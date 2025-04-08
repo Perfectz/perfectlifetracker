@@ -7,10 +7,6 @@ pool:
 variables:
   - name: NODE_VERSION
     value: '20.18.1' # Keep specific version for stability
-  - name: FRONTEND_NODE_MODULES_PATH
-    value: 'frontend/node_modules'
-  - name: BACKEND_NODE_MODULES_PATH
-    value: 'backend/node_modules'
   - name: NODE_PATH
     value: 'C:\Program Files\nodejs'
 
@@ -21,65 +17,32 @@ stages:
       - job: BuildAndTest
         displayName: 'Build and Test All'
         steps:
-          # Skip NodeTool@0 since we're using the system's Node.js
-          # - task: NodeTool@0
-          #   inputs:
-          #     versionSpec: $(NODE_VERSION)
-          #   displayName: 'Install Node.js $(NODE_VERSION)'
-
-          # Debug step to check Node availability - pure CMD
-          - task: CmdLine@2
+          # Simplest verification possible - just using batch command directly
+          - task: BatchScript@1
             inputs:
-              script: |
-                @echo off
-                echo Checking Node.js installation...
-                echo List of files in Node.js directory:
-                dir "$(NODE_PATH)" /b
-                echo.
-                echo Node.js version:
-                "$(NODE_PATH)\node.exe" --version || echo Node.js not found
-                echo.
-                echo npm version:
-                "$(NODE_PATH)\npm.cmd" --version || echo npm not found
-              failOnStderr: false
-            continueOnError: true
+              filename: 'verify-node.cmd'
+              arguments: '"$(NODE_PATH)"'
+              modifyEnvironment: true
             displayName: 'Verify Node.js'
-            
-          # Cache Frontend node_modules
-          - task: Cache@2
-            inputs:
-              key: 'npm | $(Agent.OS) | frontend/package-lock.json'
-              restoreKeys: |
-                 npm | $(Agent.OS)
-              path: $(FRONTEND_NODE_MODULES_PATH)
-            displayName: Cache Frontend node_modules
+            continueOnError: true
 
-          # Frontend Build - Using CMD batch commands only
-          - script: |
-              cd frontend
-              call "$(NODE_PATH)\npm.cmd" ci
-              if %ERRORLEVEL% NEQ 0 (
-                echo "npm ci failed with exit code %ERRORLEVEL%"
-                exit /b %ERRORLEVEL%
-              )
-              call "$(NODE_PATH)\npm.cmd" run build
-              if %ERRORLEVEL% NEQ 0 (
-                echo "npm build failed with exit code %ERRORLEVEL%"
-                exit /b %ERRORLEVEL%
-              )
+          # Build Frontend - Direct batch file
+          - task: BatchScript@1
+            inputs:
+              filename: 'build-frontend.cmd'
+              arguments: '"$(NODE_PATH)"'
+              workingFolder: '$(System.DefaultWorkingDirectory)'
             displayName: 'Build Frontend'
 
-          # Frontend Test - Using CMD batch commands only
-          - script: |
-              cd frontend
-              call "$(NODE_PATH)\npm.cmd" test
-              if %ERRORLEVEL% NEQ 0 (
-                echo "npm test failed with exit code %ERRORLEVEL%"
-                exit /b %ERRORLEVEL%
-              )
+          # Test Frontend - Direct batch file
+          - task: BatchScript@1
+            inputs:
+              filename: 'test-frontend.cmd'
+              arguments: '"$(NODE_PATH)"'
+              workingFolder: '$(System.DefaultWorkingDirectory)'
             displayName: 'Test Frontend'
-
-          # Publish Frontend Artifacts
+          
+          # Publish Frontend
           - task: PublishBuildArtifacts@1
             inputs:
               PathtoPublish: 'frontend/build'
@@ -87,48 +50,31 @@ stages:
               publishLocation: 'Container'
             displayName: 'Publish Frontend Artifacts'
 
-          # Cache Backend node_modules
-          - task: Cache@2
+          # Build Backend - Direct batch file
+          - task: BatchScript@1
             inputs:
-              key: 'npm | $(Agent.OS) | backend/package-lock.json'
-              restoreKeys: |
-                 npm | $(Agent.OS)
-              path: $(BACKEND_NODE_MODULES_PATH)
-            displayName: Cache Backend node_modules
-
-          # Backend Build - Using CMD batch commands only
-          - script: |
-              cd backend
-              call "$(NODE_PATH)\npm.cmd" ci
-              if %ERRORLEVEL% NEQ 0 (
-                echo "npm ci failed with exit code %ERRORLEVEL%"
-                exit /b %ERRORLEVEL%
-              )
-              call "$(NODE_PATH)\npm.cmd" run build
-              if %ERRORLEVEL% NEQ 0 (
-                echo "npm build failed with exit code %ERRORLEVEL%"
-                exit /b %ERRORLEVEL%
-              )
+              filename: 'build-backend.cmd'
+              arguments: '"$(NODE_PATH)"'
+              workingFolder: '$(System.DefaultWorkingDirectory)'
             displayName: 'Build Backend'
 
-          # Backend Test - Using CMD batch commands only
-          - script: |
-              cd backend
-              call "$(NODE_PATH)\npm.cmd" test
-              if %ERRORLEVEL% NEQ 0 (
-                echo "npm test failed with exit code %ERRORLEVEL%"
-                exit /b %ERRORLEVEL%
-              )
+          # Test Backend - Direct batch file
+          - task: BatchScript@1
+            inputs:
+              filename: 'test-backend.cmd'
+              arguments: '"$(NODE_PATH)"'
+              workingFolder: '$(System.DefaultWorkingDirectory)'
             displayName: 'Test Backend'
 
-          # Publish Backend Artifacts
+          # Publish Backend
           - task: PublishBuildArtifacts@1
             inputs:
-              PathtoPublish: 'backend/dist' # Assuming backend build output is in 'dist'
+              PathtoPublish: 'backend/dist'
               ArtifactName: 'backend'
               publishLocation: 'Container'
             displayName: 'Publish Backend Artifacts'
 
+  # Deployment Stage using direct batch files
   - stage: Deploy
     displayName: 'Deploy'
     dependsOn: BuildAndTest
@@ -145,35 +91,9 @@ stages:
               downloadPath: '$(System.ArtifactsDirectory)'
             displayName: 'Download Build Artifacts'
 
-          - script: |
-              echo "Preparing deployment..."
-              echo "Creating deployment directory..."
-              if not exist "$(Build.ArtifactStagingDirectory)\deploy" mkdir "$(Build.ArtifactStagingDirectory)\deploy"
-            displayName: 'Prepare Deployment'
-
-          - script: |
-              echo "Deploying frontend..."
-              xcopy "$(System.ArtifactsDirectory)\frontend\*" "$(Build.ArtifactStagingDirectory)\deploy\frontend\" /E /I /Y
-              if %ERRORLEVEL% NEQ 0 (
-                echo "Frontend deployment failed with exit code %ERRORLEVEL%"
-                exit /b %ERRORLEVEL%
-              )
-              echo "Frontend deployed successfully!"
-            displayName: 'Deploy Frontend'
-
-          - script: |
-              echo "Deploying backend..."
-              xcopy "$(System.ArtifactsDirectory)\backend\*" "$(Build.ArtifactStagingDirectory)\deploy\backend\" /E /I /Y
-              if %ERRORLEVEL% NEQ 0 (
-                echo "Backend deployment failed with exit code %ERRORLEVEL%"
-                exit /b %ERRORLEVEL%
-              )
-              echo "Backend deployed successfully!"
-            displayName: 'Deploy Backend'
-
-          - script: |
-              echo "Deployment verification..."
-              echo "Checking deployment files..."
-              dir "$(Build.ArtifactStagingDirectory)\deploy" /s
-              echo "Deployment complete and verified!"
-            displayName: 'Verify Deployment'
+          - task: BatchScript@1
+            inputs:
+              filename: 'deploy.cmd'
+              arguments: '"$(System.ArtifactsDirectory)" "$(Build.ArtifactStagingDirectory)"'
+              workingFolder: '$(System.DefaultWorkingDirectory)'
+            displayName: 'Deploy Application'
