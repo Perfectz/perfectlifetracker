@@ -210,7 +210,133 @@ Configuration of Azure DevOps pipeline to use self-hosted agent pool to work aro
 - [Azure DevOps Self-Hosted Agents](https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/agents)
 - [Agent Pools Documentation](https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/pools-queues)
 
+### [2024-04-08]: Implementation of React Frontend with TypeScript and React Router
+
+#### Change/Decision Description
+Implemented the frontend application using Create React App with TypeScript template and set up React Router for navigation between pages.
+
+#### Rationale
+- TypeScript provides strong type checking and better developer experience
+- React Router enables clean, client-side navigation between application pages
+- Create React App offers a quick setup with minimal configuration
+- Strict TypeScript mode ensures higher code quality and fewer runtime errors
+
+#### Implementation Details
+1. **Project Initialization**
+   - Used Create React App with TypeScript template
+   - Enabled strict TypeScript mode in tsconfig.json
+   - Set up base project structure
+
+2. **Routing Configuration**
+   - Implemented React Router with BrowserRouter
+   - Created basic route structure with HomePage and DashboardPage
+   - Set up navigation between routes
+
+#### Implications
+- Strong typing requirements across all components
+- Component-based architecture for all UI elements
+- Client-side routing pattern for navigation
+- Need for proper type definitions for all libraries
+
+#### References
+- [Create React App Documentation](https://create-react-app.dev/)
+- [TypeScript Documentation](https://www.typescriptlang.org/docs/)
+- [React Router Documentation](https://reactrouter.com/en/main)
+
+### [2024-04-08]: Material-UI Theme Implementation with Light/Dark Mode
+
+#### Change/Decision Description
+Integrated Material-UI (MUI) into the React application and implemented a custom theme with light and dark mode toggle functionality.
+
+#### Rationale
+- Material-UI provides a comprehensive set of pre-styled components
+- Theme customization allows for consistent branding
+- Light/dark mode switching improves user experience and accessibility
+- Using MUI reduces the need for custom CSS and ensures UI consistency
+
+#### Implementation Details
+1. **MUI Installation**
+   - Installed @mui/material, @mui/icons-material, @emotion/react, and @emotion/styled
+   - Set up ThemeProvider at the application root
+
+2. **Theme Configuration**
+   - Created custom light and dark themes with consistent color palettes
+   - Implemented theme switching functionality with React useState hook
+   - Added toggle button with appropriate icons for each theme
+
+3. **Component Usage**
+   - Implemented AppBar for navigation
+   - Used Box, Typography, Container, and Paper components for layout
+   - Applied consistent spacing and elevation
+
+#### Implications
+- Consistent design language across the application
+- Better accessibility through theme options
+- Need to follow MUI component patterns for future development
+- All styling should use MUI's styling system for consistency
+
+#### References
+- [Material-UI Documentation](https://mui.com/material-ui/getting-started/overview/)
+- [MUI Theming Guide](https://mui.com/material-ui/customization/theming/)
+
+### [2024-04-08]: Modern CSS Grid Layout for Dashboard
+
+#### Change/Decision Description
+Replaced traditional MUI Grid components with modern CSS Grid layout via Box component to resolve TypeScript compatibility issues with MUI v7.
+
+#### Rationale
+- MUI v7 Grid component API changed, causing TypeScript errors with item/container pattern
+- CSS Grid layout provides more flexibility and better browser support
+- Box component with grid display property works consistently across MUI versions
+- Simplifies the component tree and improves maintainability
+
+#### Implementation Details
+1. **Grid Implementation Issues**
+   - TypeScript errors occurred with traditional Grid item/container pattern in MUI v7
+   - Attempted several approaches to resolve typing issues
+
+2. **Modern Solution**
+   - Replaced Grid components with Box using CSS Grid layout
+   - Implemented responsive columns with media queries
+   - Maintained same visual layout while fixing type errors
+
+#### Code Changes
+```tsx
+// Before: MUI Grid approach with TypeScript errors
+<Grid container spacing={3}>
+  <Grid item xs={12} md={6}>
+    <Paper>Content</Paper>
+  </Grid>
+  <Grid item xs={12} md={6}>
+    <Paper>Content</Paper>
+  </Grid>
+</Grid>
+
+// After: Modern CSS Grid approach
+<Box sx={{ 
+  display: 'grid', 
+  gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, 
+  gap: 3 
+}}>
+  <Paper>Content</Paper>
+  <Paper>Content</Paper>
+</Box>
+```
+
+#### Implications
+- More direct use of modern CSS features
+- Simplified component structure
+- Better TypeScript compatibility
+- Need to use this pattern consistently across the application
+
+#### References
+- [MUI Box API](https://mui.com/material-ui/api/box/)
+- [CSS Grid Layout](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_grid_layout)
+
 ## Version History
 | Date | Version | Changes | Author |
 |------|---------|---------|--------|
-| 2024-04-08 | 1.0.0 | Initial version | [Author] | 
+| 2024-04-08 | 1.0.0 | Initial version | Perfect LifeTracker Pro Team |
+| 2024-04-08 | 1.1.0 | Added CI/CD and branch protection entries | Perfect LifeTracker Pro Team |
+| 2024-04-08 | 1.2.0 | Added self-hosted agent configuration | Perfect LifeTracker Pro Team |
+| 2024-04-08 | 1.3.0 | Added frontend implementation entries | Perfect LifeTracker Pro Team | 
