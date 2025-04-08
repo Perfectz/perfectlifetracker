@@ -134,6 +134,45 @@ Implementation of Azure DevOps CI pipeline for automated building and testing of
 - [Azure Pipelines Documentation](https://docs.microsoft.com/en-us/azure/devops/pipelines/)
 - [YAML Pipeline Reference](https://docs.microsoft.com/en-us/azure/devops/pipelines/yaml-schema)
 
+### [2024-04-08]: Azure DevOps Pipeline Optimization
+
+#### Change/Decision Description
+Optimization of Azure DevOps pipeline to work within free tier parallelism limits by running jobs sequentially.
+
+#### Rationale
+- Work within Azure DevOps free tier limitations
+- Maintain build and test functionality
+- Reduce pipeline complexity
+- Optimize resource usage
+
+#### Pipeline Changes
+1. **Consolidated Stages**
+   - Combined Build and Test stages into a single stage
+   - Removed parallel job execution
+   - Sequential execution of frontend and backend tasks
+
+2. **Optimized Job Structure**
+   - Single job for all operations
+   - Sequential steps for:
+     - Frontend build and test
+     - Backend build and test
+     - Artifact publishing
+
+3. **Resource Optimization**
+   - Single Node.js installation
+   - Reuse of build environment
+   - Reduced pipeline complexity
+
+#### Implications
+- Longer pipeline execution time
+- Simpler pipeline maintenance
+- No parallelism limitations
+- More efficient resource usage
+
+#### References
+- [Azure DevOps Free Tier Documentation](https://docs.microsoft.com/en-us/azure/devops/pipelines/licensing/concurrent-jobs)
+- [Pipeline Optimization Best Practices](https://docs.microsoft.com/en-us/azure/devops/pipelines/process/phases)
+
 ## Version History
 | Date | Version | Changes | Author |
 |------|---------|---------|--------|

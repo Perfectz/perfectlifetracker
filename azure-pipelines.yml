@@ -9,77 +9,56 @@ variables:
     value: '18.x'
 
 stages:
-  - stage: Build
+  - stage: BuildAndTest
     displayName: 'Build and Test'
     jobs:
-      - job: Frontend
-        displayName: 'Build Frontend'
+      - job: BuildAndTest
+        displayName: 'Build and Test All'
         steps:
+          # Install Node.js
           - task: NodeTool@0
             inputs:
               versionSpec: $(NODE_VERSION)
             displayName: 'Install Node.js'
 
+          # Frontend Build
           - script: |
               cd frontend
               npm ci
               npm run build
             displayName: 'Build Frontend'
 
+          # Frontend Test
+          - script: |
+              cd frontend
+              npm test
+            displayName: 'Test Frontend'
+
+          # Publish Frontend Artifacts
           - task: PublishBuildArtifacts@1
             inputs:
               PathtoPublish: 'frontend/build'
               ArtifactName: 'frontend'
               publishLocation: 'Container'
+            displayName: 'Publish Frontend Artifacts'
 
-      - job: Backend
-        displayName: 'Build Backend'
-        steps:
-          - task: NodeTool@0
-            inputs:
-              versionSpec: $(NODE_VERSION)
-            displayName: 'Install Node.js'
-
+          # Backend Build
           - script: |
               cd backend
               npm ci
               npm run build
             displayName: 'Build Backend'
 
+          # Backend Test
+          - script: |
+              cd backend
+              npm test
+            displayName: 'Test Backend'
+
+          # Publish Backend Artifacts
           - task: PublishBuildArtifacts@1
             inputs:
               PathtoPublish: 'backend/dist'
               ArtifactName: 'backend'
               publishLocation: 'Container'
-
-  - stage: Test
-    displayName: 'Run Tests'
-    dependsOn: Build
-    jobs:
-      - job: FrontendTests
-        displayName: 'Run Frontend Tests'
-        steps:
-          - task: NodeTool@0
-            inputs:
-              versionSpec: $(NODE_VERSION)
-            displayName: 'Install Node.js'
-
-          - script: |
-              cd frontend
-              npm ci
-              npm test
-            displayName: 'Run Frontend Tests'
-
-      - job: BackendTests
-        displayName: 'Run Backend Tests'
-        steps:
-          - task: NodeTool@0
-            inputs:
-              versionSpec: $(NODE_VERSION)
-            displayName: 'Install Node.js'
-
-          - script: |
-              cd backend
-              npm ci
-              npm test
-            displayName: 'Run Backend Tests'
+            displayName: 'Publish Backend Artifacts'
