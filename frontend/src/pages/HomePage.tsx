@@ -9,7 +9,7 @@ import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
-import Grid from '@mui/material/Grid';
+import Grid from '../components/Grid';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import PersonIcon from '@mui/icons-material/Person';
 import AssignmentIcon from '@mui/icons-material/Assignment';
@@ -96,7 +96,7 @@ const HomePage: React.FC = () => {
         <Box sx={{ flexGrow: 1, display: 'flex' }}>
           <Grid container spacing={3} sx={{ alignItems: 'stretch' }}>
             {features.map((feature, index) => (
-              <Grid xs={12} sm={6} md={4} key={index}>
+              <Grid container item xs={12} sm={6} md={4} key={index}>
                 <Card 
                   elevation={1}
                   sx={{ 
