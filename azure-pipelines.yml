@@ -6,7 +6,11 @@ pool:
 
 variables:
   - name: NODE_VERSION
-    value: '20.18.1'
+    value: '20.18.1' # Keep specific version for stability
+  - name: FRONTEND_NODE_MODULES_PATH
+    value: 'frontend/node_modules'
+  - name: BACKEND_NODE_MODULES_PATH
+    value: 'backend/node_modules'
 
 stages:
   - stage: BuildAndTest
@@ -15,55 +19,45 @@ stages:
       - job: BuildAndTest
         displayName: 'Build and Test All'
         steps:
-          # Clean workspace before starting
-          - script: |
-              echo "Cleaning workspace..."
-              if exist node_modules rd /s /q node_modules
-              if exist frontend\node_modules rd /s /q frontend\node_modules
-              if exist backend\node_modules rd /s /q backend\node_modules
-            displayName: 'Clean workspace'
-            
-          # Manual Node.js installation (alternative to NodeTool@0)
-          - script: |
-              echo "Manually installing Node.js $(NODE_VERSION)..."
-              if not exist "$(Agent.ToolsDirectory)\node" mkdir "$(Agent.ToolsDirectory)\node"
-              cd "$(Agent.ToolsDirectory)\node"
-              
-              # Download and extract Node.js for Windows
-              curl -o node.zip https://nodejs.org/dist/v$(NODE_VERSION)/node-v$(NODE_VERSION)-win-x64.zip
-              tar -xf node.zip
-              
-              # Add explicit PATH modification
-              set NODE_PATH="$(Agent.ToolsDirectory)\node\node-v$(NODE_VERSION)-win-x64"
-              echo "##vso[task.prependpath]$(Agent.ToolsDirectory)\node\node-v$(NODE_VERSION)-win-x64"
-              
-              # Create a backup of npm commands for direct reference if PATH doesn't work
-              copy "$(Agent.ToolsDirectory)\node\node-v$(NODE_VERSION)-win-x64\npm.cmd" "$(Build.SourcesDirectory)\npm.cmd" /Y
-              copy "$(Agent.ToolsDirectory)\node\node-v$(NODE_VERSION)-win-x64\npm" "$(Build.SourcesDirectory)\npm" /Y
-              
-              # Verify installation
-              "$(Agent.ToolsDirectory)\node\node-v$(NODE_VERSION)-win-x64\node.exe" -v
-              "$(Agent.ToolsDirectory)\node\node-v$(NODE_VERSION)-win-x64\npm.cmd" -v
-              
-              # Export variables for later steps
-              echo "##vso[task.setvariable variable=NODE_EXE]$(Agent.ToolsDirectory)\node\node-v$(NODE_VERSION)-win-x64\node.exe"
-              echo "##vso[task.setvariable variable=NPM_CMD]$(Agent.ToolsDirectory)\node\node-v$(NODE_VERSION)-win-x64\npm.cmd"
-            displayName: 'Install Node.js manually'
+          # Clean workspace - Optional but can prevent issues
+          # - script: |
+          #     echo "Cleaning workspace..."
+          #     if exist node_modules rd /s /q node_modules
+          #     if exist frontend\node_modules rd /s /q frontend\node_modules
+          #     if exist backend\node_modules rd /s /q backend\node_modules
+          #   displayName: 'Clean workspace' # Keeping this commented for now, can re-enable if needed
+
+          # Install Node.js using the standard task
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(NODE_VERSION)
+            displayName: 'Install Node.js $(NODE_VERSION)'
+
+          # Cache Frontend node_modules
+          - task: Cache@2
+            inputs:
+              key: 'npm | $(Agent.OS) | frontend/package-lock.json'
+              restoreKeys: |
+                 npm | $(Agent.OS)
+              path: $(FRONTEND_NODE_MODULES_PATH)
+            displayName: Cache Frontend node_modules
 
           # Frontend Build
           - script: |
               cd frontend
-              echo "Using Node.js at: $(NODE_EXE)"
-              echo "Using npm at: $(NPM_CMD)"
-              $(NPM_CMD) ci
-              $(NPM_CMD) run build
+              echo "Using Node.js at: %NODE_EXE%"
+              echo "Using npm at: %NPM_CMD%"
+              %NPM_CMD% ci
+              %NPM_CMD% run build
             displayName: 'Build Frontend'
+            workingDirectory: $(System.DefaultWorkingDirectory)
 
           # Frontend Test
           - script: |
               cd frontend
-              $(NPM_CMD) test
+              %NPM_CMD% test
             displayName: 'Test Frontend'
+            workingDirectory: $(System.DefaultWorkingDirectory)
 
           # Publish Frontend Artifacts
           - task: PublishBuildArtifacts@1
@@ -73,23 +67,34 @@ stages:
               publishLocation: 'Container'
             displayName: 'Publish Frontend Artifacts'
 
+          # Cache Backend node_modules
+          - task: Cache@2
+            inputs:
+              key: 'npm | $(Agent.OS) | backend/package-lock.json'
+              restoreKeys: |
+                 npm | $(Agent.OS)
+              path: $(BACKEND_NODE_MODULES_PATH)
+            displayName: Cache Backend node_modules
+
           # Backend Build
           - script: |
               cd backend
-              $(NPM_CMD) ci
-              $(NPM_CMD) run build
+              %NPM_CMD% ci
+              %NPM_CMD% run build
             displayName: 'Build Backend'
+            workingDirectory: $(System.DefaultWorkingDirectory)
 
           # Backend Test
           - script: |
               cd backend
-              $(NPM_CMD) test
+              %NPM_CMD% test
             displayName: 'Test Backend'
+            workingDirectory: $(System.DefaultWorkingDirectory)
 
           # Publish Backend Artifacts
           - task: PublishBuildArtifacts@1
             inputs:
-              PathtoPublish: 'backend/dist'
+              PathtoPublish: 'backend/dist' # Assuming backend build output is in 'dist'
               ArtifactName: 'backend'
               publishLocation: 'Container'
             displayName: 'Publish Backend Artifacts'
@@ -109,25 +114,25 @@ stages:
               itemPattern: '**'
               downloadPath: '$(System.ArtifactsDirectory)'
             displayName: 'Download Build Artifacts'
-          
+
           - script: |
               echo "Preparing deployment..."
               echo "Creating deployment directory..."
               if not exist "$(Build.ArtifactStagingDirectory)\deploy" mkdir "$(Build.ArtifactStagingDirectory)\deploy"
             displayName: 'Prepare Deployment'
-          
+
           - script: |
               echo "Deploying frontend..."
               xcopy "$(System.ArtifactsDirectory)\frontend\*" "$(Build.ArtifactStagingDirectory)\deploy\frontend\" /E /I /Y
               echo "Frontend deployed successfully!"
             displayName: 'Deploy Frontend'
-          
+
           - script: |
               echo "Deploying backend..."
               xcopy "$(System.ArtifactsDirectory)\backend\*" "$(Build.ArtifactStagingDirectory)\deploy\backend\" /E /I /Y
               echo "Backend deployed successfully!"
             displayName: 'Deploy Backend'
-          
+
           - script: |
               echo "Deployment verification..."
               echo "Checking deployment files..."
