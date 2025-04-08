@@ -21,12 +21,20 @@ stages:
       - job: BuildAndTest
         displayName: 'Build and Test All'
         steps:
-          # Use NodeTool@0 but ensure PATH is properly set
-          - task: NodeTool@0
-            inputs:
-              versionSpec: $(NODE_VERSION)
-            displayName: 'Install Node.js $(NODE_VERSION)'
+          # Skip NodeTool@0 since we're using the system's Node.js
+          # - task: NodeTool@0
+          #   inputs:
+          #     versionSpec: $(NODE_VERSION)
+          #   displayName: 'Install Node.js $(NODE_VERSION)'
 
+          # Debug step to check Node availability
+          - script: |
+              echo "Checking Node.js installation..."
+              dir "$(NODE_PATH)"
+              "$(NODE_PATH)\node.exe" --version
+              "$(NODE_PATH)\npm.cmd" --version
+            displayName: 'Verify Node.js'
+            
           # Cache Frontend node_modules
           - task: Cache@2
             inputs:
@@ -36,17 +44,29 @@ stages:
               path: $(FRONTEND_NODE_MODULES_PATH)
             displayName: Cache Frontend node_modules
 
-          # Frontend Build
+          # Frontend Build - Using CMD batch commands only
           - script: |
               cd frontend
-              "$(NODE_PATH)\npm.cmd" ci
-              "$(NODE_PATH)\npm.cmd" run build
+              call "$(NODE_PATH)\npm.cmd" ci
+              if %ERRORLEVEL% NEQ 0 (
+                echo "npm ci failed with exit code %ERRORLEVEL%"
+                exit /b %ERRORLEVEL%
+              )
+              call "$(NODE_PATH)\npm.cmd" run build
+              if %ERRORLEVEL% NEQ 0 (
+                echo "npm build failed with exit code %ERRORLEVEL%"
+                exit /b %ERRORLEVEL%
+              )
             displayName: 'Build Frontend'
 
-          # Frontend Test
+          # Frontend Test - Using CMD batch commands only
           - script: |
               cd frontend
-              "$(NODE_PATH)\npm.cmd" test
+              call "$(NODE_PATH)\npm.cmd" test
+              if %ERRORLEVEL% NEQ 0 (
+                echo "npm test failed with exit code %ERRORLEVEL%"
+                exit /b %ERRORLEVEL%
+              )
             displayName: 'Test Frontend'
 
           # Publish Frontend Artifacts
@@ -66,17 +86,29 @@ stages:
               path: $(BACKEND_NODE_MODULES_PATH)
             displayName: Cache Backend node_modules
 
-          # Backend Build
+          # Backend Build - Using CMD batch commands only
           - script: |
               cd backend
-              "$(NODE_PATH)\npm.cmd" ci
-              "$(NODE_PATH)\npm.cmd" run build
+              call "$(NODE_PATH)\npm.cmd" ci
+              if %ERRORLEVEL% NEQ 0 (
+                echo "npm ci failed with exit code %ERRORLEVEL%"
+                exit /b %ERRORLEVEL%
+              )
+              call "$(NODE_PATH)\npm.cmd" run build
+              if %ERRORLEVEL% NEQ 0 (
+                echo "npm build failed with exit code %ERRORLEVEL%"
+                exit /b %ERRORLEVEL%
+              )
             displayName: 'Build Backend'
 
-          # Backend Test
+          # Backend Test - Using CMD batch commands only
           - script: |
               cd backend
-              "$(NODE_PATH)\npm.cmd" test
+              call "$(NODE_PATH)\npm.cmd" test
+              if %ERRORLEVEL% NEQ 0 (
+                echo "npm test failed with exit code %ERRORLEVEL%"
+                exit /b %ERRORLEVEL%
+              )
             displayName: 'Test Backend'
 
           # Publish Backend Artifacts
@@ -112,12 +144,20 @@ stages:
           - script: |
               echo "Deploying frontend..."
               xcopy "$(System.ArtifactsDirectory)\frontend\*" "$(Build.ArtifactStagingDirectory)\deploy\frontend\" /E /I /Y
+              if %ERRORLEVEL% NEQ 0 (
+                echo "Frontend deployment failed with exit code %ERRORLEVEL%"
+                exit /b %ERRORLEVEL%
+              )
               echo "Frontend deployed successfully!"
             displayName: 'Deploy Frontend'
 
           - script: |
               echo "Deploying backend..."
               xcopy "$(System.ArtifactsDirectory)\backend\*" "$(Build.ArtifactStagingDirectory)\deploy\backend\" /E /I /Y
+              if %ERRORLEVEL% NEQ 0 (
+                echo "Backend deployment failed with exit code %ERRORLEVEL%"
+                exit /b %ERRORLEVEL%
+              )
               echo "Backend deployed successfully!"
             displayName: 'Deploy Backend'
 
