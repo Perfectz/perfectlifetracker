@@ -33,25 +33,36 @@ stages:
               curl -o node.zip https://nodejs.org/dist/v$(NODE_VERSION)/node-v$(NODE_VERSION)-win-x64.zip
               tar -xf node.zip
               
-              # Add to PATH
+              # Add explicit PATH modification
+              set NODE_PATH="$(Agent.ToolsDirectory)\node\node-v$(NODE_VERSION)-win-x64"
               echo "##vso[task.prependpath]$(Agent.ToolsDirectory)\node\node-v$(NODE_VERSION)-win-x64"
               
+              # Create a backup of npm commands for direct reference if PATH doesn't work
+              copy "$(Agent.ToolsDirectory)\node\node-v$(NODE_VERSION)-win-x64\npm.cmd" "$(Build.SourcesDirectory)\npm.cmd" /Y
+              copy "$(Agent.ToolsDirectory)\node\node-v$(NODE_VERSION)-win-x64\npm" "$(Build.SourcesDirectory)\npm" /Y
+              
               # Verify installation
-              node -v
-              npm -v
+              "$(Agent.ToolsDirectory)\node\node-v$(NODE_VERSION)-win-x64\node.exe" -v
+              "$(Agent.ToolsDirectory)\node\node-v$(NODE_VERSION)-win-x64\npm.cmd" -v
+              
+              # Export variables for later steps
+              echo "##vso[task.setvariable variable=NODE_EXE]$(Agent.ToolsDirectory)\node\node-v$(NODE_VERSION)-win-x64\node.exe"
+              echo "##vso[task.setvariable variable=NPM_CMD]$(Agent.ToolsDirectory)\node\node-v$(NODE_VERSION)-win-x64\npm.cmd"
             displayName: 'Install Node.js manually'
 
           # Frontend Build
           - script: |
               cd frontend
-              npm ci
-              npm run build
+              echo "Using Node.js at: $(NODE_EXE)"
+              echo "Using npm at: $(NPM_CMD)"
+              "$(NPM_CMD)" ci
+              "$(NPM_CMD)" run build
             displayName: 'Build Frontend'
 
           # Frontend Test
           - script: |
               cd frontend
-              npm test
+              "$(NPM_CMD)" test
             displayName: 'Test Frontend'
 
           # Publish Frontend Artifacts
@@ -65,14 +76,14 @@ stages:
           # Backend Build
           - script: |
               cd backend
-              npm ci
-              npm run build
+              "$(NPM_CMD)" ci
+              "$(NPM_CMD)" run build
             displayName: 'Build Backend'
 
           # Backend Test
           - script: |
               cd backend
-              npm test
+              "$(NPM_CMD)" test
             displayName: 'Test Backend'
 
           # Publish Backend Artifacts
