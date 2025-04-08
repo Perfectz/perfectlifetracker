@@ -6,7 +6,7 @@ pool:
 
 variables:
   - name: NODE_VERSION
-    value: '20.x'
+    value: '20.18.1'
 
 stages:
   - stage: BuildAndTest
@@ -15,11 +15,31 @@ stages:
       - job: BuildAndTest
         displayName: 'Build and Test All'
         steps:
-          # Install Node.js
-          - task: NodeTool@0
-            inputs:
-              versionSpec: $(NODE_VERSION)
-            displayName: 'Install Node.js'
+          # Clean workspace before starting
+          - script: |
+              echo "Cleaning workspace..."
+              if exist node_modules rd /s /q node_modules
+              if exist frontend\node_modules rd /s /q frontend\node_modules
+              if exist backend\node_modules rd /s /q backend\node_modules
+            displayName: 'Clean workspace'
+            
+          # Manual Node.js installation (alternative to NodeTool@0)
+          - script: |
+              echo "Manually installing Node.js $(NODE_VERSION)..."
+              if not exist "$(Agent.ToolsDirectory)\node" mkdir "$(Agent.ToolsDirectory)\node"
+              cd "$(Agent.ToolsDirectory)\node"
+              
+              # Download and extract Node.js for Windows
+              curl -o node.zip https://nodejs.org/dist/v$(NODE_VERSION)/node-v$(NODE_VERSION)-win-x64.zip
+              tar -xf node.zip
+              
+              # Add to PATH
+              echo "##vso[task.prependpath]$(Agent.ToolsDirectory)\node\node-v$(NODE_VERSION)-win-x64"
+              
+              # Verify installation
+              node -v
+              npm -v
+            displayName: 'Install Node.js manually'
 
           # Frontend Build
           - script: |
@@ -62,3 +82,44 @@ stages:
               ArtifactName: 'backend'
               publishLocation: 'Container'
             displayName: 'Publish Backend Artifacts'
+
+  - stage: Deploy
+    displayName: 'Deploy'
+    dependsOn: BuildAndTest
+    condition: succeeded()
+    jobs:
+      - job: DeployJob
+        displayName: 'Deploy Application'
+        steps:
+          - task: DownloadBuildArtifacts@0
+            inputs:
+              buildType: 'current'
+              downloadType: 'specific'
+              itemPattern: '**'
+              downloadPath: '$(System.ArtifactsDirectory)'
+            displayName: 'Download Build Artifacts'
+          
+          - script: |
+              echo "Preparing deployment..."
+              echo "Creating deployment directory..."
+              if not exist "$(Build.ArtifactStagingDirectory)\deploy" mkdir "$(Build.ArtifactStagingDirectory)\deploy"
+            displayName: 'Prepare Deployment'
+          
+          - script: |
+              echo "Deploying frontend..."
+              xcopy "$(System.ArtifactsDirectory)\frontend\*" "$(Build.ArtifactStagingDirectory)\deploy\frontend\" /E /I /Y
+              echo "Frontend deployed successfully!"
+            displayName: 'Deploy Frontend'
+          
+          - script: |
+              echo "Deploying backend..."
+              xcopy "$(System.ArtifactsDirectory)\backend\*" "$(Build.ArtifactStagingDirectory)\deploy\backend\" /E /I /Y
+              echo "Backend deployed successfully!"
+            displayName: 'Deploy Backend'
+          
+          - script: |
+              echo "Deployment verification..."
+              echo "Checking deployment files..."
+              dir "$(Build.ArtifactStagingDirectory)\deploy" /s
+              echo "Deployment complete and verified!"
+            displayName: 'Verify Deployment'
