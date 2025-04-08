@@ -1,0 +1,13 @@
+trigger:
+  - main
+pool:
+  vmImage: 'ubuntu-latest'
+steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '16.x'    # Use Node.js v16.x (for example)
+    displayName: 'Install Node.js'
+  - script: npm install
+    displayName: 'Install dependencies'
+  - script: npm run build
+    displayName: 'Build frontend'
