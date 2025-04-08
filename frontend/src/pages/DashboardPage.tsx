@@ -1,5 +1,9 @@
 import React from 'react';
-import { Typography, Container, Box, Paper, Grid } from '@mui/material';
+import Typography from '@mui/material/Typography';
+import Container from '@mui/material/Container';
+import Box from '@mui/material/Box';
+import Paper from '@mui/material/Paper';
+import Grid from '@mui/material/Grid';
 
 const DashboardPage: React.FC = () => {
   return (

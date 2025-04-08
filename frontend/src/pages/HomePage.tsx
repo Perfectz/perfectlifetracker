@@ -1,5 +1,7 @@
 import React from 'react';
-import { Typography, Container, Box } from '@mui/material';
+import Typography from '@mui/material/Typography';
+import Container from '@mui/material/Container';
+import Box from '@mui/material/Box';
 
 const HomePage: React.FC = () => {
   return (
