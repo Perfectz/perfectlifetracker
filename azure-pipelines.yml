@@ -19,26 +19,11 @@ stages:
       - job: BuildAndTest
         displayName: 'Build and Test All'
         steps:
-          # Clean workspace - Optional but can prevent issues
-          # - script: |
-          #     echo "Cleaning workspace..."
-          #     if exist node_modules rd /s /q node_modules
-          #     if exist frontend\node_modules rd /s /q frontend\node_modules
-          #     if exist backend\node_modules rd /s /q backend\node_modules
-          #   displayName: 'Clean workspace' # Keeping this commented for now, can re-enable if needed
-
           # Install Node.js using the standard task
           - task: NodeTool@0
             inputs:
               versionSpec: $(NODE_VERSION)
             displayName: 'Install Node.js $(NODE_VERSION)'
-
-          # Set NPM_CMD variable
-          - script: |
-              echo "Setting NPM_CMD variable..."
-              set NPM_CMD=npm
-              echo "NPM_CMD set to: %NPM_CMD%"
-            displayName: 'Set NPM_CMD Variable'
 
           # Cache Frontend node_modules
           - task: Cache@2
@@ -49,20 +34,18 @@ stages:
               path: $(FRONTEND_NODE_MODULES_PATH)
             displayName: Cache Frontend node_modules
 
-          # Frontend Build
-          - script: |
-              cd frontend
-              echo "Using Node.js at: %NODE_EXE%"
-              echo "Using npm at: %NPM_CMD%"
-              %NPM_CMD% ci
-              %NPM_CMD% run build
+          # Frontend Build - Using PowerShell
+          - powershell: |
+              Set-Location -Path "frontend"
+              npm ci
+              npm run build
             displayName: 'Build Frontend'
             workingDirectory: $(System.DefaultWorkingDirectory)
 
-          # Frontend Test
-          - script: |
-              cd frontend
-              %NPM_CMD% test
+          # Frontend Test - Using PowerShell
+          - powershell: |
+              Set-Location -Path "frontend"
+              npm test
             displayName: 'Test Frontend'
             workingDirectory: $(System.DefaultWorkingDirectory)
 
@@ -83,18 +66,18 @@ stages:
               path: $(BACKEND_NODE_MODULES_PATH)
             displayName: Cache Backend node_modules
 
-          # Backend Build
-          - script: |
-              cd backend
-              %NPM_CMD% ci
-              %NPM_CMD% run build
+          # Backend Build - Using PowerShell
+          - powershell: |
+              Set-Location -Path "backend"
+              npm ci
+              npm run build
             displayName: 'Build Backend'
             workingDirectory: $(System.DefaultWorkingDirectory)
 
-          # Backend Test
-          - script: |
-              cd backend
-              %NPM_CMD% test
+          # Backend Test - Using PowerShell
+          - powershell: |
+              Set-Location -Path "backend"
+              npm test
             displayName: 'Test Backend'
             workingDirectory: $(System.DefaultWorkingDirectory)
 
@@ -122,27 +105,29 @@ stages:
               downloadPath: '$(System.ArtifactsDirectory)'
             displayName: 'Download Build Artifacts'
 
-          - script: |
-              echo "Preparing deployment..."
-              echo "Creating deployment directory..."
-              if not exist "$(Build.ArtifactStagingDirectory)\deploy" mkdir "$(Build.ArtifactStagingDirectory)\deploy"
+          - powershell: |
+              Write-Host "Preparing deployment..."
+              Write-Host "Creating deployment directory..."
+              if (!(Test-Path -Path "$(Build.ArtifactStagingDirectory)\deploy")) {
+                  New-Item -Path "$(Build.ArtifactStagingDirectory)\deploy" -ItemType Directory -Force
+              }
             displayName: 'Prepare Deployment'
 
-          - script: |
-              echo "Deploying frontend..."
-              xcopy "$(System.ArtifactsDirectory)\frontend\*" "$(Build.ArtifactStagingDirectory)\deploy\frontend\" /E /I /Y
-              echo "Frontend deployed successfully!"
+          - powershell: |
+              Write-Host "Deploying frontend..."
+              Copy-Item -Path "$(System.ArtifactsDirectory)\frontend\*" -Destination "$(Build.ArtifactStagingDirectory)\deploy\frontend\" -Recurse -Force
+              Write-Host "Frontend deployed successfully!"
             displayName: 'Deploy Frontend'
 
-          - script: |
-              echo "Deploying backend..."
-              xcopy "$(System.ArtifactsDirectory)\backend\*" "$(Build.ArtifactStagingDirectory)\deploy\backend\" /E /I /Y
-              echo "Backend deployed successfully!"
+          - powershell: |
+              Write-Host "Deploying backend..."
+              Copy-Item -Path "$(System.ArtifactsDirectory)\backend\*" -Destination "$(Build.ArtifactStagingDirectory)\deploy\backend\" -Recurse -Force
+              Write-Host "Backend deployed successfully!"
             displayName: 'Deploy Backend'
 
-          - script: |
-              echo "Deployment verification..."
-              echo "Checking deployment files..."
-              dir "$(Build.ArtifactStagingDirectory)\deploy" /s
-              echo "Deployment complete and verified!"
+          - powershell: |
+              Write-Host "Deployment verification..."
+              Write-Host "Checking deployment files..."
+              Get-ChildItem -Path "$(Build.ArtifactStagingDirectory)\deploy" -Recurse
+              Write-Host "Deployment complete and verified!"
             displayName: 'Verify Deployment'
