@@ -163,8 +163,28 @@ graph TD
     ThemeProvider --> Components[All Components]
 ```
 
+### Development Workflow
+```mermaid
+graph TD
+    Development[Development Process] --> CleanStart[Clean Start]
+    Development --> Maintenance[Maintenance]
+    
+    CleanStart --> StartClean[start-clean.ps1]
+    StartClean --> KillProcesses[Kill React Processes]
+    StartClean --> StartReact[Start React Server]
+    
+    Maintenance --> KillScript[kill-react.ps1]
+    KillScript --> DetectPorts[Detect Ports 3000-3002]
+    KillScript --> FindReactProcesses[Find React Processes]
+    KillScript --> TerminateProcesses[Terminate Processes]
+    
+    StartReact --> ReactServer[React Dev Server]
+    ReactServer --> Browser[Browser Access]
+```
+
 ## Version History
 | Date | Version | Changes | Author |
 |------|---------|---------|--------|
 | 2024-04-08 | 1.0.0 | Initial architecture design | Perfect LifeTracker Pro Team | 
 | 2024-04-08 | 1.1.0 | Added frontend implementation details | Perfect LifeTracker Pro Team | 
+| 2024-04-08 | 1.2.0 | Added development workflow with PowerShell scripts | Perfect LifeTracker Pro Team | 

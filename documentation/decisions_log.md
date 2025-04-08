@@ -333,10 +333,53 @@ Replaced traditional MUI Grid components with modern CSS Grid layout via Box com
 - [MUI Box API](https://mui.com/material-ui/api/box/)
 - [CSS Grid Layout](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_grid_layout)
 
+### [2024-04-08]: PowerShell Scripts for React Process Management
+
+#### Change/Decision Description
+Added PowerShell scripts (`kill-react.ps1` and `start-clean.ps1`) to manage React development processes, allowing for clean termination and startup of React development servers.
+
+#### Rationale
+- React development servers can sometimes hang or continue running in the background
+- Port conflicts can occur when multiple instances are running
+- Manual termination of processes is error-prone and time-consuming
+- Automated scripts provide a consistent way to clean up and restart the development environment
+
+#### Implementation Details
+1. **kill-react.ps1**
+   - Detects and terminates processes on ports 3000, 3001, and 3002 (typical React ports)
+   - Identifies and terminates Node.js processes running React development servers
+   - Terminates processes with specific command line patterns related to React
+
+2. **start-clean.ps1**
+   - Performs all cleanup operations from kill-react.ps1
+   - Additionally starts a fresh React application instance with npm start
+   - Provides a clean development environment for each session
+
+#### Script Usage
+```powershell
+# Just kill React processes
+.\kill-react.ps1
+
+# Kill React processes and start a fresh instance
+.\start-clean.ps1
+```
+
+#### Implications
+- More reliable development environment
+- Reduced port conflicts and process hanging issues
+- Easier cleanup between development sessions
+- Better development workflow with consistent process management
+
+#### References
+- [React Development Server Documentation](https://create-react-app.dev/docs/getting-started)
+- [Node.js Process Management](https://nodejs.org/api/process.html)
+- [PowerShell Process Management](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-process)
+
 ## Version History
 | Date | Version | Changes | Author |
 |------|---------|---------|--------|
 | 2024-04-08 | 1.0.0 | Initial version | Perfect LifeTracker Pro Team |
 | 2024-04-08 | 1.1.0 | Added CI/CD and branch protection entries | Perfect LifeTracker Pro Team |
 | 2024-04-08 | 1.2.0 | Added self-hosted agent configuration | Perfect LifeTracker Pro Team |
-| 2024-04-08 | 1.3.0 | Added frontend implementation entries | Perfect LifeTracker Pro Team | 
+| 2024-04-08 | 1.3.0 | Added frontend implementation entries | Perfect LifeTracker Pro Team |
+| 2024-04-08 | 1.4.0 | Added PowerShell scripts for React process management | Perfect LifeTracker Pro Team | 
