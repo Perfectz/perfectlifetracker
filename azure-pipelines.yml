@@ -55,14 +55,14 @@ stages:
               cd frontend
               echo "Using Node.js at: $(NODE_EXE)"
               echo "Using npm at: $(NPM_CMD)"
-              "$(NPM_CMD)" ci
-              "$(NPM_CMD)" run build
+              $(NPM_CMD) ci
+              $(NPM_CMD) run build
             displayName: 'Build Frontend'
 
           # Frontend Test
           - script: |
               cd frontend
-              "$(NPM_CMD)" test
+              $(NPM_CMD) test
             displayName: 'Test Frontend'
 
           # Publish Frontend Artifacts
@@ -76,14 +76,14 @@ stages:
           # Backend Build
           - script: |
               cd backend
-              "$(NPM_CMD)" ci
-              "$(NPM_CMD)" run build
+              $(NPM_CMD) ci
+              $(NPM_CMD) run build
             displayName: 'Build Backend'
 
           # Backend Test
           - script: |
               cd backend
-              "$(NPM_CMD)" test
+              $(NPM_CMD) test
             displayName: 'Test Backend'
 
           # Publish Backend Artifacts
