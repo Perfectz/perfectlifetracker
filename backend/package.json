@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "This directory contains the backend services for PerfectLifeTrack Pro, built with Node.js and Azure Functions.",
   "main": "dist/index.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",

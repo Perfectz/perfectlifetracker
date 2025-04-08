@@ -6,7 +6,7 @@ pool:
 
 variables:
   - name: NODE_VERSION
-    value: '18.x'
+    value: '20.x'
 
 stages:
   - stage: BuildAndTest
