@@ -33,6 +33,13 @@ stages:
               versionSpec: $(NODE_VERSION)
             displayName: 'Install Node.js $(NODE_VERSION)'
 
+          # Set NPM_CMD variable
+          - script: |
+              echo "Setting NPM_CMD variable..."
+              set NPM_CMD=npm
+              echo "NPM_CMD set to: %NPM_CMD%"
+            displayName: 'Set NPM_CMD Variable'
+
           # Cache Frontend node_modules
           - task: Cache@2
             inputs:
