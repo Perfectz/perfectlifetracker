@@ -27,12 +27,22 @@ stages:
           #     versionSpec: $(NODE_VERSION)
           #   displayName: 'Install Node.js $(NODE_VERSION)'
 
-          # Debug step to check Node availability
-          - script: |
-              echo "Checking Node.js installation..."
-              dir "$(NODE_PATH)"
-              "$(NODE_PATH)\node.exe" --version
-              "$(NODE_PATH)\npm.cmd" --version
+          # Debug step to check Node availability - pure CMD
+          - task: CmdLine@2
+            inputs:
+              script: |
+                @echo off
+                echo Checking Node.js installation...
+                echo List of files in Node.js directory:
+                dir "$(NODE_PATH)" /b
+                echo.
+                echo Node.js version:
+                "$(NODE_PATH)\node.exe" --version || echo Node.js not found
+                echo.
+                echo npm version:
+                "$(NODE_PATH)\npm.cmd" --version || echo npm not found
+              failOnStderr: false
+            continueOnError: true
             displayName: 'Verify Node.js'
             
           # Cache Frontend node_modules
