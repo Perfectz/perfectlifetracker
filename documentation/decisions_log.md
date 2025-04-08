@@ -173,6 +173,43 @@ Optimization of Azure DevOps pipeline to work within free tier parallelism limit
 - [Azure DevOps Free Tier Documentation](https://docs.microsoft.com/en-us/azure/devops/pipelines/licensing/concurrent-jobs)
 - [Pipeline Optimization Best Practices](https://docs.microsoft.com/en-us/azure/devops/pipelines/process/phases)
 
+### [2024-04-08]: Self-Hosted Agent Configuration
+
+#### Change/Decision Description
+Configuration of Azure DevOps pipeline to use self-hosted agent pool to work around parallelism limitations.
+
+#### Rationale
+- Avoid Azure DevOps hosted agent parallelism limits
+- Maintain continuous integration functionality
+- Reduce pipeline execution costs
+- Enable more flexible build environment
+
+#### Configuration Changes
+1. **Agent Pool Selection**
+   - Switched from hosted Ubuntu agent to self-hosted agent
+   - Using Default agent pool
+   - Maintained all build and test steps
+
+2. **Build Environment**
+   - Node.js 18.x installation maintained
+   - All build and test steps preserved
+   - Artifact publishing unchanged
+
+3. **Resource Management**
+   - No parallelism limitations
+   - More control over build environment
+   - Potential for faster builds
+
+#### Implications
+- Need to maintain self-hosted agent
+- More control over build environment
+- No parallelism restrictions
+- Potential for faster builds
+
+#### References
+- [Azure DevOps Self-Hosted Agents](https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/agents)
+- [Agent Pools Documentation](https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/pools-queues)
+
 ## Version History
 | Date | Version | Changes | Author |
 |------|---------|---------|--------|
