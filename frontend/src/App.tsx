@@ -22,14 +22,14 @@ import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
-import { lightTheme, darkTheme } from './theme';
+import { responsiveLightTheme, responsiveDarkTheme } from './theme';
 import HomePage from './pages/HomePage';
 import DashboardPage from './pages/DashboardPage';
 import Link from '@mui/material/Link';
 
 function App() {
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>('light');
-  const activeTheme = themeMode === 'light' ? lightTheme : darkTheme;
+  const activeTheme = themeMode === 'light' ? responsiveLightTheme : responsiveDarkTheme;
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [drawerOpen, setDrawerOpen] = useState(false);

@@ -10,7 +10,7 @@ import Paper from '@mui/material/Paper';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import CardMedia from '@mui/material/CardMedia';
-import Grid from '@mui/material/Grid';
+import Grid from '../components/Grid';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import PersonIcon from '@mui/icons-material/Person';
 import AssignmentIcon from '@mui/icons-material/Assignment';
@@ -88,44 +88,46 @@ const HomePage: React.FC = () => {
           Key Features
         </Typography>
         
-        <Grid container spacing={3}>
-          {features.map((feature, index) => (
-            <Grid item xs={12} sm={6} md={4} key={index}>
-              <Card 
-                elevation={1}
-                sx={{ 
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
-                  '&:hover': {
-                    transform: 'translateY(-5px)',
-                    boxShadow: 4
-                  }
-                }}
-              >
-                <CardContent sx={{ flexGrow: 1 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <Box sx={{ 
-                      color: 'primary.main', 
-                      display: 'flex', 
-                      mr: 1,
-                      alignItems: 'center'
-                    }}>
-                      {feature.icon}
+        <Box sx={{ flexGrow: 1 }}>
+          <Grid container spacing={3}>
+            {features.map((feature, index) => (
+              <Grid container item xs={12} sm={6} md={4} key={index}>
+                <Card 
+                  elevation={1}
+                  sx={{ 
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
+                    '&:hover': {
+                      transform: 'translateY(-5px)',
+                      boxShadow: 4
+                    }
+                  }}
+                >
+                  <CardContent sx={{ flexGrow: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                      <Box sx={{ 
+                        color: 'primary.main', 
+                        display: 'flex', 
+                        mr: 1,
+                        alignItems: 'center'
+                      }}>
+                        {feature.icon}
+                      </Box>
+                      <Typography variant="h6" component="h3">
+                        {feature.title}
+                      </Typography>
                     </Box>
-                    <Typography variant="h6" component="h3">
-                      {feature.title}
+                    <Typography variant="body2" color="text.secondary">
+                      {feature.description}
                     </Typography>
-                  </Box>
-                  <Typography variant="body2" color="text.secondary">
-                    {feature.description}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
       </Box>
     </Container>
   );
