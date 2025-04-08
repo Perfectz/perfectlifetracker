@@ -1,13 +1,74 @@
-body {
+/* Global styles for Perfect LifeTracker Pro */
+* {
+  box-sizing: border-box;
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+#root {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Responsive typography */
+@media (max-width: 600px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+/* Improved focus styles for accessibility */
+:focus {
+  outline: 2px solid #1976d2;
+  outline-offset: 2px;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Touch-friendly tap targets */
+button, 
+a, 
+input, 
+select, 
+textarea {
+  touch-action: manipulation;
+}
+
+/* Mobile-friendly links and buttons */
+a, button {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Responsive media */
+img, 
+video, 
+iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Prevent text size adjustment on orientation change */
+html {
+  -webkit-text-size-adjust: 100%;
 }
