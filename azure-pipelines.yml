@@ -82,4 +82,4 @@ stages:
               cd backend
               npm ci
               npm test
-            displayName: 'Run Backend Tests' 
+            displayName: 'Run Backend Tests'
