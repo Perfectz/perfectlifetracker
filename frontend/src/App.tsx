@@ -26,6 +26,7 @@ import { responsiveLightTheme, responsiveDarkTheme } from './theme';
 import HomePage from './pages/HomePage';
 import DashboardPage from './pages/DashboardPage';
 import Link from '@mui/material/Link';
+import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>('light');
@@ -148,11 +149,19 @@ function App() {
         </Drawer>
       </Box>
       
-      <Container sx={{ pt: 2, pb: 4 }}>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-        </Routes>
+      <Container sx={{ 
+        pt: 2, 
+        pb: 4, 
+        minHeight: 'calc(100vh - 64px)', 
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
+        <ErrorBoundary>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+          </Routes>
+        </ErrorBoundary>
       </Container>
     </ThemeProvider>
   );

@@ -35,8 +35,13 @@ const DashboardPage: React.FC = () => {
   ];
 
   return (
-    <Container maxWidth="lg">
-      <Box sx={{ my: { xs: 2, md: 4 } }}>
+    <Container maxWidth="lg" sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ 
+        my: { xs: 2, md: 4 },
+        flexGrow: 1,
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
         <Typography 
           variant="h4" 
           component="h1" 
@@ -46,10 +51,10 @@ const DashboardPage: React.FC = () => {
           Your Dashboard
         </Typography>
         
-        <Box sx={{ flexGrow: 1 }}>
-          <Grid container spacing={3}>
+        <Box sx={{ flexGrow: 1, display: 'flex' }}>
+          <Grid container spacing={3} sx={{ alignItems: 'stretch' }}>
             <Grid container item xs={12} lg={6}>
-              <Card elevation={2} sx={{ mb: 3, width: '100%' }}>
+              <Card elevation={2} sx={{ mb: 3, width: '100%', display: 'flex', flexDirection: 'column' }}>
                 <CardHeader 
                   title={
                     <Typography variant="h5" sx={{ fontSize: { xs: '1.25rem', md: '1.5rem' } }}>
@@ -125,7 +130,7 @@ const DashboardPage: React.FC = () => {
             </Grid>
             
             <Grid container item xs={12} lg={6}>
-              <Card elevation={2} sx={{ width: '100%' }}>
+              <Card elevation={2} sx={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
                 <CardHeader 
                   title={
                     <Typography variant="h5" sx={{ fontSize: { xs: '1.25rem', md: '1.5rem' } }}>

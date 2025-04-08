@@ -2,7 +2,7 @@
  * frontend/src/theme.ts
  * Material UI theme configuration with light and dark mode options
  */
-import { createTheme, responsiveFontSizes } from '@mui/material/styles';
+import { createTheme, responsiveFontSizes, ThemeOptions } from '@mui/material/styles';
 
 // Define theme options without the problematic component styling
 const getThemeOptions = (mode: 'light' | 'dark'): ThemeOptions => ({

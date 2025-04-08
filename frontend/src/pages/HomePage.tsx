@@ -9,8 +9,7 @@ import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
-import CardMedia from '@mui/material/CardMedia';
-import Grid from '../components/Grid';
+import Grid from '@mui/material/Grid';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import PersonIcon from '@mui/icons-material/Person';
 import AssignmentIcon from '@mui/icons-material/Assignment';
@@ -38,8 +37,14 @@ const HomePage: React.FC = () => {
   ];
 
   return (
-    <Container maxWidth="lg">
-      <Box sx={{ my: { xs: 2, md: 4 } }}>
+    <Container maxWidth="lg" sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ 
+        my: { xs: 2, md: 4 },
+        flexGrow: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center'
+      }}>
         {/* Hero Section */}
         <Paper 
           elevation={0} 
@@ -88,14 +93,15 @@ const HomePage: React.FC = () => {
           Key Features
         </Typography>
         
-        <Box sx={{ flexGrow: 1 }}>
-          <Grid container spacing={3}>
+        <Box sx={{ flexGrow: 1, display: 'flex' }}>
+          <Grid container spacing={3} sx={{ alignItems: 'stretch' }}>
             {features.map((feature, index) => (
-              <Grid container item xs={12} sm={6} md={4} key={index}>
+              <Grid xs={12} sm={6} md={4} key={index}>
                 <Card 
                   elevation={1}
                   sx={{ 
                     height: '100%',
+                    width: '100%',
                     display: 'flex',
                     flexDirection: 'column',
                     transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
