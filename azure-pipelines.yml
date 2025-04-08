@@ -11,6 +11,8 @@ variables:
     value: 'frontend/node_modules'
   - name: BACKEND_NODE_MODULES_PATH
     value: 'backend/node_modules'
+  - name: NODE_PATH
+    value: 'C:\Program Files\nodejs'
 
 stages:
   - stage: BuildAndTest
@@ -19,7 +21,7 @@ stages:
       - job: BuildAndTest
         displayName: 'Build and Test All'
         steps:
-          # Install Node.js using the standard task
+          # Use NodeTool@0 but ensure PATH is properly set
           - task: NodeTool@0
             inputs:
               versionSpec: $(NODE_VERSION)
@@ -34,18 +36,21 @@ stages:
               path: $(FRONTEND_NODE_MODULES_PATH)
             displayName: Cache Frontend node_modules
 
-          # Frontend Build - Using PowerShell
+          # Frontend Build - Using direct paths
           - powershell: |
               Set-Location -Path "frontend"
-              npm ci
-              npm run build
+              & "$(NODE_PATH)\npm.cmd" ci
+              if ($LASTEXITCODE -ne 0) { throw "npm ci failed with exit code $LASTEXITCODE" }
+              & "$(NODE_PATH)\npm.cmd" run build
+              if ($LASTEXITCODE -ne 0) { throw "npm build failed with exit code $LASTEXITCODE" }
             displayName: 'Build Frontend'
             workingDirectory: $(System.DefaultWorkingDirectory)
 
-          # Frontend Test - Using PowerShell
+          # Frontend Test - Using direct paths
           - powershell: |
               Set-Location -Path "frontend"
-              npm test
+              & "$(NODE_PATH)\npm.cmd" test
+              if ($LASTEXITCODE -ne 0) { throw "npm test failed with exit code $LASTEXITCODE" }
             displayName: 'Test Frontend'
             workingDirectory: $(System.DefaultWorkingDirectory)
 
@@ -66,18 +71,21 @@ stages:
               path: $(BACKEND_NODE_MODULES_PATH)
             displayName: Cache Backend node_modules
 
-          # Backend Build - Using PowerShell
+          # Backend Build - Using direct paths
           - powershell: |
               Set-Location -Path "backend"
-              npm ci
-              npm run build
+              & "$(NODE_PATH)\npm.cmd" ci
+              if ($LASTEXITCODE -ne 0) { throw "npm ci failed with exit code $LASTEXITCODE" }
+              & "$(NODE_PATH)\npm.cmd" run build
+              if ($LASTEXITCODE -ne 0) { throw "npm build failed with exit code $LASTEXITCODE" }
             displayName: 'Build Backend'
             workingDirectory: $(System.DefaultWorkingDirectory)
 
-          # Backend Test - Using PowerShell
+          # Backend Test - Using direct paths
           - powershell: |
               Set-Location -Path "backend"
-              npm test
+              & "$(NODE_PATH)\npm.cmd" test
+              if ($LASTEXITCODE -ne 0) { throw "npm test failed with exit code $LASTEXITCODE" }
             displayName: 'Test Backend'
             workingDirectory: $(System.DefaultWorkingDirectory)
 
