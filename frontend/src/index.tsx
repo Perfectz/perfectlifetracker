@@ -1,3 +1,7 @@
+/**
+ * frontend/src/index.tsx
+ * Entry point for the React application with router configuration
+ */
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';

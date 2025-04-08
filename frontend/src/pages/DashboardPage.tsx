@@ -1,9 +1,12 @@
+/**
+ * frontend/src/pages/DashboardPage.tsx
+ * Dashboard page component displaying user's habits and goals
+ */
 import React from 'react';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
-import Grid from '@mui/material/Grid';
 
 const DashboardPage: React.FC = () => {
   return (

@@ -1,3 +1,7 @@
+/**
+ * frontend/src/App.tsx
+ * Main application component with theme provider, routing, and navigation
+ */
 import React, { useState } from 'react';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -7,12 +11,13 @@ import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
-import { Routes, Route, Link } from 'react-router-dom';
+import { Routes, Route, Link as RouterLink } from 'react-router-dom';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import { lightTheme, darkTheme } from './theme';
 import HomePage from './pages/HomePage';
 import DashboardPage from './pages/DashboardPage';
+import Link from '@mui/material/Link';
 
 function App() {
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>('light');
@@ -32,10 +37,20 @@ function App() {
               Perfect LifeTracker Pro
             </Typography>
             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-              <Link to="/" style={{ color: 'white', textDecoration: 'none' }}>
+              <Link 
+                component={RouterLink} 
+                to="/" 
+                color="inherit" 
+                sx={{ textDecoration: 'none' }}
+              >
                 Home
               </Link>
-              <Link to="/dashboard" style={{ color: 'white', textDecoration: 'none' }}>
+              <Link 
+                component={RouterLink} 
+                to="/dashboard" 
+                color="inherit" 
+                sx={{ textDecoration: 'none' }}
+              >
                 Dashboard
               </Link>
               <Button 

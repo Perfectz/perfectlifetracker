@@ -1,3 +1,7 @@
+/**
+ * frontend/src/theme.ts
+ * Material UI theme configuration with light and dark mode options
+ */
 import { createTheme } from '@mui/material/styles';
 
 const baseThemeOptions = {

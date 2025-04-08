@@ -1,3 +1,7 @@
+/**
+ * frontend/src/pages/HomePage.tsx
+ * Home page component with welcome message and app introduction
+ */
 import React from 'react';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
