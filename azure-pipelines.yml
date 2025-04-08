@@ -36,23 +36,18 @@ stages:
               path: $(FRONTEND_NODE_MODULES_PATH)
             displayName: Cache Frontend node_modules
 
-          # Frontend Build - Using direct paths
-          - powershell: |
-              Set-Location -Path "frontend"
-              & "$(NODE_PATH)\npm.cmd" ci
-              if ($LASTEXITCODE -ne 0) { throw "npm ci failed with exit code $LASTEXITCODE" }
-              & "$(NODE_PATH)\npm.cmd" run build
-              if ($LASTEXITCODE -ne 0) { throw "npm build failed with exit code $LASTEXITCODE" }
+          # Frontend Build
+          - script: |
+              cd frontend
+              "$(NODE_PATH)\npm.cmd" ci
+              "$(NODE_PATH)\npm.cmd" run build
             displayName: 'Build Frontend'
-            workingDirectory: $(System.DefaultWorkingDirectory)
 
-          # Frontend Test - Using direct paths
-          - powershell: |
-              Set-Location -Path "frontend"
-              & "$(NODE_PATH)\npm.cmd" test
-              if ($LASTEXITCODE -ne 0) { throw "npm test failed with exit code $LASTEXITCODE" }
+          # Frontend Test
+          - script: |
+              cd frontend
+              "$(NODE_PATH)\npm.cmd" test
             displayName: 'Test Frontend'
-            workingDirectory: $(System.DefaultWorkingDirectory)
 
           # Publish Frontend Artifacts
           - task: PublishBuildArtifacts@1
@@ -71,23 +66,18 @@ stages:
               path: $(BACKEND_NODE_MODULES_PATH)
             displayName: Cache Backend node_modules
 
-          # Backend Build - Using direct paths
-          - powershell: |
-              Set-Location -Path "backend"
-              & "$(NODE_PATH)\npm.cmd" ci
-              if ($LASTEXITCODE -ne 0) { throw "npm ci failed with exit code $LASTEXITCODE" }
-              & "$(NODE_PATH)\npm.cmd" run build
-              if ($LASTEXITCODE -ne 0) { throw "npm build failed with exit code $LASTEXITCODE" }
+          # Backend Build
+          - script: |
+              cd backend
+              "$(NODE_PATH)\npm.cmd" ci
+              "$(NODE_PATH)\npm.cmd" run build
             displayName: 'Build Backend'
-            workingDirectory: $(System.DefaultWorkingDirectory)
 
-          # Backend Test - Using direct paths
-          - powershell: |
-              Set-Location -Path "backend"
-              & "$(NODE_PATH)\npm.cmd" test
-              if ($LASTEXITCODE -ne 0) { throw "npm test failed with exit code $LASTEXITCODE" }
+          # Backend Test
+          - script: |
+              cd backend
+              "$(NODE_PATH)\npm.cmd" test
             displayName: 'Test Backend'
-            workingDirectory: $(System.DefaultWorkingDirectory)
 
           # Publish Backend Artifacts
           - task: PublishBuildArtifacts@1
@@ -113,29 +103,27 @@ stages:
               downloadPath: '$(System.ArtifactsDirectory)'
             displayName: 'Download Build Artifacts'
 
-          - powershell: |
-              Write-Host "Preparing deployment..."
-              Write-Host "Creating deployment directory..."
-              if (!(Test-Path -Path "$(Build.ArtifactStagingDirectory)\deploy")) {
-                  New-Item -Path "$(Build.ArtifactStagingDirectory)\deploy" -ItemType Directory -Force
-              }
+          - script: |
+              echo "Preparing deployment..."
+              echo "Creating deployment directory..."
+              if not exist "$(Build.ArtifactStagingDirectory)\deploy" mkdir "$(Build.ArtifactStagingDirectory)\deploy"
             displayName: 'Prepare Deployment'
 
-          - powershell: |
-              Write-Host "Deploying frontend..."
-              Copy-Item -Path "$(System.ArtifactsDirectory)\frontend\*" -Destination "$(Build.ArtifactStagingDirectory)\deploy\frontend\" -Recurse -Force
-              Write-Host "Frontend deployed successfully!"
+          - script: |
+              echo "Deploying frontend..."
+              xcopy "$(System.ArtifactsDirectory)\frontend\*" "$(Build.ArtifactStagingDirectory)\deploy\frontend\" /E /I /Y
+              echo "Frontend deployed successfully!"
             displayName: 'Deploy Frontend'
 
-          - powershell: |
-              Write-Host "Deploying backend..."
-              Copy-Item -Path "$(System.ArtifactsDirectory)\backend\*" -Destination "$(Build.ArtifactStagingDirectory)\deploy\backend\" -Recurse -Force
-              Write-Host "Backend deployed successfully!"
+          - script: |
+              echo "Deploying backend..."
+              xcopy "$(System.ArtifactsDirectory)\backend\*" "$(Build.ArtifactStagingDirectory)\deploy\backend\" /E /I /Y
+              echo "Backend deployed successfully!"
             displayName: 'Deploy Backend'
 
-          - powershell: |
-              Write-Host "Deployment verification..."
-              Write-Host "Checking deployment files..."
-              Get-ChildItem -Path "$(Build.ArtifactStagingDirectory)\deploy" -Recurse
-              Write-Host "Deployment complete and verified!"
+          - script: |
+              echo "Deployment verification..."
+              echo "Checking deployment files..."
+              dir "$(Build.ArtifactStagingDirectory)\deploy" /s
+              echo "Deployment complete and verified!"
             displayName: 'Verify Deployment'
