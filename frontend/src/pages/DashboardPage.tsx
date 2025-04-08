@@ -13,25 +13,21 @@ const DashboardPage: React.FC = () => {
           Dashboard
         </Typography>
         
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
-            <Paper elevation={2} sx={{ p: 3 }}>
-              <Typography variant="h6">Habits</Typography>
-              <Typography variant="body2">
-                Your habits will appear here. Track daily progress and build consistency.
-              </Typography>
-            </Paper>
-          </Grid>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
+          <Paper elevation={2} sx={{ p: 3 }}>
+            <Typography variant="h6">Habits</Typography>
+            <Typography variant="body2">
+              Your habits will appear here. Track daily progress and build consistency.
+            </Typography>
+          </Paper>
           
-          <Grid item xs={12} md={6}>
-            <Paper elevation={2} sx={{ p: 3 }}>
-              <Typography variant="h6">Goals</Typography>
-              <Typography variant="body2">
-                Your goals will appear here. Monitor progress and stay motivated.
-              </Typography>
-            </Paper>
-          </Grid>
-        </Grid>
+          <Paper elevation={2} sx={{ p: 3 }}>
+            <Typography variant="h6">Goals</Typography>
+            <Typography variant="body2">
+              Your goals will appear here. Monitor progress and stay motivated.
+            </Typography>
+          </Paper>
+        </Box>
       </Box>
     </Container>
   );
