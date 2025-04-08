@@ -375,6 +375,37 @@ Added PowerShell scripts (`kill-react.ps1` and `start-clean.ps1`) to manage Reac
 - [Node.js Process Management](https://nodejs.org/api/process.html)
 - [PowerShell Process Management](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/get-process)
 
+### [2024-04-08]: Node.js Version Update for React 19 Compatibility
+
+#### Change/Decision Description
+Updated Node.js version requirement from 18.x to 20.x across the project to ensure compatibility with React 19.1.0 and React Router 7.5.0.
+
+#### Rationale
+- React 19.1.0 requires a newer version of Node.js than 18.x
+- React Router 7.5.0 explicitly requires Node.js >=20.0.0
+- Using older Node.js versions was causing build failures in the CI pipeline
+- Maintaining consistent Node.js versions across development and CI environments
+
+#### Implementation Details
+1. **Azure DevOps Pipeline Update**
+   - Changed the Node.js version in the Azure pipeline from 18.x to 20.x
+
+2. **Package.json Updates**
+   - Added "engines" specification to both frontend and backend package.json files
+   - Set the minimum Node.js version to >=20.0.0
+   - Ensured consistent Node.js requirements across the project
+
+#### Implications
+- Developers need to use Node.js 20.x or newer for local development
+- CI/CD pipeline now uses Node.js 20.x for builds
+- Better compatibility with modern JavaScript frameworks and libraries
+- More consistent build environment across development and production
+
+#### References
+- [React 19 Compatibility Requirements](https://react.dev/)
+- [React Router 7.5.0 Documentation](https://reactrouter.com/)
+- [Node.js Release Schedule](https://nodejs.org/en/about/releases)
+
 ## Version History
 | Date | Version | Changes | Author |
 |------|---------|---------|--------|
@@ -382,4 +413,5 @@ Added PowerShell scripts (`kill-react.ps1` and `start-clean.ps1`) to manage Reac
 | 2024-04-08 | 1.1.0 | Added CI/CD and branch protection entries | Perfect LifeTracker Pro Team |
 | 2024-04-08 | 1.2.0 | Added self-hosted agent configuration | Perfect LifeTracker Pro Team |
 | 2024-04-08 | 1.3.0 | Added frontend implementation entries | Perfect LifeTracker Pro Team |
-| 2024-04-08 | 1.4.0 | Added PowerShell scripts for React process management | Perfect LifeTracker Pro Team | 
+| 2024-04-08 | 1.4.0 | Added PowerShell scripts for React process management | Perfect LifeTracker Pro Team |
+| 2024-04-08 | 1.5.0 | Updated Node.js version for React 19 compatibility | Perfect LifeTracker Pro Team | 
