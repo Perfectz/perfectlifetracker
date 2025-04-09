@@ -27,7 +27,11 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "format": "prettier --write 'src/**/*.{ts,tsx,css,scss}'",
+    "format:check": "prettier --check 'src/**/*.{ts,tsx,css,scss}'"
   },
   "eslintConfig": {
     "extends": [
@@ -55,8 +59,15 @@
     "@types/jest": "^27.5.2",
     "@types/node": "^20.10.5",
     "@types/react-router-dom": "^5.3.3",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
     "@vitejs/plugin-react": "^4.2.1",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.6",
+    "eslint-plugin-react": "^7.37.5",
     "jsdom": "^24.0.0",
+    "prettier": "^3.5.3",
     "vite": "^5.1.4",
     "vitest": "^1.2.1"
   }
