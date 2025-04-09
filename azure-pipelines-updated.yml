@@ -58,21 +58,43 @@ stages:
                 }
               workingDirectory: '$(System.DefaultWorkingDirectory)'
             displayName: 'Clean Frontend node_modules'
-
-          # Build Frontend - Direct batch file
-          - task: BatchScript@1
+          
+          # Use NodeTool to ensure consistent Node version
+          - task: NodeTool@0
             inputs:
-              filename: 'build-frontend.cmd'
-              arguments: '"$(NODE_PATH)"'
-              workingFolder: '$(System.DefaultWorkingDirectory)'
+              versionSpec: '$(NODE_VERSION)'
+            displayName: 'Install Node.js'
+
+          # Restore npm cache
+          - task: Cache@2
+            inputs:
+              key: 'npm | "$(Agent.OS)" | frontend/package-lock.json'
+              restoreKeys: |
+                npm | "$(Agent.OS)"
+              path: $(npm_config_cache)
+            displayName: 'Cache npm packages'
+
+          # Build Frontend with clean install
+          - task: Bash@3
+            inputs:
+              targetType: 'inline'
+              script: |
+                echo "Building Frontend..."
+                cd frontend
+                npm clean-install
+                npm run build
+              workingDirectory: '$(System.DefaultWorkingDirectory)'
             displayName: 'Build Frontend'
 
-          # Test Frontend - Direct batch file
-          - task: BatchScript@1
+          # Test Frontend
+          - task: Bash@3
             inputs:
-              filename: 'test-frontend.cmd'
-              arguments: '"$(NODE_PATH)"'
-              workingFolder: '$(System.DefaultWorkingDirectory)'
+              targetType: 'inline'
+              script: |
+                echo "Testing Frontend..."
+                cd frontend
+                npm test
+              workingDirectory: '$(System.DefaultWorkingDirectory)'
             displayName: 'Test Frontend'
           
           # Publish Frontend
@@ -101,7 +123,7 @@ stages:
                     # Create an empty directory to use with robocopy
                     $emptyDir = New-Item -Path "$(System.DefaultWorkingDirectory)/empty" -ItemType Directory -Force
                     
-                    # Use robocopy to purge the directory (MIR = mirror empty directory)
+                    # Use robocopy to purge the directory
                     robocopy $emptyDir.FullName "$(System.DefaultWorkingDirectory)/backend/node_modules" /MIR /NFL /NDL /NJH /NJS /NC /NS /MT:8
                     
                     # Remove the empty directory
@@ -116,20 +138,36 @@ stages:
               workingDirectory: '$(System.DefaultWorkingDirectory)'
             displayName: 'Clean Backend node_modules'
 
-          # Build Backend - Direct batch file
-          - task: BatchScript@1
+          # Restore backend npm cache
+          - task: Cache@2
             inputs:
-              filename: 'build-backend.cmd'
-              arguments: '"$(NODE_PATH)"'
-              workingFolder: '$(System.DefaultWorkingDirectory)'
+              key: 'npm | "$(Agent.OS)" | backend/package-lock.json'
+              restoreKeys: |
+                npm | "$(Agent.OS)"
+              path: $(npm_config_cache)
+            displayName: 'Cache backend npm packages'
+
+          # Build Backend with clean install
+          - task: Bash@3
+            inputs:
+              targetType: 'inline'
+              script: |
+                echo "Building Backend..."
+                cd backend
+                npm clean-install
+                npm run build
+              workingDirectory: '$(System.DefaultWorkingDirectory)'
             displayName: 'Build Backend'
 
-          # Test Backend - Direct batch file
-          - task: BatchScript@1
+          # Test Backend
+          - task: Bash@3
             inputs:
-              filename: 'test-backend.cmd'
-              arguments: '"$(NODE_PATH)"'
-              workingFolder: '$(System.DefaultWorkingDirectory)'
+              targetType: 'inline'
+              script: |
+                echo "Testing Backend..."
+                cd backend
+                npm test
+              workingDirectory: '$(System.DefaultWorkingDirectory)'
             displayName: 'Test Backend'
 
           # Publish Backend
@@ -140,7 +178,7 @@ stages:
               publishLocation: 'Container'
             displayName: 'Publish Backend Artifacts'
 
-  # Deployment Stage using direct batch files
+  # Deployment Stage
   - stage: Deploy
     displayName: 'Deploy'
     dependsOn: BuildAndTest
@@ -157,9 +195,13 @@ stages:
               downloadPath: '$(System.ArtifactsDirectory)'
             displayName: 'Download Build Artifacts'
 
-          - task: BatchScript@1
+          - task: Bash@3
             inputs:
-              filename: 'deploy.cmd'
-              arguments: '"$(System.ArtifactsDirectory)" "$(Build.ArtifactStagingDirectory)"'
-              workingFolder: '$(System.DefaultWorkingDirectory)'
-            displayName: 'Deploy Application'
+              targetType: 'inline'
+              script: |
+                echo "Deploying application..."
+                # Replace with your actual deployment commands
+                echo "Artifacts directory: $(System.ArtifactsDirectory)"
+                echo "Staging directory: $(Build.ArtifactStagingDirectory)"
+              workingDirectory: '$(System.DefaultWorkingDirectory)'
+            displayName: 'Deploy Application' 
