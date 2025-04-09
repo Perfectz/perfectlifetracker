@@ -4,10 +4,11 @@ A comprehensive AI-powered personal assistant application designed to help users
 
 ## Project Structure
 
-The project is organized into two main components:
+The project is organized into three main components:
 
 - **Frontend**: React with TypeScript, Material UI (Vite)
 - **Backend**: Azure Functions (Node.js)
+- **Infrastructure**: Terraform configuration for Azure resources
 
 ## Getting Started
 
@@ -48,6 +49,24 @@ npm install
 npm start
 ```
 
+### Infrastructure as Code
+
+The project uses Terraform to define and manage Azure infrastructure:
+
+```bash
+# Navigate to the terraform directory
+cd terraform
+
+# Initialize Terraform
+terraform init
+
+# Plan the deployment
+terraform plan -out=tfplan
+
+# Apply the configuration
+terraform apply tfplan
+```
+
 ## Development Workflow
 
 1. Make your changes
@@ -64,6 +83,7 @@ For more detailed documentation, see:
 - [Architecture Design](./documentation/architecture_design.md)
 - [System Requirements](./documentation/system_requirements.md)
 - [Decisions Log](./documentation/decisions_log.md)
+- [Terraform Infrastructure](./terraform/README.md)
 
 ## 🚀 Features
 
@@ -77,13 +97,13 @@ For more detailed documentation, see:
 ## 🛠 Tech Stack
 
 ### Frontend
-- **React 18+** with TypeScript for type safety
+- **React 19+** with TypeScript for type safety
 - **Material UI 7+** for modern, responsive UI components
 - **React Router 7+** for seamless navigation
 - **Emotion** for styling components
 
 ### Backend
-- **Node.js 18+** with Express
+- **Node.js 20+** with Express
 - **TypeScript** for type-safe backend development
 - **Azure Functions** for serverless API endpoints
 - **Azure Cosmos DB** for scalable, globally distributed database
@@ -93,18 +113,26 @@ For more detailed documentation, see:
 - **Azure Machine Learning** for personalized recommendations
 - **Azure Cognitive Services** for data analysis and insights
 
-### DevOps
+### DevOps & Infrastructure
 - **GitHub** for version control
+- **GitHub Actions** for CI workflow
 - **Azure DevOps** for CI/CD pipelines
 - **Self-hosted agent** for build automation
-- **Azure Kubernetes Service** for containerized deployment
+- **Docker** for containerized development
+- **Terraform** for infrastructure as code
+- **Azure Static Web Apps** for frontend hosting
+- **Azure App Service** for backend API
+- **Azure Cosmos DB** for database storage
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js 18+
+- Node.js 20+
 - npm or yarn
 - Git
+- Docker and Docker Compose (optional)
+- Terraform (optional, for infrastructure deployment)
+- Azure CLI (optional, for Azure deployments)
 
 ### Installation and Setup
 
@@ -129,7 +157,7 @@ npm install
 4. Start the frontend development server:
 ```bash
 # In the frontend directory
-npm start
+npm run dev
 ```
 The frontend will be available at http://localhost:3000
 
@@ -145,10 +173,13 @@ The backend API will be available at http://localhost:3001
 - ✅ Frontend React application with TypeScript
 - ✅ Material UI integration with light/dark theme toggle
 - ✅ React Router setup with basic page navigation
-- ✅ Basic backend Express server
-- ✅ CI/CD pipeline with Azure DevOps
-- ✅ Self-hosted agent configuration
+- ✅ Vite build system for improved development experience
+- ✅ Docker development environment
+- ✅ GitHub Actions CI workflow
+- ✅ Azure DevOps pipeline configuration
+- ✅ Self-hosted agent configuration with troubleshooting tools
 - ✅ PowerShell scripts for React process management
+- ✅ Terraform configuration for Azure infrastructure
 - ⏳ User authentication system (Coming soon)
 - ⏳ Database integration (Coming soon)
 - ⏳ Feature components development (Coming soon)
@@ -160,7 +191,7 @@ The backend API will be available at http://localhost:3001
 
 This project follows the GitHub Flow model for development:
 
-1. Create a feature branch from `master`
+1. Create a feature branch from `main`
    ```bash
    git checkout -b feature/your-feature-name
    ```
@@ -183,7 +214,7 @@ This project follows the GitHub Flow model for development:
 
 5. Wait for CI checks to pass and request review
 
-6. After approval, merge your changes to `master`
+6. After approval, merge your changes to `main`
 
 ### Coding Standards
 
@@ -198,8 +229,6 @@ This project follows the GitHub Flow model for development:
 
 - All changes must go through Pull Requests
 - CI checks must pass before merging
-- No direct pushes to `master`
-- At least one approval required
 
 ## 📄 License
 
@@ -218,6 +247,13 @@ For support, please open an issue in the GitHub repository or contact the mainta
 ## 🔄 CI/CD Status
 
 [![Azure Pipeline Status](https://dev.azure.com/Perfectz/perfectlifetrack-pro/_apis/build/status/perfectlifetrack-pro?branchName=master)](https://dev.azure.com/Perfectz/perfectlifetrack-pro/_build/latest?definitionId=1&branchName=master)
+
+### Recent Build Improvements
+
+- Enhanced CI pipeline reliability with pre-checkout cleanup scripts
+- Updated TypeScript configuration for compatibility with Azure DevOps build environment
+- Fixed theme and color definitions to ensure consistent builds
+- Implemented node_modules cleanup in pipeline to prevent corruption issues
 
 ## 👨‍💻 Authors and Acknowledgment
 
