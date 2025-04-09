@@ -1,21 +1,35 @@
 /**
  * frontend/src/theme.ts
- * Material UI theme configuration with light and dark mode options
+ * Material UI theme configuration with Terra color palette and responsive options
  */
 import { createTheme, responsiveFontSizes, ThemeOptions } from '@mui/material/styles';
 
-// Define theme options without the problematic component styling
+// Terra Color Palette
+const terraPalette = {
+  pearl: '#E8DDCB',        // background
+  softTeal: '#70A9A1',     // borders, accents
+  tropicalRain: '#036564', // interactive elements
+  prussianBlue: '#033649', // app bars, important text
+  maastrichtBlue: '#031634' // primary text
+};
+
+// Define theme options with Terra palette
 const getThemeOptions = (mode: 'light' | 'dark'): ThemeOptions => ({
   palette: {
     mode,
     primary: {
-      main: '#1976d2', // blue tone for primary
+      main: terraPalette.tropicalRain, // Tropical Rain Forest for primary
     },
     secondary: {
-      main: '#9c27b0', // purple tone for secondary
+      main: terraPalette.softTeal, // Soft Teal for secondary
     },
     background: {
-      default: mode === 'light' ? '#f5f5f5' : '#121212',
+      default: mode === 'light' ? terraPalette.pearl : '#121212',
+      paper: mode === 'light' ? '#FFFFFF' : '#1E1E1E',
+    },
+    text: {
+      primary: terraPalette.maastrichtBlue,
+      secondary: terraPalette.prussianBlue,
     },
   },
   typography: {
@@ -72,6 +86,7 @@ export const lightTheme = createTheme(lightThemeBase, {
       styleOverrides: {
         root: {
           borderRadius: 8,
+          border: `1px solid ${terraPalette.softTeal}20`, // Light border with soft teal
         },
       },
     },
@@ -79,6 +94,7 @@ export const lightTheme = createTheme(lightThemeBase, {
       styleOverrides: {
         root: {
           padding: '16px 16px 8px 16px',
+          color: terraPalette.prussianBlue,
         },
       },
     },
@@ -103,6 +119,60 @@ export const lightTheme = createTheme(lightThemeBase, {
             xs: 16,
             sm: 24,
           },
+        },
+      },
+    },
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          backgroundColor: terraPalette.prussianBlue,
+        },
+      },
+    },
+    MuiDrawer: {
+      styleOverrides: {
+        paper: {
+          backgroundColor: terraPalette.pearl,
+        },
+      },
+    },
+    MuiListItemButton: {
+      styleOverrides: {
+        root: {
+          '&.Mui-selected': {
+            backgroundColor: `${terraPalette.tropicalRain}20`,
+            color: terraPalette.tropicalRain,
+            '&:hover': {
+              backgroundColor: `${terraPalette.tropicalRain}30`,
+            },
+          },
+          '&:hover': {
+            backgroundColor: `${terraPalette.softTeal}20`,
+          },
+        },
+      },
+    },
+    MuiFab: {
+      styleOverrides: {
+        root: {
+          backgroundColor: terraPalette.tropicalRain,
+          color: terraPalette.pearl,
+          '&:hover': {
+            backgroundColor: terraPalette.prussianBlue,
+          },
+        },
+      },
+    },
+    MuiLinearProgress: {
+      styleOverrides: {
+        root: {
+          backgroundColor: `${terraPalette.pearl}`,
+          borderRadius: 5,
+          height: 10,
+        },
+        bar: {
+          backgroundColor: terraPalette.tropicalRain,
+          borderRadius: 5,
         },
       },
     },
@@ -126,6 +196,7 @@ export const darkTheme = createTheme(darkThemeBase, {
       styleOverrides: {
         root: {
           borderRadius: 8,
+          border: `1px solid ${terraPalette.softTeal}30`,
         },
       },
     },
@@ -160,8 +231,65 @@ export const darkTheme = createTheme(darkThemeBase, {
         },
       },
     },
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          backgroundColor: terraPalette.maastrichtBlue,
+        },
+      },
+    },
+    MuiDrawer: {
+      styleOverrides: {
+        paper: {
+          backgroundColor: '#121212',
+        },
+      },
+    },
+    MuiListItemButton: {
+      styleOverrides: {
+        root: {
+          '&.Mui-selected': {
+            backgroundColor: `${terraPalette.tropicalRain}40`,
+            color: terraPalette.softTeal,
+            '&:hover': {
+              backgroundColor: `${terraPalette.tropicalRain}50`,
+            },
+          },
+          '&:hover': {
+            backgroundColor: `${terraPalette.softTeal}30`,
+          },
+        },
+      },
+    },
+    MuiFab: {
+      styleOverrides: {
+        root: {
+          backgroundColor: terraPalette.tropicalRain,
+          color: terraPalette.pearl,
+          '&:hover': {
+            backgroundColor: terraPalette.prussianBlue,
+          },
+        },
+      },
+    },
+    MuiLinearProgress: {
+      styleOverrides: {
+        root: {
+          backgroundColor: '#2A2A2A',
+          borderRadius: 5,
+          height: 10,
+        },
+        bar: {
+          backgroundColor: terraPalette.softTeal,
+          borderRadius: 5,
+        },
+      },
+    },
   },
 });
+
+// Export Terra palette for use in other components
+export const terraColors = terraPalette;
 
 // Apply responsive font sizes
 export const responsiveLightTheme = responsiveFontSizes(lightTheme);

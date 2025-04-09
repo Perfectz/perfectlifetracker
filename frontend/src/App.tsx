@@ -25,6 +25,7 @@ import { useTheme } from '@mui/material/styles';
 import { responsiveLightTheme, responsiveDarkTheme } from './theme';
 import HomePage from './pages/HomePage';
 import DashboardPage from './pages/DashboardPage';
+import TerraDesignDemo from './pages/TerraDesignDemo';
 import Link from '@mui/material/Link';
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -54,6 +55,7 @@ function App() {
   const navigationLinks = [
     { text: 'Home', path: '/' },
     { text: 'Dashboard', path: '/dashboard' },
+    { text: 'Terra Design', path: '/terra-design' },
   ];
 
   const drawer = (
@@ -160,6 +162,7 @@ function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/terra-design" element={<TerraDesignDemo />} />
           </Routes>
         </ErrorBoundary>
       </Container>
