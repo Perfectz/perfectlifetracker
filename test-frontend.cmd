@@ -14,6 +14,19 @@ cd frontend
 echo Changed to directory: %CD%
 
 echo.
+echo Applying test fix patch...
+if exist "..\test-fix.patch" (
+    type "..\test-fix.patch" | git apply -
+    if %ERRORLEVEL% NEQ 0 (
+        echo WARNING: Failed to apply test patch, continuing anyway...
+    ) else (
+        echo Successfully applied test patch
+    )
+) else (
+    echo WARNING: Test patch file not found, continuing anyway...
+)
+
+echo.
 echo Running npm test...
 call "%NODE_DIR%\npm.cmd" test
 if %ERRORLEVEL% NEQ 0 (

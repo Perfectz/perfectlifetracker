@@ -1,0 +1,56 @@
+diff --git a/frontend/src/App.test.tsx b/frontend/src/App.test.tsx
+index 463acf1..6a2dfc2 100644
+--- a/frontend/src/App.test.tsx
++++ b/frontend/src/App.test.tsx
+@@ -1,9 +1,9 @@
+ import React from 'react';
+-import { render, screen } from '@testing-library/react';
++import { render, screen } from './utils/test-utils';
+ import App from './App';
+ 
+-test('renders learn react link', () => {
++test('renders app title in header', () => {
+   render(<App />);
+-  const linkElement = screen.getByText(/learn react/i);
+-  expect(linkElement).toBeInTheDocument();
++  const titleElement = screen.getByText('Perfect LifeTracker Pro - Vite Edition');
++  expect(titleElement).toBeInTheDocument();
+ });
+diff --git a/frontend/src/utils/test-utils.tsx b/frontend/src/utils/test-utils.tsx
+new file mode 100644
+index 0000000..0e93a4c
+--- /dev/null
++++ b/frontend/src/utils/test-utils.tsx
+@@ -0,0 +1,30 @@
++/**
++ * frontend/src/utils/test-utils.tsx
++ * Utility functions for testing React components
++ */
++import React, { ReactElement } from 'react';
++import { render, RenderOptions } from '@testing-library/react';
++import { BrowserRouter } from 'react-router-dom';
++import { ThemeProvider } from '@mui/material/styles';
++import { responsiveLightTheme } from '../theme';
++
++// Custom wrapper that provides necessary context providers for testing
++const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
++  return (
++    <BrowserRouter>
++      <ThemeProvider theme={responsiveLightTheme}>
++        {children}
++      </ThemeProvider>
++    </BrowserRouter>
++  );
++};
++
++// Custom render method that wraps rendered UI with necessary providers
++const customRender = (
++  ui: ReactElement,
++  options?: Omit<RenderOptions, 'wrapper'>,
++) => render(ui, { wrapper: AllTheProviders, ...options });
++
++// Re-export everything from testing-library
++export * from '@testing-library/react';
++
++// Override render method
++export { customRender as render }; 
