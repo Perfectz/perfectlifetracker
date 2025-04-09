@@ -87,6 +87,7 @@ The backend API will be available at http://localhost:3001
 - ✅ Basic backend Express server
 - ✅ CI/CD pipeline with Azure DevOps
 - ✅ Self-hosted agent configuration
+- ✅ PowerShell scripts for React process management
 - ⏳ User authentication system (Coming soon)
 - ⏳ Database integration (Coming soon)
 - ⏳ Feature components development (Coming soon)

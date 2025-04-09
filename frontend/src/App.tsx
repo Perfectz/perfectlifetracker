@@ -114,7 +114,7 @@ function App() {
               </IconButton>
             )}
             <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-              Perfect LifeTracker Pro
+              Perfect LifeTracker Pro - Vite Edition
             </Typography>
             {!isMobile && (
               <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>

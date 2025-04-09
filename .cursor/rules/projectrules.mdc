@@ -247,3 +247,50 @@ For EVERY significant change or decision you make, append an entry to decisions_
 - DON'T use deprecated APIs or components
 - DON'T hardcode sensitive information or configuration
 - DON'T neglect error handling or edge cases 
+
+
+Rule Name: kill-react-processes
+Description: 
+# React Process Management Rule
+
+Automatically kill any running React processes before launching the application.
+
+## Usage
+
+When you want to start a clean React application without any conflicting processes:
+
+1. Execute the kill-react.ps1 script first to terminate all React-related processes
+2. Then start the application fresh with npm start or yarn start
+
+## Commands
+
+Here are the key commands you should use:
+
+- `npm run start:clean` - Kills all React processes and starts a fresh instance
+- `npm run kill` - Just kills React processes without starting the app
+
+## Implementation
+
+This rule leverages PowerShell scripts in the project:
+- start-clean.ps1: Comprehensive process cleanup and app restart
+- kill-react.ps1: Just cleans up processes without restarting
+
+The scripts handle:
+- Port detection (3000, 3001, 3002)
+- React-specific processes
+- Node.js and npm processes
+
+## When to Use
+
+Use this approach when:
+- You encounter "port already in use" errors
+- The application seems to be running in an inconsistent state
+- Multiple instances of the app may be running
+- After making significant changes to the codebase
+
+## Automatic Implementation
+
+Before launching the React app, the IDE should:
+1. Check for processes using ports 3000-3002
+2. Terminate any React-related processes
+3. Only then start a fresh instance of the application
