@@ -14,10 +14,10 @@ cd frontend
 echo Changed to directory: %CD%
 
 echo.
-echo Running npm ci...
-call "%NODE_DIR%\npm.cmd" ci
+echo Running npm install...
+call "%NODE_DIR%\npm.cmd" install
 if %ERRORLEVEL% NEQ 0 (
-    echo ERROR: npm ci failed with exit code %ERRORLEVEL%
+    echo ERROR: npm install failed with exit code %ERRORLEVEL%
     exit /b %ERRORLEVEL%
 )
 
