@@ -406,6 +406,34 @@ Updated Node.js version requirement from 18.x to 20.x across the project to ensu
 - [React Router 7.5.0 Documentation](https://reactrouter.com/)
 - [Node.js Release Schedule](https://nodejs.org/en/about/releases)
 
+### [2025-04-09]: Frontend Migration from Create React App to Vite
+
+#### Change/Decision Description
+Migrated the frontend application from Create React App (CRA) to Vite as the build tool and development server.
+
+#### Rationale
+1. **Development Speed**: Vite provides significantly faster startup times and hot module replacement compared to CRA
+2. **Build Performance**: More efficient production builds, especially as the project grows
+3. **Modern Architecture**: Better support for ES modules and modern JavaScript features
+4. **Flexibility**: Easier configuration without needing to "eject"
+5. **Future-proofing**: Aligns with current industry trends moving away from webpack-based solutions
+
+#### Alternatives Considered
+1. **Keep Create React App**: Maintain the status quo with the official React toolchain
+2. **Next.js**: Would provide additional features like server-side rendering, but would require more significant architectural changes
+3. **Custom Webpack Configuration**: Complete customization but higher maintenance overhead
+
+#### Implications
+1. **Development Workflow**: Commands changed from `npm start` to `npm run dev`
+2. **Configuration**: New configuration files added (vite.config.ts, tsconfig.node.json)
+3. **Docker**: Updated Dockerfile and added docker-compose.yml
+4. **Build Output**: Similar structure but potentially smaller bundle sizes
+5. **Development Experience**: Much faster feedback cycle during development
+
+#### References
+- [Vite Documentation](https://vitejs.dev/guide/)
+- [Create React App vs Vite Comparison](https://vitejs.dev/guide/why.html)
+
 ## Version History
 | Date | Version | Changes | Author |
 |------|---------|---------|--------|
@@ -414,4 +442,5 @@ Updated Node.js version requirement from 18.x to 20.x across the project to ensu
 | 2024-04-08 | 1.2.0 | Added self-hosted agent configuration | Perfect LifeTracker Pro Team |
 | 2024-04-08 | 1.3.0 | Added frontend implementation entries | Perfect LifeTracker Pro Team |
 | 2024-04-08 | 1.4.0 | Added PowerShell scripts for React process management | Perfect LifeTracker Pro Team |
-| 2024-04-08 | 1.5.0 | Updated Node.js version for React 19 compatibility | Perfect LifeTracker Pro Team | 
+| 2024-04-08 | 1.5.0 | Updated Node.js version for React 19 compatibility | Perfect LifeTracker Pro Team |
+| 2025-04-09 | 1.6.0 | Added frontend migration from CRA to Vite | Perfect LifeTracker Pro Team | 

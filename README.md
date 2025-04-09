@@ -1,8 +1,69 @@
 # Perfect LifeTracker Pro
 
-Perfect LifeTracker Pro is a comprehensive AI-powered personal assistant application designed to help users track fitness goals, personal development activities, and daily tasks. The application leverages artificial intelligence to provide personalized recommendations, analyze progress patterns, and offer actionable insights to help users achieve their goals more effectively.
+A comprehensive AI-powered personal assistant application designed to help users track fitness goals, personal development activities, and daily tasks.
 
-With an intuitive interface built on Material UI, Perfect LifeTracker Pro offers a seamless experience across both web and mobile platforms, allowing users to stay connected to their goals wherever they are.
+## Project Structure
+
+The project is organized into two main components:
+
+- **Frontend**: React with TypeScript, Material UI (Vite)
+- **Backend**: Azure Functions (Node.js)
+
+## Getting Started
+
+### Running the Frontend
+
+The frontend uses Vite for faster development and builds:
+
+```bash
+# Navigate to the frontend directory
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start the development server
+npm run dev
+```
+
+Or using Docker:
+
+```bash
+# Build and run with Docker Compose
+docker-compose up
+```
+
+### Running the Backend
+
+The backend uses Azure Functions:
+
+```bash
+# Navigate to the backend directory
+cd backend
+
+# Install dependencies
+npm install
+
+# Start the development server
+npm start
+```
+
+## Development Workflow
+
+1. Make your changes
+2. Test locally
+3. Commit your changes
+4. Push to the repository
+5. The CI/CD pipeline will handle deployment
+
+## Additional Documentation
+
+For more detailed documentation, see:
+
+- [Frontend Documentation](./frontend/README.md)
+- [Architecture Design](./documentation/architecture_design.md)
+- [System Requirements](./documentation/system_requirements.md)
+- [Decisions Log](./documentation/decisions_log.md)
 
 ## 🚀 Features
 
