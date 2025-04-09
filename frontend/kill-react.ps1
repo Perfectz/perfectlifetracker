@@ -109,4 +109,34 @@ if ($npmProcesses) {
     Write-Host "CLEAR: No npm processes found running" -ForegroundColor Green
 }
 
+# Kill existing React/Vite processes
+Write-Host "Killing any existing React/Vite processes..." -ForegroundColor Cyan
+
+# Find and kill processes using port 3000
+$processesByPort = Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue | 
+    Select-Object -ExpandProperty OwningProcess | 
+    ForEach-Object { Get-Process -Id $_ }
+
+if ($processesByPort) {
+    Write-Host "Found processes using port 3000:" -ForegroundColor Yellow
+    $processesByPort | Format-Table Id, ProcessName, Path -AutoSize
+    $processesByPort | ForEach-Object { Stop-Process -Id $_.Id -Force }
+    Write-Host "Processes terminated." -ForegroundColor Green
+} else {
+    Write-Host "No processes found using port 3000." -ForegroundColor Green
+}
+
+# Also find and kill any node processes related to React/Vite
+$reactProcesses = Get-Process -Name "node" -ErrorAction SilentlyContinue | 
+    Where-Object { $_.CommandLine -like "*vite*" -or $_.CommandLine -like "*react*" }
+
+if ($reactProcesses) {
+    Write-Host "Found React/Vite related node processes:" -ForegroundColor Yellow
+    $reactProcesses | Format-Table Id, ProcessName, Path -AutoSize
+    $reactProcesses | ForEach-Object { Stop-Process -Id $_.Id -Force }
+    Write-Host "Node processes terminated." -ForegroundColor Green
+} else {
+    Write-Host "No React/Vite related node processes found." -ForegroundColor Green
+}
+
 Write-Host "COMPLETE: All React development servers and related processes have been stopped." -ForegroundColor Cyan 
