@@ -4,6 +4,29 @@
  */
 import { createTheme, responsiveFontSizes, ThemeOptions } from '@mui/material/styles';
 
+// Define Terra color palette
+export const terraColors = {
+  primary: '#1976d2',
+  secondary: '#9c27b0',
+  success: '#4caf50',
+  info: '#03a9f4',
+  warning: '#ff9800',
+  error: '#f44336',
+  pearl: '#E8DDCB',
+  softTeal: '#03A9F4',
+  tropicalRain: '#00BCD4',
+  prussianBlue: '#0D3B66',
+  maastrichtBlue: '#033860',
+  background: {
+    light: '#f5f5f5',
+    dark: '#121212'
+  },
+  text: {
+    light: '#212121',
+    dark: '#ffffff'
+  }
+};
+
 // Define theme options without the problematic component styling
 const getThemeOptions = (mode: 'light' | 'dark'): ThemeOptions => ({
   palette: {
@@ -165,4 +188,4 @@ export const darkTheme = createTheme(darkThemeBase, {
 
 // Apply responsive font sizes
 export const responsiveLightTheme = responsiveFontSizes(lightTheme);
-export const responsiveDarkTheme = responsiveFontSizes(darkTheme); 
+export const responsiveDarkTheme = responsiveFontSizes(darkTheme);
