@@ -1,0 +1,100 @@
+# Single Container Approach: Build and Serve in one image
+FROM node:20-bullseye
+
+# Install necessary packages for serving
+RUN apt-get update && apt-get install -y \
+    nginx \
+    wget \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Environment variables
+ENV NODE_ENV=production
+ENV PORT=80
+ENV ROLLUP_SKIP_NODEJS_NATIVE=1
+ENV NPM_CONFIG_OPTIONAL=false
+
+# Create app directory
+WORKDIR /app
+
+# Copy package.json and install dependencies
+COPY package.json ./
+RUN npm install --legacy-peer-deps --no-optional
+
+# Copy the rest of the application
+COPY . .
+
+# Create nginx config
+RUN mkdir -p /var/www/html && \
+    chown -R www-data:www-data /var/www/html && \
+    echo 'user www-data; \n\
+worker_processes auto; \n\
+pid /run/nginx.pid; \n\
+error_log /var/log/nginx/error.log; \n\
+events { \n\
+    worker_connections 1024; \n\
+} \n\
+http { \n\
+    include /etc/nginx/mime.types; \n\
+    default_type application/octet-stream; \n\
+    access_log /var/log/nginx/access.log; \n\
+    server { \n\
+        listen 80; \n\
+        server_name localhost; \n\
+        root /app/dist; \n\
+        index index.html; \n\
+        location / { \n\
+            try_files $uri $uri/ /index.html; \n\
+        } \n\
+        location ~* \\.(?:jpg|jpeg|gif|png|ico|svg|woff|woff2|ttf|css|js)$ { \n\
+            expires 30d; \n\
+            add_header Cache-Control "public, max-age=2592000"; \n\
+        } \n\
+    } \n\
+}' > /etc/nginx/nginx.conf
+
+# Create a custom Vite config to avoid rollup native dependencies
+RUN echo 'import { defineConfig } from "vite"; \n\
+import react from "@vitejs/plugin-react"; \n\
+export default defineConfig({ \n\
+  plugins: [react()], \n\
+  build: { target: "es2015", minify: "terser" }, \n\
+  optimizeDeps: { disabled: false }, \n\
+  define: { "process.env": process.env }, \n\
+});' > /app/vite.config.custom.js
+
+# Create a custom Vite config for development
+RUN echo 'import { defineConfig } from "vite"; \n\
+import react from "@vitejs/plugin-react"; \n\
+export default defineConfig({ \n\
+  plugins: [react()], \n\
+  server: { host: "0.0.0.0", port: 3000, open: false }, \n\
+  optimizeDeps: { disabled: false, esbuildOptions: { target: "esnext" } }, \n\
+  define: { "process.env": process.env }, \n\
+});' > /app/vite.config.dev.js
+
+# Build the application
+RUN npx vite build --config /app/vite.config.custom.js
+RUN ls -la /app/dist && chmod -R 755 /app/dist
+
+# Create the entrypoint script
+RUN echo '#!/bin/bash \n\
+set -e \n\
+\n\
+# Start nginx or development server based on NODE_ENV \n\
+if [ "$NODE_ENV" = "production" ]; then \n\
+    echo "Starting in production mode with nginx..." \n\
+    nginx -g "daemon off;" \n\
+else \n\
+    echo "Starting in development mode with Vite..." \n\
+    npx vite --config /app/vite.config.dev.js \n\
+fi' > /app/entrypoint.sh
+
+# Make the entrypoint script executable
+RUN chmod +x /app/entrypoint.sh
+
+# Expose appropriate ports
+EXPOSE 80 3000
+
+# Start the application
+CMD ["/app/entrypoint.sh"] 

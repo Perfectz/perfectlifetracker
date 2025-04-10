@@ -1,0 +1,16 @@
+FROM nginx:stable-alpine
+
+# Copy custom nginx config with proper formatting
+COPY nginx-fixed.conf /etc/nginx/conf.d/default.conf
+
+# Copy built app
+COPY build/ /usr/share/nginx/html/
+
+# Set proper permissions
+RUN chmod -R 755 /usr/share/nginx/html
+
+# Expose port 80
+EXPOSE 80
+
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"] 

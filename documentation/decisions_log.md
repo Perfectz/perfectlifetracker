@@ -406,7 +406,7 @@ Updated Node.js version requirement from 18.x to 20.x across the project to ensu
 - [React Router 7.5.0 Documentation](https://reactrouter.com/)
 - [Node.js Release Schedule](https://nodejs.org/en/about/releases)
 
-### [2025-04-09]: Frontend Migration from Create React App to Vite
+### [2024-04-09]: Frontend Migration from Create React App to Vite
 
 #### Change/Decision Description
 Migrated the frontend application from Create React App (CRA) to Vite as the build tool and development server.
@@ -434,6 +434,244 @@ Migrated the frontend application from Create React App (CRA) to Vite as the bui
 - [Vite Documentation](https://vitejs.dev/guide/)
 - [Create React App vs Vite Comparison](https://vitejs.dev/guide/why.html)
 
+### [2024-04-09]: Docker Development Environment Implementation
+
+#### Change/Decision Description
+Implemented a Docker-based development environment with Docker Compose to provide consistent development experience across all environments.
+
+#### Rationale
+1. **Environment Consistency**: Ensures all developers work with identical environments
+2. **Onboarding Simplicity**: New team members can start development quickly with a single command
+3. **Isolation**: Prevents dependency conflicts with other projects
+4. **Service Integration**: Easily connects frontend and backend services
+5. **Production Similarity**: Development environment more closely resembles production
+
+#### Implementation Details
+1. **Docker Compose Configuration**
+   - Frontend service with Vite dev server
+   - Backend service with Node.js and Express
+   - Shared network for inter-service communication
+   - Volume mounts for source code with hot reloading
+   - Automatic dependency installation
+
+2. **Frontend Dockerfile**
+   - Development-focused configuration
+   - Node.js 20 Alpine base image
+   - Configured for hot module replacement
+   - Environment variable support
+
+3. **Backend Placeholder**
+   - Auto-creates minimal Express API if none exists
+   - Configured with nodemon for auto-restart
+   - Health check endpoint for testing
+
+#### Alternatives Considered
+1. **Local development only**: Simpler but inconsistent environments
+2. **Full Kubernetes development**: More production-like but excessive complexity
+3. **Separate containers without Compose**: More manual configuration needed
+4. **Dev containers in VS Code**: IDE-specific solution
+
+#### Implications
+1. **Development Process**: Developers now use `docker-compose up` to start the environment
+2. **Prerequisites**: Docker and Docker Compose now required for development
+3. **Resource Usage**: Container usage requires more system resources
+4. **CI Integration**: Better alignment between local and CI environments
+5. **Learning Curve**: Team needs to understand basic Docker concepts
+
+#### References
+- [Docker Compose Documentation](https://docs.docker.com/compose/)
+- [Vite Docker Development](https://vitejs.dev/guide/backend-integration.html)
+- [Node.js Docker Best Practices](https://github.com/nodejs/docker-node/blob/main/docs/BestPractices.md)
+
+### [2024-04-09]: Azure DevOps Agent Troubleshooting Improvements
+
+#### Change/Decision Description
+Implemented a comprehensive solution for handling corrupted node_modules directories in Azure DevOps self-hosted agents, including an automated cleanup script and updated pipeline configuration.
+
+#### Rationale
+- Self-hosted agents were encountering issues with corrupted node_modules directories
+- Git clean operations were failing during the checkout phase
+- Build pipelines were failing with IO exceptions
+- Node.js process termination was sometimes leaving locked files
+- A robust solution was needed to handle these edge cases
+
+#### Implementation Details
+1. **PowerShell Cleanup Script (agent-cleanup.ps1)**
+   - Robust directory cleaning with multiple fallback methods
+   - Handles corrupted and locked directories
+   - Uses multiple cleanup techniques (Remove-Item, robocopy, rd command)
+   - Special handling for known problematic paths
+
+2. **Pipeline Improvements**
+   - Added pre-checkout cleanup steps to azure-pipelines.yml
+   - Created a separate pre-checkout pipeline variant
+   - Added detailed error handling and reporting
+   - Implemented clean workspace functionality
+
+3. **Documentation**
+   - Created AZURE_AGENT_TROUBLESHOOTING.md with detailed guidance
+   - Added instructions for manual agent cleanup
+   - Documented common causes and prevention methods
+
+#### Alternatives Considered
+1. **Use hosted agents**: Would avoid the issue but incur additional costs
+2. **Rebuild agents from scratch**: More time-consuming but cleaner
+3. **Docker-based builds**: Would provide cleaner isolation but require significant pipeline changes
+4. **Simple cleanup scripts**: Less robust but simpler to implement
+
+#### Implications
+- More reliable build pipelines
+- Better handling of edge cases with node_modules
+- Additional maintenance tasks for agent machines
+- Improved documentation for DevOps processes
+- Need to periodically check agent health
+
+#### References
+- [Azure DevOps Agent Troubleshooting](https://docs.microsoft.com/en-us/azure/devops/pipelines/troubleshooting)
+- [Git Clean Documentation](https://git-scm.com/docs/git-clean)
+- [Robocopy Documentation](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/robocopy)
+
+### [2024-04-09]: GitHub Actions CI Workflow Implementation
+
+#### Change/Decision Description
+Implemented a GitHub Actions CI workflow to automate code quality checks and build verification on every push to main and on pull requests. The workflow runs linting, formatting checks, and Docker build verification in a clean environment.
+
+#### Rationale
+- Automated quality checks ensure code consistency and catch issues early
+- CI provides a safety net even for solo development
+- Running builds in a clean environment catches "works on my machine" issues
+- Automated verification of Docker builds ensures deployment readiness
+- Establishes good practices for potential future team expansion
+
+#### Implementation Details
+1. **GitHub Actions Workflow**
+   - Created `.github/workflows/ci.yml` with configuration
+   - Set up triggers for pushes to main and PRs
+   - Configured Ubuntu-latest runner
+
+2. **Quality Checks**
+   - ESLint for code quality enforcement
+   - Prettier for consistent formatting
+   - Directory-specific checks for frontend (and conditionally backend)
+
+3. **Build Verification**
+   - Docker image builds for frontend
+   - Conditional building of backend Docker image
+   - Docker Compose validation
+
+#### Alternatives Considered
+1. **Manual Quality Management**: Error-prone and inconsistent
+2. **Pre-commit Hooks**: Only run locally, can be bypassed
+3. **Jenkins**: More complex setup for solo development needs
+4. **Azure DevOps Pipelines**: Already using for deployment, but GitHub Actions integrates better with GitHub repositories
+
+#### Implications
+- Enforces code quality standards across the project
+- Increases confidence in the build and deployment process
+- Streamlines the development workflow
+- Prevents broken code from getting into the main branch
+- Creates a foundation for potential future expansion to CD (Continuous Deployment)
+
+#### References
+- [GitHub Actions Documentation](https://docs.github.com/en/actions)
+- [CI/CD Best Practices](https://docs.github.com/en/actions/guides/about-continuous-integration)
+- [Docker GitHub Actions](https://docs.docker.com/build/ci/github-actions/)
+
+### [2024-04-09]: Azure Infrastructure as Code with Terraform
+
+#### Change/Decision Description
+Implemented Infrastructure as Code (IaC) using Terraform to define and manage Azure resources for the Perfect LifeTracker Pro application.
+
+#### Rationale
+- Enables consistent, repeatable infrastructure deployment
+- Puts infrastructure definition under version control
+- Eliminates manual Azure portal configuration
+- Facilitates environment replication for testing or staging
+- Provides documentation of infrastructure in code form
+- Enables easy updates and modifications to the infrastructure
+
+#### Implementation Details
+1. **Core Azure Resources**
+   - Resource Group to contain all resources
+   - Static Web App (Free tier) for hosting the React frontend
+   - App Service Plan (Linux, B1) for backend compute
+   - App Service (Node.js 18) for the backend API
+   - Cosmos DB account (with free tier) for NoSQL database
+   - Cosmos DB SQL database for application data
+
+2. **Configuration Structure**
+   - Separated into logical files: providers.tf, variables.tf, main.tf
+   - Parameterized with variables for prefix and location
+   - Consistent naming convention using prefixes
+   - Minimized costs by using free tiers where possible
+
+#### Alternatives Considered
+1. **Manual Azure Portal Configuration**: Less reproducible, prone to human error
+2. **Azure Resource Manager (ARM) Templates**: More complex JSON syntax, Azure-specific
+3. **Pulumi**: Code-first approach but requires additional SDK knowledge
+4. **Ansible/Chef/Puppet**: Better for configuration management than infrastructure provisioning
+5. **Azure Bicep**: Newer Azure-specific IaC language with less community adoption
+
+#### Implications
+- Requires learning Terraform syntax and concepts
+- Enables consistent deployment across environments
+- Simplifies future modifications to infrastructure
+- Facilitates collaboration on infrastructure changes
+- Provides a foundation for CI/CD pipeline infrastructure deployment
+
+#### References
+- [Terraform Azure Provider Documentation](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs)
+- [Infrastructure as Code Best Practices](https://docs.microsoft.com/en-us/azure/cloud-adoption-framework/ready/considerations/infrastructure-as-code)
+- [Azure Static Web Apps Documentation](https://docs.microsoft.com/en-us/azure/static-web-apps/)
+- [Azure Cosmos DB Documentation](https://docs.microsoft.com/en-us/azure/cosmos-db/)
+
+### [2024-04-10]: Docker-Based Deployment and CI/CD Pipeline Update
+
+#### Change/Decision Description
+Implemented Docker-based deployment strategy for both frontend and backend components, along with updating the Azure DevOps CI/CD pipeline to support this approach.
+
+#### Rationale
+- Docker containers provide consistent environment across development and production
+- Nginx container for frontend offers better performance and SPA routing support
+- Separate containers for frontend and backend align with microservices architecture
+- Simplified deployment process with docker-compose
+- Improved reliability with health checks and automatic restarts
+
+#### Implementation Details
+1. **Frontend Container**
+   - Used nginx:stable-alpine as base image
+   - Implemented custom Nginx configuration for SPA routing
+   - Pre-built React application for better performance
+   - Optimized build process to handle .dockerignore correctly
+
+2. **Backend Container**
+   - Used existing backend Dockerfile
+   - Added health checks and restart policies
+   - Exposed on port 3001
+
+3. **CI/CD Pipeline Updates**
+   - Updated Azure DevOps pipeline to build frontend locally before Docker build
+   - Implemented proper .dockerignore handling
+   - Updated container names to be consistent (lifetrack-app and lifetrack-backend)
+   - Improved docker-compose configuration with health checks and restart policies
+
+#### Alternatives Considered
+- Full multi-stage Docker build for frontend (rejected due to dependency issues)
+- Single container for both frontend and backend (rejected to maintain separation of concerns)
+- Using standard Node.js server for frontend (rejected in favor of Nginx for better performance)
+
+#### Implications
+- More consistent deployment between environments
+- Better isolation between frontend and backend
+- Improved performance with Nginx serving static assets
+- Need for proper Docker knowledge for deployment and troubleshooting
+- Temporary .dockerignore modifications during build process
+
+#### References
+- [Nginx Documentation](https://docs.nginx.com/)
+- [Docker Compose Documentation](https://docs.docker.com/compose/)
+- [Azure DevOps Pipeline Documentation](https://docs.microsoft.com/en-us/azure/devops/pipelines/)
+
 ## Version History
 | Date | Version | Changes | Author |
 |------|---------|---------|--------|
@@ -443,4 +681,9 @@ Migrated the frontend application from Create React App (CRA) to Vite as the bui
 | 2024-04-08 | 1.3.0 | Added frontend implementation entries | Perfect LifeTracker Pro Team |
 | 2024-04-08 | 1.4.0 | Added PowerShell scripts for React process management | Perfect LifeTracker Pro Team |
 | 2024-04-08 | 1.5.0 | Updated Node.js version for React 19 compatibility | Perfect LifeTracker Pro Team |
-| 2025-04-09 | 1.6.0 | Added frontend migration from CRA to Vite | Perfect LifeTracker Pro Team | 
+| 2024-04-09 | 1.6.0 | Added frontend migration from CRA to Vite | Perfect LifeTracker Pro Team |
+| 2024-04-09 | 1.7.0 | Added Docker development environment implementation | Perfect LifeTracker Pro Team |
+| 2024-04-09 | 1.8.0 | Added Azure DevOps agent troubleshooting improvements | Perfect LifeTracker Pro Team |
+| 2024-04-09 | 1.9.0 | Added GitHub Actions CI workflow implementation | Perfect LifeTracker Pro Team |
+| 2024-04-09 | 1.10.0 | Added Azure infrastructure as code with Terraform | Perfect LifeTracker Pro Team |
+| 2024-04-10 | 1.11.0 | Added Docker-based deployment and CI/CD pipeline update | Perfect LifeTracker Pro Team | 

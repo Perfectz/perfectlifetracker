@@ -12,9 +12,9 @@ variables:
   - name: DOCKER_BUILDKIT
     value: '1'
   - name: FRONTEND_IMAGE_NAME
-    value: 'perfectltp-frontend'
+    value: 'lifetrack-app'
   - name: BACKEND_IMAGE_NAME
-    value: 'perfectltp-backend'
+    value: 'lifetrack-backend'
   - name: CONTAINER_REGISTRY
     value: 'yourregistry.azurecr.io'
   - name: TAG
@@ -41,42 +41,71 @@ stages:
               workingDirectory: '$(System.DefaultWorkingDirectory)'
             displayName: 'Verify Docker'
 
+          # Build Frontend (Build the React App first, then create Docker image)
+          - task: PowerShell@2
+            displayName: 'Build Frontend React App'
+            inputs:
+              targetType: 'inline'
+              script: |
+                # Install dependencies and build
+                cd frontend
+                npm ci
+                npm run build
+                
+                # Create temporary .dockerignore that allows /build directory
+                $originalDockerignore = ".dockerignore"
+                $backupDockerignore = ".dockerignore.bak"
+                
+                if (Test-Path $originalDockerignore) {
+                  Move-Item $originalDockerignore $backupDockerignore -Force
+                  @"
+                node_modules
+                npm-debug.log
+                "@ | Out-File -Encoding ASCII $originalDockerignore
+                }
+                
+                # Return to root directory
+                cd ..
+              workingDirectory: '$(System.DefaultWorkingDirectory)'
+
           # Build Frontend Docker Image
           - task: Docker@2
             displayName: 'Build Frontend Docker Image'
             inputs:
               command: 'build'
-              Dockerfile: 'frontend/Dockerfile'
+              Dockerfile: 'frontend/Dockerfile.fixed'
               buildContext: 'frontend'
-              arguments: '--target production --build-arg REACT_APP_AZURE_CLIENT_ID=$(AZURE_CLIENT_ID) --build-arg REACT_APP_AZURE_AUTHORITY=$(AZURE_AUTHORITY) --build-arg REACT_APP_AZURE_REDIRECT_URI=$(AZURE_REDIRECT_URI)'
               tags: |
                 $(FRONTEND_IMAGE_NAME):$(TAG)
                 $(FRONTEND_IMAGE_NAME):latest
 
-          # Build Backend Docker Image or use placeholder
+          # Restore original .dockerignore
           - task: PowerShell@2
-            displayName: 'Build Backend Docker Image'
+            displayName: 'Restore Frontend .dockerignore'
             inputs:
               targetType: 'inline'
               script: |
-                if (Test-Path "$(System.DefaultWorkingDirectory)/backend/Dockerfile") {
-                  Write-Host "Building backend Docker image from Dockerfile"
-                  docker build -t $(BACKEND_IMAGE_NAME):$(TAG) -t $(BACKEND_IMAGE_NAME):latest ./backend
-                } else {
-                  Write-Host "Creating placeholder backend Docker image"
-                  # Create temporary Dockerfile for the backend
-                  @"
-                  FROM node:20-alpine
-                  WORKDIR /app
-                  RUN echo '{"dependencies":{"express":"^4.18.2","cors":"^2.8.5"},"scripts":{"start":"node server.js"}}' > package.json && \
-                      echo 'const express = require("express"); const cors = require("cors"); const app = express(); app.use(cors()); app.get("/api/health", (req, res) => { res.json({ status: "ok", message: "Backend API is running" }); }); app.listen(3001, () => console.log("Backend server running on port 3001"));' > server.js && \
-                      npm install
-                  EXPOSE 3001
-                  CMD ["npm", "start"]
-                  "@ | Out-File -Encoding ASCII ./backend-dockerfile
-                  docker build -t $(BACKEND_IMAGE_NAME):$(TAG) -t $(BACKEND_IMAGE_NAME):latest -f ./backend-dockerfile .
+                cd frontend
+                $originalDockerignore = ".dockerignore"
+                $backupDockerignore = ".dockerignore.bak"
+                
+                if (Test-Path $backupDockerignore) {
+                  Move-Item $backupDockerignore $originalDockerignore -Force
                 }
+                
+                cd ..
               workingDirectory: '$(System.DefaultWorkingDirectory)'
+
+          # Build Backend Docker Image
+          - task: Docker@2
+            displayName: 'Build Backend Docker Image'
+            inputs:
+              command: 'build'
+              Dockerfile: 'backend/Dockerfile'
+              buildContext: 'backend'
+              tags: |
+                $(BACKEND_IMAGE_NAME):$(TAG)
+                $(BACKEND_IMAGE_NAME):latest
 
           # Create docker-compose file for deployment
           - task: PowerShell@2
@@ -90,11 +119,10 @@ stages:
                   frontend:
                     image: $(FRONTEND_IMAGE_NAME):$(TAG)
                     ports:
-                      - "80:80"
+                      - "8080:80"
                     depends_on:
                       - backend
-                    environment:
-                      - VITE_API_URL=http://backend:3001
+                    restart: always
 
                   backend:
                     image: $(BACKEND_IMAGE_NAME):$(TAG)
@@ -103,6 +131,13 @@ stages:
                     environment:
                       - NODE_ENV=production
                       - PORT=3001
+                    restart: always
+                    healthcheck:
+                      test: ["CMD", "curl", "-f", "http://localhost:3001/api/health"]
+                      interval: 30s
+                      timeout: 10s
+                      retries: 3
+                      start_period: 30s
                 "@ | Out-File -Encoding ASCII "$(Build.ArtifactStagingDirectory)/docker-compose.yml"
               workingDirectory: '$(System.DefaultWorkingDirectory)'
 
