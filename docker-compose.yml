@@ -5,62 +5,84 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      target: development # Specify development stage
+      target: production
+      args:
+        - REACT_APP_AZURE_CLIENT_ID=${AZURE_CLIENT_ID:-d9764c39-1eb9-4963-83a0-e8ba859c8965}
+        - REACT_APP_AZURE_AUTHORITY=https://login.microsoftonline.com/78e9993f-a208-4c38-9d9d-6b15f0d2407d
+        - REACT_APP_AZURE_REDIRECT_URI=${AZURE_REDIRECT_URI:-http://localhost:3000}
+        - VITE_API_URL=http://backend:3001
     container_name: lifetrack-frontend
     ports:
-      - "3000:3000"   # Map Vite dev server port to host
+      - "${FRONTEND_PORT:-80}:80"   # Map production web server port
     environment:
-      - VITE_REACT_APP_AZURE_CLIENT_ID=${AZURE_CLIENT_ID:-d9764c39-1eb9-4963-83a0-e8ba859c8965}
-      - VITE_REACT_APP_AZURE_AUTHORITY=https://login.microsoftonline.com/78e9993f-a208-4c38-9d9d-6b15f0d2407d
-      - VITE_REACT_APP_AZURE_REDIRECT_URI=http://localhost:3000
       - VITE_API_URL=http://backend:3001
     depends_on:
       - backend
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000"]
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:80"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 20s
+    restart: unless-stopped
 
-  # Production frontend option (commented out by default)
-  # frontend-prod:
+  # Development frontend option (uncomment to use development mode)
+  # frontend-dev:
   #   build:
   #     context: ./frontend
   #     dockerfile: Dockerfile
-  #     target: production
+  #     target: development
+  #     args:
+  #       - REACT_APP_AZURE_CLIENT_ID=${AZURE_CLIENT_ID:-d9764c39-1eb9-4963-83a0-e8ba859c8965}
+  #       - REACT_APP_AZURE_AUTHORITY=https://login.microsoftonline.com/78e9993f-a208-4c38-9d9d-6b15f0d2407d
+  #       - REACT_APP_AZURE_REDIRECT_URI=${AZURE_REDIRECT_URI:-http://localhost:3000}
+  #       - VITE_API_URL=http://backend:3001
+  #   container_name: lifetrack-frontend-dev
   #   ports:
-  #     - "8080:80"
+  #     - "3000:3000"   # Map development server port
+  #   environment:
+  #     - VITE_API_URL=http://backend:3001
   #   depends_on:
   #     - backend
+  #   restart: unless-stopped
 
   backend:
-    image: node:20-alpine
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: production
     container_name: lifetrack-backend
-    working_dir: /app
-    volumes:
-      - ./backend:/app    # Mount backend source code
-      - backend_node_modules:/app/node_modules
     ports:
-      - "3001:3001"
-    command: >
-      sh -c "if [ -f package.json ]; then 
-              npm install && npm run dev; 
-             else 
-              # Create a simple placeholder API if no backend exists yet
-              echo '{\"dependencies\":{\"express\":\"^4.18.2\",\"cors\":\"^2.8.5\",\"nodemon\":\"^3.0.1\"}, \"scripts\":{\"dev\":\"nodemon server.js\"}}' > package.json &&
-              echo 'const express = require(\"express\"); const cors = require(\"cors\"); const app = express(); app.use(cors()); app.get(\"/api/health\", (req, res) => { res.json({ status: \"ok\", message: \"Backend API is running\" }); }); app.listen(3001, () => console.log(\"Backend server running on port 3001\"));' > server.js &&
-              npm install && npm run dev; 
-             fi"
+      - "${BACKEND_PORT:-3001}:3001"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=${NODE_ENV:-production}
       - PORT=3001
+      # Add any other backend environment variables here
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3001/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 20s
+    restart: unless-stopped
 
+  # Development backend option (uncomment to use development mode)
+  # backend-dev:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #     target: development
+  #   container_name: lifetrack-backend-dev
+  #   ports:
+  #     - "3001:3001"
+  #   environment:
+  #     - NODE_ENV=development
+  #     - PORT=3001
+  #   volumes:
+  #     - ./backend:/app    # Mount for development hot-reload
+  #     - backend_node_modules:/app/node_modules
+  #   restart: unless-stopped
+
+# Volumes for development mode
 volumes:
   backend_node_modules: 

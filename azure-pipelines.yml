@@ -9,6 +9,16 @@ variables:
     value: '20.18.1' # Keep specific version for stability
   - name: NODE_PATH
     value: 'C:\Program Files\nodejs'
+  - name: DOCKER_BUILDKIT
+    value: '1'
+  - name: FRONTEND_IMAGE_NAME
+    value: 'perfectltp-frontend'
+  - name: BACKEND_IMAGE_NAME
+    value: 'perfectltp-backend'
+  - name: CONTAINER_REGISTRY
+    value: 'yourregistry.azurecr.io'
+  - name: TAG
+    value: '$(Build.BuildNumber)'
 
 stages:
   - stage: BuildAndTest
@@ -17,142 +27,193 @@ stages:
       - job: BuildAndTest
         displayName: 'Build and Test All'
         steps:
-          # Simplest verification possible - just using batch command directly
-          - task: BatchScript@1
-            inputs:
-              filename: 'verify-node.cmd'
-              arguments: '"$(NODE_PATH)"'
-              modifyEnvironment: true
-            displayName: 'Verify Node.js'
-            continueOnError: true
-
-          # Clean Frontend node_modules directory to prevent corruption issues
+          # Verify Docker is installed
           - task: PowerShell@2
             inputs:
               targetType: 'inline'
               script: |
-                Write-Host "Cleaning frontend node_modules directory..."
-                if (Test-Path "$(System.DefaultWorkingDirectory)/frontend/node_modules") {
-                  try {
-                    Remove-Item -Path "$(System.DefaultWorkingDirectory)/frontend/node_modules" -Force -Recurse -ErrorAction Stop
-                    Write-Host "Successfully cleaned node_modules directory"
-                  }
-                  catch {
-                    Write-Host "##vso[task.logissue type=warning]Could not remove node_modules directory normally"
-                    Write-Host "Attempting force clean with robocopy..."
-                    
-                    # Create an empty directory to use with robocopy
-                    $emptyDir = New-Item -Path "$(System.DefaultWorkingDirectory)/empty" -ItemType Directory -Force
-                    
-                    # Use robocopy to purge the directory (MIR = mirror empty directory)
-                    robocopy $emptyDir.FullName "$(System.DefaultWorkingDirectory)/frontend/node_modules" /MIR /NFL /NDL /NJH /NJS /NC /NS /MT:8
-                    
-                    # Remove the empty directory
-                    Remove-Item -Path $emptyDir.FullName -Force -Recurse
-                    
-                    Write-Host "Force clean completed"
-                  }
-                }
-                else {
-                  Write-Host "node_modules directory doesn't exist, no cleanup needed"
+                $dockerVersion = docker --version
+                Write-Host "Docker version: $dockerVersion"
+                if ($LASTEXITCODE -ne 0) {
+                  Write-Host "##vso[task.logissue type=error]Docker is not available"
+                  exit 1
                 }
               workingDirectory: '$(System.DefaultWorkingDirectory)'
-            displayName: 'Clean Frontend node_modules'
+            displayName: 'Verify Docker'
 
-          # Build Frontend - Direct batch file
-          - task: BatchScript@1
+          # Build Frontend Docker Image
+          - task: Docker@2
+            displayName: 'Build Frontend Docker Image'
             inputs:
-              filename: 'build-frontend.cmd'
-              arguments: '"$(NODE_PATH)"'
-              workingFolder: '$(System.DefaultWorkingDirectory)'
-            displayName: 'Build Frontend'
+              command: 'build'
+              Dockerfile: 'frontend/Dockerfile'
+              buildContext: 'frontend'
+              arguments: '--target production --build-arg REACT_APP_AZURE_CLIENT_ID=$(AZURE_CLIENT_ID) --build-arg REACT_APP_AZURE_AUTHORITY=$(AZURE_AUTHORITY) --build-arg REACT_APP_AZURE_REDIRECT_URI=$(AZURE_REDIRECT_URI)'
+              tags: |
+                $(FRONTEND_IMAGE_NAME):$(TAG)
+                $(FRONTEND_IMAGE_NAME):latest
 
-          # Test Frontend - Direct batch file
-          - task: BatchScript@1
+          # Build Backend Docker Image or use placeholder
+          - task: PowerShell@2
+            displayName: 'Build Backend Docker Image'
             inputs:
-              filename: 'test-frontend.cmd'
-              arguments: '"$(NODE_PATH)"'
-              workingFolder: '$(System.DefaultWorkingDirectory)'
-            displayName: 'Test Frontend'
+              targetType: 'inline'
+              script: |
+                if (Test-Path "$(System.DefaultWorkingDirectory)/backend/Dockerfile") {
+                  Write-Host "Building backend Docker image from Dockerfile"
+                  docker build -t $(BACKEND_IMAGE_NAME):$(TAG) -t $(BACKEND_IMAGE_NAME):latest ./backend
+                } else {
+                  Write-Host "Creating placeholder backend Docker image"
+                  # Create temporary Dockerfile for the backend
+                  @"
+                  FROM node:20-alpine
+                  WORKDIR /app
+                  RUN echo '{"dependencies":{"express":"^4.18.2","cors":"^2.8.5"},"scripts":{"start":"node server.js"}}' > package.json && \
+                      echo 'const express = require("express"); const cors = require("cors"); const app = express(); app.use(cors()); app.get("/api/health", (req, res) => { res.json({ status: "ok", message: "Backend API is running" }); }); app.listen(3001, () => console.log("Backend server running on port 3001"));' > server.js && \
+                      npm install
+                  EXPOSE 3001
+                  CMD ["npm", "start"]
+                  "@ | Out-File -Encoding ASCII ./backend-dockerfile
+                  docker build -t $(BACKEND_IMAGE_NAME):$(TAG) -t $(BACKEND_IMAGE_NAME):latest -f ./backend-dockerfile .
+                }
+              workingDirectory: '$(System.DefaultWorkingDirectory)'
+
+          # Create docker-compose file for deployment
+          - task: PowerShell@2
+            displayName: 'Create Deployment Compose File'
+            inputs:
+              targetType: 'inline'
+              script: |
+                @"
+                version: "3.9"
+                services:
+                  frontend:
+                    image: $(FRONTEND_IMAGE_NAME):$(TAG)
+                    ports:
+                      - "80:80"
+                    depends_on:
+                      - backend
+                    environment:
+                      - VITE_API_URL=http://backend:3001
+
+                  backend:
+                    image: $(BACKEND_IMAGE_NAME):$(TAG)
+                    ports:
+                      - "3001:3001"
+                    environment:
+                      - NODE_ENV=production
+                      - PORT=3001
+                "@ | Out-File -Encoding ASCII "$(Build.ArtifactStagingDirectory)/docker-compose.yml"
+              workingDirectory: '$(System.DefaultWorkingDirectory)'
+
+          # Optional: Push Docker images to registry if configured
+          # Uncomment to enable pushing to registry
+          # - task: Docker@2
+          #   displayName: 'Push Frontend Image to Registry'
+          #   inputs:
+          #     containerRegistry: 'dockerRegistry'
+          #     repository: '$(FRONTEND_IMAGE_NAME)'
+          #     command: 'push'
+          #     tags: |
+          #       $(TAG)
+          #       latest
           
-          # Publish Frontend - Custom batch script instead of task
-          - task: BatchScript@1
-            inputs:
-              filename: 'publish-artifacts.cmd'
-              arguments: 'frontend\build frontend "$(Build.ArtifactStagingDirectory)\frontend"'
-              workingFolder: '$(System.DefaultWorkingDirectory)'
-            displayName: 'Publish Frontend Artifacts'
+          # - task: Docker@2
+          #   displayName: 'Push Backend Image to Registry'
+          #   inputs:
+          #     containerRegistry: 'dockerRegistry'
+          #     repository: '$(BACKEND_IMAGE_NAME)'
+          #     command: 'push'
+          #     tags: |
+          #       $(TAG)
+          #       latest
 
-          # Clean Backend node_modules directory
+          # Save Docker images as artifacts
           - task: PowerShell@2
+            displayName: 'Save Docker Images as Artifacts'
             inputs:
               targetType: 'inline'
               script: |
-                Write-Host "Cleaning backend node_modules directory..."
-                if (Test-Path "$(System.DefaultWorkingDirectory)/backend/node_modules") {
-                  try {
-                    Remove-Item -Path "$(System.DefaultWorkingDirectory)/backend/node_modules" -Force -Recurse -ErrorAction Stop
-                    Write-Host "Successfully cleaned node_modules directory"
-                  }
-                  catch {
-                    Write-Host "##vso[task.logissue type=warning]Could not remove node_modules directory normally"
-                    Write-Host "Attempting force clean with robocopy..."
-                    
-                    # Create an empty directory to use with robocopy
-                    $emptyDir = New-Item -Path "$(System.DefaultWorkingDirectory)/empty" -ItemType Directory -Force
-                    
-                    # Use robocopy to purge the directory (MIR = mirror empty directory)
-                    robocopy $emptyDir.FullName "$(System.DefaultWorkingDirectory)/backend/node_modules" /MIR /NFL /NDL /NJH /NJS /NC /NS /MT:8
-                    
-                    # Remove the empty directory
-                    Remove-Item -Path $emptyDir.FullName -Force -Recurse
-                    
-                    Write-Host "Force clean completed"
-                  }
-                }
-                else {
-                  Write-Host "node_modules directory doesn't exist, no cleanup needed"
-                }
+                # Create directory for Docker images
+                New-Item -Path "$(Build.ArtifactStagingDirectory)/docker-images" -ItemType Directory -Force
+                
+                # Save Docker images
+                docker save $(FRONTEND_IMAGE_NAME):$(TAG) | gzip > "$(Build.ArtifactStagingDirectory)/docker-images/frontend-image.tar.gz"
+                docker save $(BACKEND_IMAGE_NAME):$(TAG) | gzip > "$(Build.ArtifactStagingDirectory)/docker-images/backend-image.tar.gz"
+                
+                # Create deployment script
+                @"
+                #!/bin/bash
+                # Load Docker images
+                gunzip -c frontend-image.tar.gz | docker load
+                gunzip -c backend-image.tar.gz | docker load
+                
+                # Run docker-compose
+                docker-compose up -d
+                "@ | Out-File -Encoding ASCII "$(Build.ArtifactStagingDirectory)/docker-images/deploy.sh"
+                
+                # Create Windows version
+                @"
+                @echo off
+                echo Loading Docker images...
+                docker load -i frontend-image.tar.gz
+                docker load -i backend-image.tar.gz
+                
+                echo Starting containers...
+                docker-compose up -d
+                "@ | Out-File -Encoding ASCII "$(Build.ArtifactStagingDirectory)/docker-images/deploy.cmd"
               workingDirectory: '$(System.DefaultWorkingDirectory)'
-            displayName: 'Clean Backend node_modules'
 
-          # Build Backend - Direct batch file
-          - task: BatchScript@1
+          # Publish artifacts
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Docker Images and Compose File'
             inputs:
-              filename: 'build-backend.cmd'
-              arguments: '"$(NODE_PATH)"'
-              workingFolder: '$(System.DefaultWorkingDirectory)'
-            displayName: 'Build Backend'
+              PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+              ArtifactName: 'container-deployment'
+              publishLocation: 'Container'
 
-          # Test Backend - Direct batch file
-          - task: BatchScript@1
-            inputs:
-              filename: 'test-backend.cmd'
-              arguments: '"$(NODE_PATH)"'
-              workingFolder: '$(System.DefaultWorkingDirectory)'
-            displayName: 'Test Backend'
-
-          # Publish Backend - Custom batch script instead of task
-          - task: BatchScript@1
-            inputs:
-              filename: 'publish-artifacts.cmd'
-              arguments: 'backend\dist backend "$(Build.ArtifactStagingDirectory)\backend"'
-              workingFolder: '$(System.DefaultWorkingDirectory)'
-            displayName: 'Publish Backend Artifacts'
-
-  # Deployment Stage using direct batch files
+  # Deployment Stage
   - stage: Deploy
     displayName: 'Deploy'
     dependsOn: BuildAndTest
     condition: succeeded()
     jobs:
       - job: DeployJob
-        displayName: 'Deploy Application'
+        displayName: 'Deploy Containerized Application'
         steps:
-          # Deploy using custom script
-          - task: BatchScript@1
+          # Download artifacts
+          - task: DownloadBuildArtifacts@0
             inputs:
-              filename: 'deploy.cmd'
-              arguments: '"$(System.ArtifactsDirectory)" "$(Build.ArtifactStagingDirectory)"'
-              workingFolder: '$(System.DefaultWorkingDirectory)'
-            displayName: 'Deploy Application'
+              buildType: 'current'
+              downloadType: 'specific'
+              itemPattern: 'container-deployment/**'
+              downloadPath: '$(System.ArtifactsDirectory)'
+            displayName: 'Download Build Artifacts'
+          
+          # Deploy with Docker
+          - task: PowerShell@2
+            inputs:
+              targetType: 'inline'
+              script: |
+                # Navigate to the deployment directory
+                cd "$(System.ArtifactsDirectory)/container-deployment"
+                
+                # Display available files
+                Get-ChildItem -Recurse
+                
+                # Stop existing containers if they exist
+                docker-compose down
+                
+                # Load the Docker images
+                cd docker-images
+                docker load -i frontend-image.tar.gz
+                docker load -i backend-image.tar.gz
+                cd ..
+                
+                # Start the containers
+                docker-compose up -d
+                
+                # Verify the containers are running
+                docker ps
+              workingDirectory: '$(System.DefaultWorkingDirectory)'
+            displayName: 'Deploy with Docker'

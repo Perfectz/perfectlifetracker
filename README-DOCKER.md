@@ -1,96 +1,125 @@
 # Docker Setup for Perfect LifeTracker Pro
 
-This document explains how to run Perfect LifeTracker Pro services using Docker.
+This document explains how to run Perfect LifeTracker Pro using Docker containers for simplified deployment.
 
 ## Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/) installed
 - [Docker Compose](https://docs.docker.com/compose/install/) installed
 
-## Quick Start for Development
+## Quick Start
 
-For now, we've simplified the Docker setup to run only the backend API service while you develop the frontend locally:
-
-1. **Run the backend API:**
+1. **Run the application stack using Docker Compose:**
 
 ```bash
-# Start the backend service only
-docker-compose up backend
+# Start the entire application stack in production mode
+docker-compose up -d
 ```
 
-The backend API will be available at http://localhost:3001 with a health check endpoint at http://localhost:3001/api/health
+This will:
+- Build the frontend and backend Docker images
+- Start containers for both services
+- Configure the environment for production use
 
-2. **Run the frontend locally:**
+The application will be available at:
+- Frontend UI: http://localhost (or http://localhost:80)
+- Backend API: http://localhost:3001
+
+## Environment Variables
+
+You can customize the deployment by setting these environment variables:
 
 ```bash
-cd frontend
-npm install
-npm run dev
+# Set variables for customization
+export AZURE_CLIENT_ID=your-azure-client-id
+export AZURE_REDIRECT_URI=http://your-domain
+export FRONTEND_PORT=8080
+export BACKEND_PORT=3001
+export NODE_ENV=production
+
+# Run with custom configuration
+docker-compose up -d
 ```
 
-The frontend will be available at http://localhost:3000 and will connect to the backend running in Docker.
+## Development Mode
 
-## Docker Compose Configuration
+For development with hot-reloading:
 
-The `docker-compose.yml` file is configured to run both frontend and backend services, but we're experiencing some compatibility issues with the frontend in Docker. For now, it's recommended to run the frontend locally.
-
-### Backend API Endpoints
-
-The backend creates a simple placeholder API with the following endpoints:
-
-- `GET /api/health` - Returns a status message indicating the API is running
-
-## Troubleshooting
-
-### Container Won't Start
+1. Uncomment the `frontend-dev` and `backend-dev` services in `docker-compose.yml`
+2. Start the development services:
 
 ```bash
-# View detailed logs
-docker-compose logs
-
-# Check for port conflicts
-docker ps -a
-```
-
-### Port Already In Use
-
-If you see errors about ports already being in use:
-
-```bash
-# Find processes using port 3001
-netstat -ano | findstr :3001
-
-# Kill the process using the port
-npx kill-port 3001
-```
-
-### Accessing the Container Shell
-
-```bash
-# Access backend container
-docker-compose exec backend sh
+# Start only the development services
+docker-compose up frontend-dev backend-dev
 ```
 
 ## Production Deployment
 
-For production, we provide a multi-stage Dockerfile that builds an optimized nginx-based image:
+For production deployment:
 
 ```bash
-# Build production frontend image
-docker build -f frontend/Dockerfile --target production -t perfectltp-frontend:prod frontend
-
-# Run the production container
-docker run -p 8080:80 perfectltp-frontend:prod
+# Build and start production containers
+docker-compose build
+docker-compose up -d
 ```
 
-## Known Issues
+## Azure DevOps Pipeline Integration
 
-1. The frontend container currently has issues with the rollup module in Docker. We're working on a fix. In the meantime, run the frontend locally.
+This project is configured with a containerized CI/CD pipeline:
 
-2. Environment variables need to be properly configured in both environments. Make sure your `.env` file in the frontend directory has:
+1. The `azure-pipelines.yml` file builds Docker images for both frontend and backend
+2. Images are saved as artifacts for deployment
+3. Deployment uses the Docker images with an auto-generated docker-compose.yml file
+
+To customize the CI/CD pipeline:
+- Update build arguments in the pipeline configuration
+- Modify the Docker registry settings for your environment
+- Adjust deployment target environments as needed
+
+## Container Architecture
 
 ```
-VITE_REACT_APP_AZURE_CLIENT_ID=your-client-id
-VITE_REACT_APP_AZURE_AUTHORITY=https://login.microsoftonline.com/your-tenant-id
-VITE_REACT_APP_AZURE_REDIRECT_URI=http://localhost:3000
-``` 
+┌────────────────┐       ┌────────────────┐
+│                │       │                │
+│    Frontend    │◄─────►│    Backend     │
+│    (Nginx)     │       │   (Node.js)    │
+│                │       │                │
+└────────────────┘       └────────────────┘
+       Port 80                Port 3001
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Port conflicts:**
+   ```bash
+   # Check for processes using the ports
+   netstat -ano | findstr :80
+   netstat -ano | findstr :3001
+   
+   # Kill processes if needed
+   npx kill-port 80 3001
+   ```
+
+2. **Container not starting:**
+   ```bash
+   # Check container logs
+   docker-compose logs frontend
+   docker-compose logs backend
+   ```
+
+3. **Authentication issues:**
+   Make sure environment variables for Azure authentication are correctly set:
+   ```bash
+   # Verify environment variables
+   docker-compose config
+   ```
+
+## CI/CD Workflow
+
+1. Code is committed to the repository
+2. Azure Pipeline builds Docker images for frontend and backend
+3. Images are saved as artifacts with deployment scripts
+4. Deployment stage loads the images and starts containers
+5. Health checks verify successful deployment 

@@ -4,6 +4,18 @@ FROM node:20-alpine AS build
 # Set working directory
 WORKDIR /app
 
+# Define build arguments for configuration
+ARG REACT_APP_AZURE_CLIENT_ID
+ARG REACT_APP_AZURE_AUTHORITY
+ARG REACT_APP_AZURE_REDIRECT_URI
+ARG VITE_API_URL=http://localhost:3001
+
+# Set environment variables from build args
+ENV VITE_REACT_APP_AZURE_CLIENT_ID=${REACT_APP_AZURE_CLIENT_ID}
+ENV VITE_REACT_APP_AZURE_AUTHORITY=${REACT_APP_AZURE_AUTHORITY}
+ENV VITE_REACT_APP_AZURE_REDIRECT_URI=${REACT_APP_AZURE_REDIRECT_URI}
+ENV VITE_API_URL=${VITE_API_URL}
+
 # Copy package files for dependency installation
 COPY package.json package-lock.json ./
 
@@ -34,6 +46,19 @@ CMD ["nginx", "-g", "daemon off;"]
 # Development stage: Use Node.js with Debian instead of Alpine for better compatibility
 FROM node:20 AS development
 
+# Define build arguments for development
+ARG REACT_APP_AZURE_CLIENT_ID
+ARG REACT_APP_AZURE_AUTHORITY
+ARG REACT_APP_AZURE_REDIRECT_URI
+ARG VITE_API_URL=http://localhost:3001
+
+# Set environment variables
+ENV VITE_REACT_APP_AZURE_CLIENT_ID=${REACT_APP_AZURE_CLIENT_ID}
+ENV VITE_REACT_APP_AZURE_AUTHORITY=${REACT_APP_AZURE_AUTHORITY}
+ENV VITE_REACT_APP_AZURE_REDIRECT_URI=${REACT_APP_AZURE_REDIRECT_URI}
+ENV VITE_API_URL=${VITE_API_URL}
+ENV NODE_ENV=development
+
 # Install required dependencies 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
@@ -51,9 +76,6 @@ RUN npm install --legacy-peer-deps --no-optional
 
 # Copy source code
 COPY . .
-
-# Set environment variables
-ENV NODE_ENV=development
 
 # Expose the Vite development server port
 EXPOSE 3000
