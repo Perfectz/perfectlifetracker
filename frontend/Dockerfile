@@ -31,8 +31,14 @@ EXPOSE 80
 # Start nginx in foreground
 CMD ["nginx", "-g", "daemon off;"]
 
-# Development stage: Use Node.js 20 Alpine for development
-FROM node:20-alpine AS development
+# Development stage: Use Node.js with Debian instead of Alpine for better compatibility
+FROM node:20 AS development
+
+# Install required dependencies 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    wget \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
@@ -40,8 +46,8 @@ WORKDIR /app
 # Copy package files
 COPY package.json package-lock.json ./
 
-# Install dependencies with npm install instead of npm ci to avoid rollup issues
-RUN npm install --legacy-peer-deps
+# Install dependencies with npm install and force to avoid platform-specific issues
+RUN npm install --legacy-peer-deps --no-optional
 
 # Copy source code
 COPY . .
