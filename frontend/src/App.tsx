@@ -2,7 +2,7 @@
  * frontend/src/App.tsx
  * Main application component with theme provider, routing, and navigation
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import Button from '@mui/material/Button';
@@ -22,6 +22,7 @@ import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
+// import { Provider } from 'react-redux';
 import { responsiveLightTheme, responsiveDarkTheme } from './theme';
 import HomePage from './pages/HomePage';
 import DashboardPage from './pages/DashboardPage';
@@ -33,6 +34,11 @@ import { AuthProvider, useAuth } from './services/AuthContext';
 import LoginButton from './components/LoginButton';
 import UserMenu from './components/UserMenu';
 import ProtectedRoute from './components/ProtectedRoute';
+import { AuthModalsProvider } from './hooks/useAuthModals';
+// import { store } from './store';
+// import { useAppDispatch } from './hooks/redux';
+// import { loginSuccess } from './store/authSlice';
+import { authService, msalInstance } from './services/authService';
 
 // Header wrapper that only shows on certain routes
 const ConditionalHeader = () => {
@@ -42,6 +48,49 @@ const ConditionalHeader = () => {
   if (!showHeader) return null;
   
   return <Header height={220} marginBottom={3} />;
+};
+
+// Auth state initialization component
+const AuthStateInitializer = () => {
+  // const dispatch = useAppDispatch();
+  
+  useEffect(() => {
+    // Check if the user has an active session
+    const account = authService.getAccount();
+    
+    if (account) {
+      // If a user session exists, update the Redux store
+      // dispatch(loginSuccess({
+      //   name: account.name || null,
+      //   email: account.username || null
+      // }));
+      console.log('User is authenticated:', account);
+    }
+    
+    // Process redirect response if coming back from B2C login
+    const handleRedirectResponse = async () => {
+      try {
+        // This will handle the redirect callback (if we're on the redirect page)
+        const result = await msalInstance.handleRedirectPromise();
+        
+        if (result) {
+          // If we have a result, update Redux with the user info
+          // dispatch(loginSuccess({
+          //   name: account.name || null,
+          //   email: account.username || null
+          // }));
+          console.log('Redirect response handled:', result);
+        }
+      } catch (error) {
+        console.error('Error handling redirect response:', error);
+      }
+    };
+    
+    handleRedirectResponse();
+  // }, [dispatch]);
+  }, []);
+  
+  return null; // This component doesn't render anything
 };
 
 // Navigation component with auth state
@@ -120,6 +169,9 @@ const Navigation = () => {
   return (
     <ThemeProvider theme={activeTheme}>
       <CssBaseline />
+      {/* Initialize the auth state */}
+      <AuthStateInitializer />
+      
       <Box sx={{ flexGrow: 1 }}>
         <AppBar position="static">
           <Toolbar>
@@ -202,11 +254,13 @@ const Navigation = () => {
   );
 };
 
-// Main App with Authentication Provider
+// Main App with Authentication Provider and Redux store
 function App() {
   return (
     <AuthProvider>
-      <Navigation />
+      <AuthModalsProvider>
+        <Navigation />
+      </AuthModalsProvider>
     </AuthProvider>
   );
 }
