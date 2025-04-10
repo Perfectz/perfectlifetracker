@@ -1,21 +1,56 @@
-# Use Node.js 20 Alpine as base image for smaller size
-FROM node:20-alpine
+# Build stage: Use Node.js 20 Alpine as base image
+FROM node:20-alpine AS build
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files for dependency installation
+COPY package.json package-lock.json ./
+
+# Install dependencies with legacy peer deps to handle React version conflicts
+RUN npm ci --legacy-peer-deps
+
+# Copy all source files
+COPY . .
+
+# Build the application for production
+RUN npm run build
+
+# Production stage: Create a smaller image for serving
+FROM nginx:stable-alpine AS production
+
+# Copy built files from build stage to nginx serve directory
+COPY --from=build /app/build /usr/share/nginx/html
+
+# Copy the custom nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Expose port 80 for the web server
+EXPOSE 80
+
+# Start nginx in foreground
+CMD ["nginx", "-g", "daemon off;"]
+
+# Development stage: Use Node.js 20 Alpine for development
+FROM node:20-alpine AS development
 
 # Set working directory
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
+COPY package.json package-lock.json ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies with npm install instead of npm ci to avoid rollup issues
+RUN npm install --legacy-peer-deps
 
 # Copy source code
 COPY . .
 
-# Expose the port Vite dev server runs on
+# Set environment variables
+ENV NODE_ENV=development
+
+# Expose the Vite development server port
 EXPOSE 3000
 
-# Start the development server
-# Using --host 0.0.0.0 to make it accessible outside the container
+# Start development server with host flag for container access
 CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"] 
