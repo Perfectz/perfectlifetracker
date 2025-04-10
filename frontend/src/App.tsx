@@ -11,7 +11,7 @@ import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
-import { Routes, Route, Link as RouterLink } from 'react-router-dom';
+import { Routes, Route, Link as RouterLink, useLocation } from 'react-router-dom';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -25,36 +25,58 @@ import { useTheme } from '@mui/material/styles';
 import { responsiveLightTheme, responsiveDarkTheme } from './theme';
 import HomePage from './pages/HomePage';
 import DashboardPage from './pages/DashboardPage';
+import LoginPage from './pages/LoginPage';
 import Link from '@mui/material/Link';
 import ErrorBoundary from './components/ErrorBoundary';
+import Header from './components/Header';
+import { AuthProvider, useAuth } from './services/AuthContext';
+import LoginButton from './components/LoginButton';
+import UserMenu from './components/UserMenu';
+import ProtectedRoute from './components/ProtectedRoute';
 
-function App() {
+// Header wrapper that only shows on certain routes
+const ConditionalHeader = () => {
+  const location = useLocation();
+  const showHeader = location.pathname === '/' || location.pathname === '/dashboard';
+  
+  if (!showHeader) return null;
+  
+  return <Header height={220} marginBottom={3} />;
+};
+
+// Navigation component with auth state
+const Navigation = () => {
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>('light');
   const activeTheme = themeMode === 'light' ? responsiveLightTheme : responsiveDarkTheme;
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const { isAuthenticated, isLoading } = useAuth();
 
   const toggleTheme = () => {
     setThemeMode(prev => (prev === 'light' ? 'dark' : 'light'));
   };
 
-  const toggleDrawer = (open: boolean) => 
-    (event: React.KeyboardEvent | React.MouseEvent) => {
-      if (
-        event.type === 'keydown' &&
-        ((event as React.KeyboardEvent).key === 'Tab' ||
-          (event as React.KeyboardEvent).key === 'Shift')
-      ) {
-        return;
-      }
-      setDrawerOpen(open);
-    };
+  const toggleDrawer = (open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => {
+    if (
+      event.type === 'keydown' &&
+      ((event as React.KeyboardEvent).key === 'Tab' ||
+        (event as React.KeyboardEvent).key === 'Shift')
+    ) {
+      return;
+    }
+    setDrawerOpen(open);
+  };
 
   const navigationLinks = [
     { text: 'Home', path: '/' },
-    { text: 'Dashboard', path: '/dashboard' },
+    { text: 'Dashboard', path: '/dashboard', protected: true },
   ];
+
+  // Filter links based on authentication state
+  const availableLinks = navigationLinks.filter(
+    link => !link.protected || isAuthenticated
+  );
 
   const drawer = (
     <Box
@@ -64,13 +86,13 @@ function App() {
       onKeyDown={toggleDrawer(false)}
     >
       <List>
-        {navigationLinks.map((link) => (
-          <ListItem 
-            key={link.text} 
-            component={RouterLink} 
+        {availableLinks.map(link => (
+          <ListItem
+            key={link.text}
+            component={RouterLink}
             to={link.path}
-            sx={{ 
-              textDecoration: 'none', 
+            sx={{
+              textDecoration: 'none',
               color: 'inherit',
               '&:hover': {
                 backgroundColor: 'rgba(0, 0, 0, 0.04)',
@@ -118,7 +140,7 @@ function App() {
             </Typography>
             {!isMobile && (
               <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                {navigationLinks.map((link) => (
+                {availableLinks.map(link => (
                   <Link
                     key={link.text}
                     component={RouterLink}
@@ -129,8 +151,8 @@ function App() {
                     {link.text}
                   </Link>
                 ))}
-                <Button 
-                  onClick={toggleTheme} 
+                <Button
+                  onClick={toggleTheme}
                   color="inherit"
                   startIcon={themeMode === 'light' ? <Brightness4Icon /> : <Brightness7Icon />}
                 >
@@ -138,32 +160,54 @@ function App() {
                 </Button>
               </Box>
             )}
+            {/* Auth components */}
+            <Box sx={{ ml: 2 }}>
+              {isAuthenticated ? <UserMenu /> : <LoginButton />}
+            </Box>
           </Toolbar>
         </AppBar>
-        <Drawer
-          anchor="left"
-          open={drawerOpen}
-          onClose={toggleDrawer(false)}
-        >
+        <Drawer anchor="left" open={drawerOpen} onClose={toggleDrawer(false)}>
           {drawer}
         </Drawer>
       </Box>
-      
-      <Container sx={{ 
-        pt: 2, 
-        pb: 4, 
-        minHeight: 'calc(100vh - 64px)', 
-        display: 'flex',
-        flexDirection: 'column'
-      }}>
+
+      <Container
+        sx={{
+          pt: 2,
+          pb: 4,
+          minHeight: 'calc(100vh - 64px)',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        {/* Add the header back, conditionally based on route */}
+        <ConditionalHeader />
+        
         <ErrorBoundary>
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              } 
+            />
           </Routes>
         </ErrorBoundary>
       </Container>
     </ThemeProvider>
+  );
+};
+
+// Main App with Authentication Provider
+function App() {
+  return (
+    <AuthProvider>
+      <Navigation />
+    </AuthProvider>
   );
 }
 
