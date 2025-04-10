@@ -75,12 +75,12 @@ stages:
               workingFolder: '$(System.DefaultWorkingDirectory)'
             displayName: 'Test Frontend'
           
-          # Publish Frontend
-          - task: PublishBuildArtifacts@1
+          # Publish Frontend - Custom batch script instead of task
+          - task: BatchScript@1
             inputs:
-              PathtoPublish: 'frontend/build'
-              ArtifactName: 'frontend'
-              publishLocation: 'Container'
+              filename: 'publish-artifacts.cmd'
+              arguments: 'frontend\build frontend "$(Build.ArtifactStagingDirectory)\frontend"'
+              workingFolder: '$(System.DefaultWorkingDirectory)'
             displayName: 'Publish Frontend Artifacts'
 
           # Clean Backend node_modules directory
@@ -132,12 +132,12 @@ stages:
               workingFolder: '$(System.DefaultWorkingDirectory)'
             displayName: 'Test Backend'
 
-          # Publish Backend
-          - task: PublishBuildArtifacts@1
+          # Publish Backend - Custom batch script instead of task
+          - task: BatchScript@1
             inputs:
-              PathtoPublish: 'backend/dist'
-              ArtifactName: 'backend'
-              publishLocation: 'Container'
+              filename: 'publish-artifacts.cmd'
+              arguments: 'backend\dist backend "$(Build.ArtifactStagingDirectory)\backend"'
+              workingFolder: '$(System.DefaultWorkingDirectory)'
             displayName: 'Publish Backend Artifacts'
 
   # Deployment Stage using direct batch files
@@ -149,14 +149,7 @@ stages:
       - job: DeployJob
         displayName: 'Deploy Application'
         steps:
-          - task: DownloadBuildArtifacts@0
-            inputs:
-              buildType: 'current'
-              downloadType: 'specific'
-              itemPattern: '**'
-              downloadPath: '$(System.ArtifactsDirectory)'
-            displayName: 'Download Build Artifacts'
-
+          # Deploy using custom script
           - task: BatchScript@1
             inputs:
               filename: 'deploy.cmd'
