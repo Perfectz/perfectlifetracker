@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>React Test</title>
+  <!-- Load React from CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+  
+  <script type="text/babel">
+    // Simple React component
+    function App() {
+      const [count, setCount] = React.useState(0);
+      
+      return (
+        <div style={{ fontFamily: 'Arial', maxWidth: '500px', margin: '0 auto', padding: '20px' }}>
+          <h1>React is Working!</h1>
+          <p>If you can see this, React is correctly loaded and rendering.</p>
+          
+          <div style={{ marginTop: '20px', padding: '10px', border: '1px solid #ccc', borderRadius: '5px' }}>
+            <h2>Counter: {count}</h2>
+            <button 
+              onClick={() => setCount(count + 1)}
+              style={{ 
+                padding: '8px 16px', 
+                background: '#4285F4', 
+                color: 'white', 
+                border: 'none', 
+                borderRadius: '4px',
+                cursor: 'pointer',
+                marginRight: '10px'
+              }}
+            >
+              Increment
+            </button>
+            <button 
+              onClick={() => setCount(0)}
+              style={{ 
+                padding: '8px 16px', 
+                background: '#ddd', 
+                border: 'none', 
+                borderRadius: '4px',
+                cursor: 'pointer' 
+              }}
+            >
+              Reset
+            </button>
+          </div>
+        </div>
+      );
+    }
+    
+    // Render the App component
+    const rootElement = document.getElementById('root');
+    const root = ReactDOM.createRoot(rootElement);
+    root.render(<App />);
+  </script>
+</body>
+</html> 

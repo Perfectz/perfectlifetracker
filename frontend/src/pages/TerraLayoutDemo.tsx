@@ -11,16 +11,16 @@ import TasksCard from '../components/TasksCard';
 import DevelopmentCard from '../components/DevelopmentCard';
 import TerraFAB from '../components/TerraFAB';
 import Grid from '../components/Grid';
-import { terraColors } from '../theme';
+import { terraColors } from '../../src/theme';
 
 // Header image container
 const HeaderImageContainer = React.memo(() => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  
+
   return (
-    <Box 
-      sx={{ 
+    <Box
+      sx={{
         width: '100%',
         height: isMobile ? 140 : 180,
         backgroundColor: `${terraColors.softTeal}20`,
@@ -34,9 +34,9 @@ const HeaderImageContainer = React.memo(() => {
         padding: 2,
       }}
     >
-      <Typography 
-        variant={isMobile ? "h5" : "h4"}
-        component="h1" 
+      <Typography
+        variant={isMobile ? 'h5' : 'h4'}
+        component="h1"
         color={terraColors.prussianBlue}
         fontWeight="bold"
       >
@@ -48,22 +48,17 @@ const HeaderImageContainer = React.memo(() => {
 
 // Welcome section
 const WelcomeSection = React.memo(() => (
-  <Paper 
+  <Paper
     elevation={0}
-    sx={{ 
-      p: 2, 
-      mb: 3, 
+    sx={{
+      p: 2,
+      mb: 3,
       backgroundColor: '#fff',
       borderRadius: 2,
       border: `1px solid ${terraColors.softTeal}20`,
     }}
   >
-    <Typography 
-      variant="h5" 
-      component="h2" 
-      color={terraColors.prussianBlue}
-      fontWeight="medium"
-    >
+    <Typography variant="h5" component="h2" color={terraColors.prussianBlue} fontWeight="medium">
       Good Morning, Jane!
     </Typography>
     <Typography variant="body1" color={terraColors.maastrichtBlue}>
@@ -75,12 +70,12 @@ const WelcomeSection = React.memo(() => (
 const TerraLayoutDemo: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  
+
   return (
     <TerraLayout>
       <HeaderImageContainer />
       <WelcomeSection />
-      
+
       <Box sx={{ flexGrow: 1 }}>
         <Grid container spacing={3}>
           {/* First row */}
@@ -109,14 +104,10 @@ const TerraLayoutDemo: React.FC = () => {
           right: 24,
         }}
       >
-        <TerraFAB 
-          size="large" 
-          aria-label="add" 
-          onClick={() => console.log('FAB clicked')}
-        />
+        <TerraFAB size="large" aria-label="add" onClick={() => console.log('FAB clicked')} />
       </Box>
     </TerraLayout>
   );
 };
 
-export default TerraLayoutDemo; 
+export default TerraLayoutDemo;

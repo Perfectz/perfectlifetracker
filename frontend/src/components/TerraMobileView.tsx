@@ -3,17 +3,17 @@
  * Mobile view demonstration of the Terra UI
  */
 import React from 'react';
-import { 
-  Box, 
-  Paper, 
-  Typography, 
-  styled, 
+import {
+  Box,
+  Paper,
+  Typography,
+  styled,
   LinearProgress,
   linearProgressClasses,
   IconButton,
-  Fab
+  Fab,
 } from '@mui/material';
-import { terraColors } from '../theme';
+import { terraColors } from '../../src/theme';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import ChecklistIcon from '@mui/icons-material/Checklist';
@@ -143,7 +143,14 @@ const TerraMobileView: React.FC = () => {
         </WelcomeCard>
 
         {/* Progress Bar */}
-        <Paper sx={{ p: 2, backgroundColor: '#fff', borderRadius: 8, border: `1px solid ${terraColors.softTeal}20` }}>
+        <Paper
+          sx={{
+            p: 2,
+            backgroundColor: '#fff',
+            borderRadius: 8,
+            border: `1px solid ${terraColors.softTeal}20`,
+          }}
+        >
           <Typography variant="subtitle2" color={terraColors.prussianBlue} gutterBottom>
             Today's Progress
           </Typography>
@@ -201,14 +208,14 @@ const TerraMobileView: React.FC = () => {
 
       {/* Floating Action Button */}
       <Box sx={{ position: 'absolute', bottom: 24, right: 24 }}>
-        <Fab 
-          size="medium" 
-          sx={{ 
-            backgroundColor: terraColors.tropicalRain, 
+        <Fab
+          size="medium"
+          sx={{
+            backgroundColor: terraColors.tropicalRain,
             color: terraColors.pearl,
             '&:hover': {
               backgroundColor: terraColors.prussianBlue,
-            }
+            },
           }}
         >
           <AddIcon />
@@ -218,4 +225,4 @@ const TerraMobileView: React.FC = () => {
   );
 };
 
-export default TerraMobileView; 
+export default TerraMobileView;

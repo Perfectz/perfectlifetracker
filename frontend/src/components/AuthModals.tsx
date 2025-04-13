@@ -1,30 +1,18 @@
 /**
  * frontend/src/components/AuthModals.tsx
- * Controller component for managing authentication modals with Redux
+ * Controller component for managing authentication modals with context API
  */
-import React, { useState } from 'react';
+import React from 'react';
 import LoginModal from './LoginModal';
 import RegisterModal from './RegisterModal';
 import ResetPasswordModal from './ResetPasswordModal';
-// import { useAppSelector, useAppDispatch } from '../hooks/redux';
-// import { closeAuthModal } from '../store/authSlice';
-
-// Temporary enum to replace Redux state
-enum ModalType {
-  NONE = 'none',
-  LOGIN = 'login',
-  REGISTER = 'register',
-  RESET_PASSWORD = 'resetPassword',
-}
+import { useAuthModals, ModalType } from '../hooks/useAuthModals';
 
 const AuthModals = () => {
-  // const dispatch = useAppDispatch();
-  // const { showLoginModal, showRegisterModal, showResetModal } = useAppSelector(state => state.auth);
-  const [activeModal, setActiveModal] = useState<ModalType>(ModalType.NONE);
+  const { activeModal, closeAllModals } = useAuthModals();
 
   const handleClose = () => {
-    // dispatch(closeAuthModal());
-    setActiveModal(ModalType.NONE);
+    closeAllModals();
   };
 
   return (

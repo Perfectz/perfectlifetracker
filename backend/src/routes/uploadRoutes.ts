@@ -100,6 +100,7 @@ router.post('/file', checkJwt, extractUserId, (req, res, next) => {
     // Store file metadata in database
     const fileRecord = await FileModel.createFile({
       userId,
+      type: 'file',
       fileName: file.originalname,
       blobName: result.blobName,
       url: result.url,
@@ -159,6 +160,7 @@ router.post('/files', checkJwt, extractUserId, (req, res, next) => {
       // Store file metadata in database
       const fileRecord = await FileModel.createFile({
         userId,
+        type: 'file',
         fileName: file.originalname,
         blobName: result.blobName,
         url: result.url,

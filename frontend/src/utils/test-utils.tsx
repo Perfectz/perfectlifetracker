@@ -6,13 +6,18 @@ import React, { ReactElement } from 'react';
 import { render, RenderOptions } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
-import { responsiveLightTheme } from '../theme';
+import { createMuiTheme } from '../../src/theme';
+import { responsiveFontSizes } from '@mui/material/styles';
 
 // Custom wrapper that provides necessary context providers for testing
 const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
+  // Create theme using the shared theme creator and apply responsive font sizes
+  const muiTheme = createMuiTheme(false); // Use light theme for tests
+  const responsiveTheme = responsiveFontSizes(muiTheme);
+  
   return (
     <BrowserRouter>
-      <ThemeProvider theme={responsiveLightTheme}>
+      <ThemeProvider theme={responsiveTheme}>
         {children}
       </ThemeProvider>
     </BrowserRouter>

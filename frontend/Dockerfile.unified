@@ -11,6 +11,8 @@ RUN apt-get update && apt-get install -y \
 # Environment variables
 ENV NODE_ENV=production
 ENV PORT=80
+# Explicitly disable native module usage for rollup
+ENV ROLLUP_NATIVE_MODULES=false
 ENV ROLLUP_SKIP_NODEJS_NATIVE=1
 ENV NPM_CONFIG_OPTIONAL=false
 
@@ -19,7 +21,7 @@ WORKDIR /app
 
 # Copy package.json and install dependencies
 COPY package.json ./
-RUN npm install --legacy-peer-deps --no-optional
+RUN npm install --legacy-peer-deps --no-optional --force
 
 # Copy the rest of the application
 COPY . .
@@ -58,9 +60,24 @@ RUN echo 'import { defineConfig } from "vite"; \n\
 import react from "@vitejs/plugin-react"; \n\
 export default defineConfig({ \n\
   plugins: [react()], \n\
-  build: { target: "es2015", minify: "terser" }, \n\
+  build: { \n\
+    target: "es2015", \n\
+    minify: "terser", \n\
+    rollupOptions: { \n\
+      external: ["@rollup/rollup-linux-x64-gnu"] \n\
+    } \n\
+  }, \n\
   optimizeDeps: { disabled: false }, \n\
-  define: { "process.env": process.env }, \n\
+  define: { \n\
+    "process.env": {}, \n\
+    "import.meta.env.MODE": JSON.stringify(process.env.NODE_ENV), \n\
+    "import.meta.env.VITE_REACT_APP_AZURE_CLIENT_ID": JSON.stringify(process.env.VITE_REACT_APP_AZURE_CLIENT_ID), \n\
+    "import.meta.env.VITE_REACT_APP_AZURE_AUTHORITY": JSON.stringify(process.env.VITE_REACT_APP_AZURE_AUTHORITY), \n\
+    "import.meta.env.VITE_REACT_APP_AZURE_REDIRECT_URI": JSON.stringify(process.env.VITE_REACT_APP_AZURE_REDIRECT_URI), \n\
+    "import.meta.env.VITE_AUTH0_DOMAIN": JSON.stringify(process.env.VITE_AUTH0_DOMAIN), \n\
+    "import.meta.env.VITE_AUTH0_CLIENT_ID": JSON.stringify(process.env.VITE_AUTH0_CLIENT_ID), \n\
+    "import.meta.env.VITE_API_URL": JSON.stringify(process.env.VITE_API_URL) \n\
+  } \n\
 });' > /app/vite.config.custom.js
 
 # Create a custom Vite config for development
@@ -69,12 +86,21 @@ import react from "@vitejs/plugin-react"; \n\
 export default defineConfig({ \n\
   plugins: [react()], \n\
   server: { host: "0.0.0.0", port: 3000, open: false }, \n\
-  optimizeDeps: { disabled: false, esbuildOptions: { target: "esnext" } }, \n\
-  define: { "process.env": process.env }, \n\
+  optimizeDeps: { disabled: false }, \n\
+  define: { \n\
+    "process.env": {}, \n\
+    "import.meta.env.MODE": JSON.stringify(process.env.NODE_ENV), \n\
+    "import.meta.env.VITE_REACT_APP_AZURE_CLIENT_ID": JSON.stringify(process.env.VITE_REACT_APP_AZURE_CLIENT_ID), \n\
+    "import.meta.env.VITE_REACT_APP_AZURE_AUTHORITY": JSON.stringify(process.env.VITE_REACT_APP_AZURE_AUTHORITY), \n\
+    "import.meta.env.VITE_REACT_APP_AZURE_REDIRECT_URI": JSON.stringify(process.env.VITE_REACT_APP_AZURE_REDIRECT_URI), \n\
+    "import.meta.env.VITE_AUTH0_DOMAIN": JSON.stringify(process.env.VITE_AUTH0_DOMAIN), \n\
+    "import.meta.env.VITE_AUTH0_CLIENT_ID": JSON.stringify(process.env.VITE_AUTH0_CLIENT_ID), \n\
+    "import.meta.env.VITE_API_URL": JSON.stringify(process.env.VITE_API_URL) \n\
+  } \n\
 });' > /app/vite.config.dev.js
 
-# Build the application
-RUN npx vite build --config /app/vite.config.custom.js
+# Build the application with disabled rollup native support
+RUN NODE_OPTIONS="--max-old-space-size=4096" ROLLUP_NATIVE_MODULES=false npx vite build --config /app/vite.config.custom.js
 RUN ls -la /app/dist && chmod -R 755 /app/dist
 
 # Create the entrypoint script
@@ -87,7 +113,7 @@ if [ "$NODE_ENV" = "production" ]; then \n\
     nginx -g "daemon off;" \n\
 else \n\
     echo "Starting in development mode with Vite..." \n\
-    npx vite --config /app/vite.config.dev.js \n\
+    ROLLUP_NATIVE_MODULES=false npx vite --config /app/vite.config.dev.js \n\
 fi' > /app/entrypoint.sh
 
 # Make the entrypoint script executable

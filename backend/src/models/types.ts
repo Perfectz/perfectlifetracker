@@ -133,6 +133,7 @@ export interface AnalyticsDocument extends BaseDocument {
  * File data structure for uploaded files
  */
 export interface FileDocument extends BaseDocument {
+  type: 'file';             // Type identifier for the document
   fileName: string;        // Original file name
   blobName: string;        // Name in blob storage
   url: string;             // Public URL to access the file

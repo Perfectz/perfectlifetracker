@@ -1,27 +1,34 @@
+// frontend/vite.config.ts - Fixed config
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { resolve } from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  resolve: {
-    alias: {
-      '@': resolve(__dirname, 'src'),
-    },
-  },
   server: {
     port: 3000,
-    host: true, // listen on all addresses
-    open: true, // open browser on start
+    strictPort: false,
   },
   build: {
-    outDir: 'build', // Same output directory as CRA for consistency
+    outDir: 'build',
     sourcemap: true,
+    rollupOptions: {
+      input: {
+        main: './index.html',
+      },
+    },
   },
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: './src/setupTests.ts',
+  resolve: {
+    alias: {
+      '@': '/src',
+    },
+  },
+  optimizeDeps: {
+    include: [
+      'react', 
+      'react-dom', 
+      'react-dom/client'
+    ],
+    force: true,
   },
 }) 

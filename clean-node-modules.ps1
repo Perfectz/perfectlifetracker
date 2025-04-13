@@ -94,4 +94,13 @@ if (Test-Path $nodeModulesMain) {
 }
 
 Write-Host "`nCleanup process completed!" -ForegroundColor Green
-Write-Host "You can now run 'npm install' or 'npm ci' to reinstall dependencies." -ForegroundColor Cyan 
+Write-Host "You can now run 'npm install' or 'npm ci' to reinstall dependencies." -ForegroundColor Cyan
+
+# Find the exact agent service name (in case it's not the default name)
+Get-Service | Where-Object {$_.Name -like "*vstsagent*"} | Select-Object Name, Status
+
+# Stop the agent service (adjust the service name if needed based on the previous command)
+net stop vstsagent.Perfectz.Default
+
+# Start the agent service
+net start vstsagent.Perfectz.Default 

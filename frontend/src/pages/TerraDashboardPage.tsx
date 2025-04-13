@@ -3,15 +3,15 @@
  * Terra-themed dashboard page component
  */
 import React from 'react';
-import { 
-  Typography, 
-  Container, 
-  Box, 
-  Grid as MuiGrid, 
-  Paper, 
+import {
+  Typography,
+  Container,
+  Box,
+  Grid as MuiGrid,
+  Paper,
   styled,
   useMediaQuery,
-  useTheme
+  useTheme,
 } from '@mui/material';
 import Grid from '../components/Grid';
 import GoalsCard from '../components/GoalsCard';
@@ -19,7 +19,7 @@ import FitnessMetricsCard from '../components/FitnessMetricsCard';
 import TasksCard from '../components/TasksCard';
 import DevelopmentCard from '../components/DevelopmentCard';
 import TerraFAB from '../components/TerraFAB';
-import { terraColors } from '../theme';
+import { terraColors } from '../../src/theme';
 
 // Header image container
 const HeaderImageContainer = styled(Box)(({ theme }) => ({
@@ -53,17 +53,17 @@ const TerraDashboardPage: React.FC = () => {
     <Container maxWidth="lg" sx={{ pt: 3, pb: 8 }}>
       {/* Header Image Placeholder */}
       <HeaderImageContainer>
-        <Box 
-          sx={{ 
+        <Box
+          sx={{
             position: 'absolute',
             bottom: 16,
             left: 16,
             color: terraColors.maastrichtBlue,
           }}
         >
-          <Typography 
-            variant="h4" 
-            component="h1" 
+          <Typography
+            variant="h4"
+            component="h1"
             color={terraColors.prussianBlue}
             fontWeight="bold"
           >
@@ -74,9 +74,9 @@ const TerraDashboardPage: React.FC = () => {
 
       {/* Welcome Section */}
       <WelcomeSection>
-        <Typography 
-          variant="h5" 
-          component="h2" 
+        <Typography
+          variant="h5"
+          component="h2"
           color={terraColors.prussianBlue}
           fontWeight="medium"
         >
@@ -122,4 +122,4 @@ const TerraDashboardPage: React.FC = () => {
   );
 };
 
-export default TerraDashboardPage; 
+export default TerraDashboardPage;

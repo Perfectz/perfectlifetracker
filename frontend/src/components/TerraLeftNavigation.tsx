@@ -3,16 +3,16 @@
  * Left navigation component for desktop view
  */
 import React from 'react';
-import { 
-  Box, 
-  Drawer, 
-  List, 
-  ListItem, 
-  ListItemButton, 
-  ListItemIcon, 
-  ListItemText, 
+import {
+  Box,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
   Divider,
-  styled
+  styled,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -21,9 +21,10 @@ import SchoolIcon from '@mui/icons-material/School';
 import ChecklistIcon from '@mui/icons-material/Checklist';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import SettingsIcon from '@mui/icons-material/Settings';
-import { terraColors } from '../theme';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import { terraColors } from '../../src/theme';
 
-const drawerWidth = 200;
+const drawerWidth = 240;
 
 interface NavigationItem {
   id: string;
@@ -37,32 +38,38 @@ const navigationItems: NavigationItem[] = [
     id: 'dashboard',
     text: 'Dashboard',
     icon: <DashboardIcon />,
-    path: '/terra-design'
+    path: '/dashboard',
   },
   {
     id: 'fitness',
     text: 'Fitness',
     icon: <FitnessCenterIcon />,
-    path: '/fitness'
+    path: '/fitness',
   },
   {
     id: 'development',
     text: 'Development',
     icon: <SchoolIcon />,
-    path: '/development'
+    path: '/development',
   },
   {
     id: 'tasks',
     text: 'Tasks',
     icon: <ChecklistIcon />,
-    path: '/tasks'
+    path: '/tasks',
   },
   {
     id: 'analytics',
     text: 'Analytics',
     icon: <BarChartIcon />,
-    path: '/analytics'
-  }
+    path: '/analytics',
+  },
+  {
+    id: 'fileUpload',
+    text: 'File Upload',
+    icon: <CloudUploadIcon />,
+    path: '/file-upload',
+  },
 ];
 
 // Settings is separate to create a divider above it
@@ -70,7 +77,7 @@ const settingsItem: NavigationItem = {
   id: 'settings',
   text: 'Settings',
   icon: <SettingsIcon />,
-  path: '/settings'
+  path: '/settings',
 };
 
 interface TerraLeftNavigationProps {
@@ -97,10 +104,7 @@ const TerraListItemButton = styled(ListItemButton)(({ theme }) => ({
   },
 }));
 
-const TerraLeftNavigation: React.FC<TerraLeftNavigationProps> = ({
-  activeItem,
-  onItemClick,
-}) => {
+const TerraLeftNavigation: React.FC<TerraLeftNavigationProps> = ({ activeItem, onItemClick }) => {
   const navigate = useNavigate();
 
   const handleItemClick = (item: NavigationItem) => {
@@ -114,18 +118,21 @@ const TerraLeftNavigation: React.FC<TerraLeftNavigationProps> = ({
       sx={{
         width: drawerWidth,
         flexShrink: 0,
+        display: 'block',
         [`& .MuiDrawer-paper`]: {
           width: drawerWidth,
           boxSizing: 'border-box',
           backgroundColor: terraColors.pearl,
           borderRight: `1px solid ${terraColors.softTeal}20`,
           pt: 1,
+          height: '100%',
+          position: 'relative',
         },
       }}
     >
-      <Box sx={{ overflow: 'auto', mt: '64px' }}>
+      <Box sx={{ overflow: 'auto', height: '100%' }}>
         <List>
-          {navigationItems.map((item) => (
+          {navigationItems.map(item => (
             <ListItem key={item.id} disablePadding>
               <TerraListItemButton
                 selected={activeItem === item.id}
@@ -133,15 +140,14 @@ const TerraLeftNavigation: React.FC<TerraLeftNavigationProps> = ({
               >
                 <ListItemIcon
                   sx={{
-                    color: activeItem === item.id 
-                      ? terraColors.tropicalRain 
-                      : terraColors.prussianBlue,
-                    minWidth: 40
+                    color:
+                      activeItem === item.id ? terraColors.tropicalRain : terraColors.prussianBlue,
+                    minWidth: 40,
                   }}
                 >
                   {item.icon}
                 </ListItemIcon>
-                <ListItemText 
+                <ListItemText
                   primary={item.text}
                   primaryTypographyProps={{
                     fontSize: 14,
@@ -161,15 +167,16 @@ const TerraLeftNavigation: React.FC<TerraLeftNavigationProps> = ({
             >
               <ListItemIcon
                 sx={{
-                  color: activeItem === settingsItem.id 
-                    ? terraColors.tropicalRain 
-                    : terraColors.prussianBlue,
-                  minWidth: 40
+                  color:
+                    activeItem === settingsItem.id
+                      ? terraColors.tropicalRain
+                      : terraColors.prussianBlue,
+                  minWidth: 40,
                 }}
               >
                 {settingsItem.icon}
               </ListItemIcon>
-              <ListItemText 
+              <ListItemText
                 primary={settingsItem.text}
                 primaryTypographyProps={{
                   fontSize: 14,
@@ -184,4 +191,4 @@ const TerraLeftNavigation: React.FC<TerraLeftNavigationProps> = ({
   );
 };
 
-export default TerraLeftNavigation; 
+export default TerraLeftNavigation;

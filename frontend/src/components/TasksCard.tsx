@@ -3,20 +3,20 @@
  * Card component for displaying and managing user tasks
  */
 import React, { useState } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  Typography, 
-  Box, 
+import {
+  Card,
+  CardContent,
+  Typography,
+  Box,
   Checkbox,
   List,
   ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  styled
+  styled,
 } from '@mui/material';
-import { terraColors } from '../theme';
+import { terraColors } from '../../src/theme';
 
 // Define the task interface
 interface Task {
@@ -53,15 +53,13 @@ interface TasksCardProps {
 
 const TasksCard: React.FC<TasksCardProps> = ({
   tasks: initialTasks = sampleTasks,
-  title = "Tasks"
+  title = 'Tasks',
 }) => {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
 
   const handleToggleTask = (taskId: number) => {
-    setTasks(prevTasks => 
-      prevTasks.map(task => 
-        task.id === taskId ? { ...task, completed: !task.completed } : task
-      )
+    setTasks(prevTasks =>
+      prevTasks.map(task => (task.id === taskId ? { ...task, completed: !task.completed } : task))
     );
   };
 
@@ -71,22 +69,18 @@ const TasksCard: React.FC<TasksCardProps> = ({
         <Typography variant="h6" color={terraColors.prussianBlue} gutterBottom>
           {title}
         </Typography>
-        
+
         <List sx={{ mt: 1 }}>
-          {tasks.map((task) => (
-            <ListItem 
-              key={task.id} 
-              disablePadding 
-              sx={{ 
+          {tasks.map(task => (
+            <ListItem
+              key={task.id}
+              disablePadding
+              sx={{
                 borderBottom: `1px solid ${terraColors.pearl}`,
-                py: 0.5
+                py: 0.5,
               }}
             >
-              <ListItemButton 
-                role={undefined} 
-                onClick={() => handleToggleTask(task.id)} 
-                dense
-              >
+              <ListItemButton role={undefined} onClick={() => handleToggleTask(task.id)} dense>
                 <ListItemIcon sx={{ minWidth: 40 }}>
                   <TerraCheckbox
                     edge="start"
@@ -109,4 +103,4 @@ const TasksCard: React.FC<TasksCardProps> = ({
   );
 };
 
-export default TasksCard; 
+export default TasksCard;

@@ -3,20 +3,20 @@
  * Demo page showcasing the Terra color scheme implementation
  */
 import React, { useState } from 'react';
-import { 
-  Container, 
-  Box, 
-  Typography, 
-  Tabs, 
-  Tab, 
-  Paper, 
-  useTheme, 
+import {
+  Container,
+  Box,
+  Typography,
+  Tabs,
+  Tab,
+  Paper,
+  useTheme,
   useMediaQuery,
-  Divider
+  Divider,
 } from '@mui/material';
 import TerraDashboardPage from './TerraDashboardPage';
 import TerraMobileView from '../components/TerraMobileView';
-import { terraColors } from '../theme';
+import { terraColors } from '../../src/theme';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -35,11 +35,7 @@ const TabPanel = (props: TabPanelProps) => {
       aria-labelledby={`terra-tab-${index}`}
       {...other}
     >
-      {value === index && (
-        <Box sx={{ p: { xs: 2, md: 3 } }}>
-          {children}
-        </Box>
-      )}
+      {value === index && <Box sx={{ p: { xs: 2, md: 3 } }}>{children}</Box>}
     </div>
   );
 };
@@ -55,26 +51,26 @@ const TerraDesignDemo: React.FC = () => {
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
-      <Paper 
-        elevation={0} 
-        sx={{ 
-          p: 3, 
-          mb: 4, 
+      <Paper
+        elevation={0}
+        sx={{
+          p: 3,
+          mb: 4,
           textAlign: 'center',
-          backgroundColor: terraColors.pearl
+          backgroundColor: terraColors.pearl,
         }}
       >
-        <Typography 
-          variant="h3" 
-          component="h1" 
+        <Typography
+          variant="h3"
+          component="h1"
           gutterBottom
           color={terraColors.prussianBlue}
           fontWeight="bold"
         >
           PerfectLifeTrack Pro - Terra Color Scheme
         </Typography>
-        <Typography 
-          variant="h6" 
+        <Typography
+          variant="h6"
           color={terraColors.maastrichtBlue}
           sx={{ maxWidth: '800px', mx: 'auto' }}
         >
@@ -83,8 +79,8 @@ const TerraDesignDemo: React.FC = () => {
       </Paper>
 
       <Box sx={{ mb: 3 }}>
-        <Tabs 
-          value={tabValue} 
+        <Tabs
+          value={tabValue}
           onChange={handleTabChange}
           textColor="primary"
           indicatorColor="primary"
@@ -98,9 +94,9 @@ const TerraDesignDemo: React.FC = () => {
 
       <TabPanel value={tabValue} index={0}>
         <Box sx={{ mt: 2 }}>
-          <Typography 
-            variant="h5" 
-            gutterBottom 
+          <Typography
+            variant="h5"
+            gutterBottom
             textAlign="center"
             color={terraColors.prussianBlue}
             sx={{ mb: 4 }}
@@ -113,9 +109,9 @@ const TerraDesignDemo: React.FC = () => {
 
       <TabPanel value={tabValue} index={1}>
         <Box sx={{ mt: 2 }}>
-          <Typography 
-            variant="h5" 
-            gutterBottom 
+          <Typography
+            variant="h5"
+            gutterBottom
             textAlign="center"
             color={terraColors.prussianBlue}
             sx={{ mb: 4 }}
@@ -128,44 +124,39 @@ const TerraDesignDemo: React.FC = () => {
 
       <TabPanel value={tabValue} index={2}>
         <Box sx={{ mt: 2 }}>
-          <Typography 
-            variant="h5" 
-            gutterBottom 
+          <Typography
+            variant="h5"
+            gutterBottom
             textAlign="center"
             color={terraColors.prussianBlue}
             sx={{ mb: 4 }}
           >
             Terra Color Palette
           </Typography>
-          
+
           <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 3 }}>
-            <ColorSwatch 
-              color={terraColors.pearl} 
-              name="Pearl" 
-              hex="#E8DDCB"
-              usage="Background"
-            />
-            <ColorSwatch 
-              color={terraColors.softTeal} 
-              name="Soft Teal" 
+            <ColorSwatch color={terraColors.pearl} name="Pearl" hex="#E8DDCB" usage="Background" />
+            <ColorSwatch
+              color={terraColors.softTeal}
+              name="Soft Teal"
               hex="#70A9A1"
               usage="Borders, Accents"
             />
-            <ColorSwatch 
-              color={terraColors.tropicalRain} 
-              name="Teal" 
+            <ColorSwatch
+              color={terraColors.tropicalRain}
+              name="Teal"
               hex="#036564"
               usage="Interactive Elements"
             />
-            <ColorSwatch 
-              color={terraColors.prussianBlue} 
-              name="Blue" 
+            <ColorSwatch
+              color={terraColors.prussianBlue}
+              name="Blue"
               hex="#033649"
               usage="App Bars, Important Text"
             />
-            <ColorSwatch 
-              color={terraColors.maastrichtBlue} 
-              name="Navy" 
+            <ColorSwatch
+              color={terraColors.maastrichtBlue}
+              name="Navy"
               hex="#031634"
               usage="Primary Text"
             />
@@ -214,4 +205,4 @@ const ColorSwatch: React.FC<ColorSwatchProps> = ({ color, name, hex, usage }) =>
   );
 };
 
-export default TerraDesignDemo; 
+export default TerraDesignDemo;

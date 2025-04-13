@@ -7,7 +7,7 @@ import { Box, useMediaQuery, useTheme } from '@mui/material';
 import TerraAppBar from './TerraAppBar';
 import TerraLeftNavigation from './TerraLeftNavigation';
 import TerraBottomNavigation from './TerraBottomNavigation';
-import { terraColors } from '../theme';
+import { terraColors } from '../../src/theme';
 
 interface TerraLayoutProps {
   children: React.ReactNode;
@@ -31,10 +31,7 @@ const TerraLayout: React.FC<TerraLayoutProps> = ({ children }) => {
       <Box sx={{ display: 'flex', flexGrow: 1 }}>
         {/* Left Navigation (Desktop Only) */}
         {!isMobile && (
-          <TerraLeftNavigation
-            activeItem={activeItem}
-            onItemClick={handleNavItemClick}
-          />
+          <TerraLeftNavigation activeItem={activeItem} onItemClick={handleNavItemClick} />
         )}
 
         {/* Content */}
@@ -46,7 +43,7 @@ const TerraLayout: React.FC<TerraLayoutProps> = ({ children }) => {
             backgroundColor: terraColors.pearl,
             ...(isMobile
               ? { pb: 7 } // Add padding at bottom for mobile navigation
-              : {})
+              : {}),
           }}
         >
           {children}
@@ -55,13 +52,10 @@ const TerraLayout: React.FC<TerraLayoutProps> = ({ children }) => {
 
       {/* Bottom Navigation (Mobile Only) */}
       {isMobile && (
-        <TerraBottomNavigation
-          activeItem={activeItem}
-          onItemClick={handleNavItemClick}
-        />
+        <TerraBottomNavigation activeItem={activeItem} onItemClick={handleNavItemClick} />
       )}
     </Box>
   );
 };
 
-export default TerraLayout; 
+export default TerraLayout;

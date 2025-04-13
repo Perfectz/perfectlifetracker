@@ -28,14 +28,21 @@ class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // You can also log the error to an error reporting service
-    console.error("Uncaught error:", error, errorInfo);
+    console.error('Uncaught error:', error, errorInfo);
   }
 
   public render() {
     if (this.state.hasError) {
       // You can render any custom fallback UI
       return (
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            minHeight: '50vh',
+          }}
+        >
           <Paper elevation={3} sx={{ p: 4, textAlign: 'center' }}>
             <Typography variant="h5" gutterBottom color="error">
               Oops! Something went wrong.
@@ -44,8 +51,12 @@ class ErrorBoundary extends Component<Props, State> {
               We encountered an error. Please try refreshing the page.
             </Typography>
             {/* Optionally display error details during development */}
-            {process.env.NODE_ENV === 'development' && this.state.error && (
-              <Typography variant="caption" display="block" sx={{ mt: 2, whiteSpace: 'pre-wrap', textAlign: 'left' }}>
+            {import.meta.env.MODE === 'development' && this.state.error && (
+              <Typography
+                variant="caption"
+                display="block"
+                sx={{ mt: 2, whiteSpace: 'pre-wrap', textAlign: 'left' }}
+              >
                 {this.state.error.toString()}
               </Typography>
             )}
@@ -58,4 +69,4 @@ class ErrorBoundary extends Component<Props, State> {
   }
 }
 
-export default ErrorBoundary; 
+export default ErrorBoundary;

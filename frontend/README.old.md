@@ -10,7 +10,7 @@ frontend/
 │   ├── components/        # React components
 │   ├── pages/            # Page components
 │   ├── services/         # API services
-│   ├── store/            # Redux store
+│   ├── hooks/           # Custom React hooks and Context providers
 │   ├── styles/           # Global styles
 │   ├── utils/            # Utility functions
 │   └── App.tsx           # Root component

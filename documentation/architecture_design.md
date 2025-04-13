@@ -96,6 +96,25 @@ graph TD
     Backend --> ML[Azure ML]
 ```
 
+### Docker Development Environment
+```mermaid
+graph TD
+    DockerCompose[Docker Compose] --> FrontendContainer[Frontend Container]
+    DockerCompose --> BackendContainer[Backend Container]
+    
+    FrontendContainer --> ViteServer[Vite Dev Server]
+    BackendContainer --> NodeJS[Node.js Express]
+    
+    ViteServer --> HotReload[Hot Module Replacement]
+    NodeJS --> APIEndpoints[API Endpoints]
+    
+    FrontendContainer --> FrontendVolume[Source Code Volume]
+    BackendContainer --> BackendVolume[Source Code Volume]
+    
+    FrontendContainer --> Port3000[Port 3000]
+    BackendContainer --> Port3001[Port 3001]
+```
+
 ## Security Architecture
 
 ### Authentication & Authorization
@@ -168,6 +187,7 @@ graph TD
 graph TD
     Development[Development Process] --> CleanStart[Clean Start]
     Development --> Maintenance[Maintenance]
+    Development --> DockerDev[Docker Development]
     
     CleanStart --> StartClean[start-clean.ps1]
     StartClean --> KillProcesses[Kill React Processes]
@@ -178,8 +198,35 @@ graph TD
     KillScript --> FindReactProcesses[Find React Processes]
     KillScript --> TerminateProcesses[Terminate Processes]
     
-    StartReact --> ReactServer[React Dev Server]
-    ReactServer --> Browser[Browser Access]
+    StartReact --> ViteServer[Vite Dev Server]
+    ViteServer --> Browser[Browser Access]
+    
+    DockerDev --> DockerCompose[docker-compose up]
+    DockerCompose --> FrontendContainer[Frontend Container]
+    DockerCompose --> BackendContainer[Backend Container]
+    FrontendContainer --> HMR[Hot Module Replacement]
+    BackendContainer --> NodemonWatcher[Nodemon Auto-restart]
+```
+
+### Build Systems
+```mermaid
+graph TD
+    BuildTools[Build Systems] --> LocalBuild[Local Build]
+    BuildTools --> CIBuild[CI Build]
+    BuildTools --> DockerBuild[Docker Build]
+    
+    LocalBuild --> ViteDev[Vite Dev Server]
+    LocalBuild --> ViteBuild[Vite Production Build]
+    
+    CIBuild --> AzurePipeline[Azure DevOps Pipeline]
+    AzurePipeline --> CleanupStep[Node Modules Cleanup]
+    AzurePipeline --> BuildStep[Build Frontend/Backend]
+    AzurePipeline --> TestStep[Test Frontend/Backend]
+    AzurePipeline --> PublishStep[Publish Artifacts]
+    
+    DockerBuild --> DockerfileBuild[Frontend Dockerfile]
+    DockerBuild --> MultiStage[Multi-stage Build]
+    DockerBuild --> NodeAlpine[Node Alpine Base]
 ```
 
 ## Version History
@@ -188,3 +235,4 @@ graph TD
 | 2024-04-08 | 1.0.0 | Initial architecture design | Perfect LifeTracker Pro Team | 
 | 2024-04-08 | 1.1.0 | Added frontend implementation details | Perfect LifeTracker Pro Team | 
 | 2024-04-08 | 1.2.0 | Added development workflow with PowerShell scripts | Perfect LifeTracker Pro Team | 
+| 2024-04-09 | 1.3.0 | Added Docker development environment and Vite build system | Perfect LifeTracker Pro Team |

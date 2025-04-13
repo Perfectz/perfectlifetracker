@@ -3,16 +3,16 @@
  * Card component for displaying user's daily goals with progress
  */
 import React from 'react';
-import { 
-  Card, 
-  CardContent, 
-  Typography, 
-  Box, 
+import {
+  Card,
+  CardContent,
+  Typography,
+  Box,
   LinearProgress,
   linearProgressClasses,
-  styled
+  styled,
 } from '@mui/material';
-import { terraColors } from '../theme';
+import { terraColors } from '../../src/theme';
 
 // Define the goal interface
 interface Goal {
@@ -70,25 +70,19 @@ interface GoalsCardProps {
   title?: string;
 }
 
-const GoalsCard: React.FC<GoalsCardProps> = ({ 
-  goals = sampleGoals,
-  title = "Today's Goals"
-}) => {
+const GoalsCard: React.FC<GoalsCardProps> = ({ goals = sampleGoals, title = "Today's Goals" }) => {
   return (
     <Card>
       <CardContent>
         <Typography variant="h6" color={terraColors.prussianBlue} gutterBottom>
           {title}
         </Typography>
-        
-        {goals.map((goal) => (
+
+        {goals.map(goal => (
           <Box key={goal.id} sx={{ mt: 2, position: 'relative' }}>
             <ProgressLabel>{goal.name}</ProgressLabel>
             <ProgressPercentage>{goal.progress}%</ProgressPercentage>
-            <TerraLinearProgress 
-              variant="determinate" 
-              value={goal.progress} 
-            />
+            <TerraLinearProgress variant="determinate" value={goal.progress} />
           </Box>
         ))}
       </CardContent>
@@ -96,4 +90,4 @@ const GoalsCard: React.FC<GoalsCardProps> = ({
   );
 };
 
-export default GoalsCard; 
+export default GoalsCard;

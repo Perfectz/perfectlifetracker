@@ -3,16 +3,16 @@
  * Card component for tracking personal development activities
  */
 import React from 'react';
-import { 
-  Card, 
-  CardContent, 
-  Typography, 
-  Box, 
+import {
+  Card,
+  CardContent,
+  Typography,
+  Box,
   LinearProgress,
   linearProgressClasses,
-  styled
+  styled,
 } from '@mui/material';
-import { terraColors } from '../theme';
+import { terraColors } from '../../src/theme';
 
 // Define the development activity interface
 interface DevelopmentActivity {
@@ -49,7 +49,7 @@ interface DevelopmentCardProps {
 
 const DevelopmentCard: React.FC<DevelopmentCardProps> = ({
   activities = sampleActivities,
-  title = "Development"
+  title = 'Development',
 }) => {
   return (
     <Card>
@@ -57,8 +57,8 @@ const DevelopmentCard: React.FC<DevelopmentCardProps> = ({
         <Typography variant="h6" color={terraColors.prussianBlue} gutterBottom>
           {title}
         </Typography>
-        
-        {activities.map((activity) => (
+
+        {activities.map(activity => (
           <Box key={activity.id} sx={{ mt: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
               <Typography variant="body2" color={terraColors.maastrichtBlue}>
@@ -68,10 +68,7 @@ const DevelopmentCard: React.FC<DevelopmentCardProps> = ({
                 {activity.progress}%
               </Typography>
             </Box>
-            <TerraLinearProgress 
-              variant="determinate" 
-              value={activity.progress} 
-            />
+            <TerraLinearProgress variant="determinate" value={activity.progress} />
           </Box>
         ))}
       </CardContent>
@@ -79,4 +76,4 @@ const DevelopmentCard: React.FC<DevelopmentCardProps> = ({
   );
 };
 
-export default DevelopmentCard; 
+export default DevelopmentCard;

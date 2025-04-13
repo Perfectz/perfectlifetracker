@@ -5,7 +5,7 @@
 import React from 'react';
 import { Fab, FabProps, styled } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import { terraColors } from '../theme';
+import { terraColors } from '../../src/theme';
 
 // Styled FAB using Terra colors
 const StyledFab = styled(Fab)(({ theme }) => ({
@@ -20,15 +20,8 @@ interface TerraFABProps extends Omit<FabProps, 'color'> {
   icon?: React.ReactNode;
 }
 
-const TerraFAB: React.FC<TerraFABProps> = ({
-  icon = <AddIcon />,
-  ...props
-}) => {
-  return (
-    <StyledFab {...props}>
-      {icon}
-    </StyledFab>
-  );
+const TerraFAB: React.FC<TerraFABProps> = ({ icon = <AddIcon />, ...props }) => {
+  return <StyledFab {...props}>{icon}</StyledFab>;
 };
 
-export default TerraFAB; 
+export default TerraFAB;

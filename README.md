@@ -7,31 +7,63 @@ A comprehensive AI-powered personal assistant application designed to help users
 The project is organized into three main components:
 
 - **Frontend**: React with TypeScript, Material UI (Vite)
-- **Backend**: Azure Functions (Node.js)
-- **Infrastructure**: Terraform configuration for Azure resources
+- **Backend**: Express.js with TypeScript, MongoDB
+- **Infrastructure**: Docker containers with Docker Compose orchestration
 
 ## Getting Started
 
-### Running the Frontend
+### Running the Application with Docker (Recommended)
 
-The frontend uses Vite for faster development and builds:
+The application is designed to run using Docker for consistency and proper process management:
 
 ```bash
-# Navigate to the frontend directory
-cd frontend
+# Clone the repository
+git clone https://github.com/Perfectz/perfectlifetrack-pro.git
+cd perfectlifetrack-pro
 
-# Install dependencies
+# Install root-level dependencies
 npm install
 
-# Start the development server
-npm run dev
+# Start the application in development mode (with hot reloading)
+npm run start:clean:dev
+
+# Or start in production mode
+npm run start:clean
 ```
 
-Or using Docker:
+When you're done, you can stop all containers with:
 
 ```bash
-# Build and run with Docker Compose
-docker-compose up
+npm run stop
+```
+
+### Available npm Scripts
+
+| Command               | Description                                              |
+|-----------------------|----------------------------------------------------------|
+| `npm start`           | Start the application in production mode                 |
+| `npm run start:dev`   | Start the application in development mode                |
+| `npm run start:clean` | Clean all processes and start in production mode         |
+| `npm run start:clean:dev` | Clean all processes and start in development mode    |
+| `npm run stop`        | Stop all Docker containers and clean up processes        |
+| `npm run build`       | Build all Docker images                                  |
+| `npm run build:frontend` | Build only the frontend Docker image                  |
+| `npm run build:backend` | Build only the backend Docker image                    |
+
+### Manual Startup (Not Recommended)
+
+If you need to run components without Docker (not recommended for development):
+
+```bash
+# Frontend
+cd frontend
+npm install
+npm run dev
+
+# Backend
+cd backend
+npm install
+npm start
 ```
 
 ### Running the Backend
@@ -93,6 +125,7 @@ For more detailed documentation, see:
 - **AI Insights**: Get personalized recommendations and performance analysis
 - **Cross-Platform**: Access your data seamlessly across web and mobile devices
 - **Dark/Light Theme**: Customizable UI experience with theme switching
+- **File Upload**: Secure file uploads with Azure Blob Storage integration
 
 ## 🛠 Tech Stack
 
@@ -107,6 +140,7 @@ For more detailed documentation, see:
 - **TypeScript** for type-safe backend development
 - **Azure Functions** for serverless API endpoints
 - **Azure Cosmos DB** for scalable, globally distributed database
+- **Azure Blob Storage** for secure file storage
 
 ### AI Integration
 - **Azure OpenAI Service** for advanced natural language processing
@@ -180,6 +214,7 @@ The backend API will be available at http://localhost:3001
 - ✅ Self-hosted agent configuration with troubleshooting tools
 - ✅ PowerShell scripts for React process management
 - ✅ Terraform configuration for Azure infrastructure
+- ✅ Azure Blob Storage integration for file uploads
 - ⏳ User authentication system (Coming soon)
 - ⏳ Database integration (Coming soon)
 - ⏳ Feature components development (Coming soon)

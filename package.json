@@ -1,0 +1,29 @@
+{
+  "name": "perfect-lifetracker-pro",
+  "version": "1.0.0",
+  "description": "Perfect LifeTracker Pro - Comprehensive personal productivity suite",
+  "private": true,
+  "scripts": {
+    "start": "powershell -ExecutionPolicy Bypass -File ./docker-start.ps1",
+    "start:dev": "powershell -ExecutionPolicy Bypass -File ./docker-start.ps1 -dev",
+    "start:clean": "powershell -ExecutionPolicy Bypass -File ./docker-clean.ps1 && powershell -ExecutionPolicy Bypass -File ./docker-start.ps1",
+    "start:clean:dev": "powershell -ExecutionPolicy Bypass -File ./docker-clean.ps1 && powershell -ExecutionPolicy Bypass -File ./docker-start.ps1 -dev",
+    "stop": "powershell -ExecutionPolicy Bypass -File ./docker-clean.ps1",
+    "build": "docker-compose build",
+    "build:frontend": "docker-compose build app",
+    "build:backend": "docker-compose build backend",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "frontend": "cd frontend && npm run dev",
+    "backend": "cd backend && npm start",
+    "dev": "cd frontend && npm run dev"
+  },
+  "keywords": [
+    "productivity",
+    "tracker",
+    "life-management",
+    "todo",
+    "fitness"
+  ],
+  "author": "",
+  "license": "ISC"
+} 

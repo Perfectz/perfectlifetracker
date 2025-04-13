@@ -672,6 +672,39 @@ Implemented Docker-based deployment strategy for both frontend and backend compo
 - [Docker Compose Documentation](https://docs.docker.com/compose/)
 - [Azure DevOps Pipeline Documentation](https://docs.microsoft.com/en-us/azure/devops/pipelines/)
 
+### [2025-04-12]: Implementing Azure Blob Storage for File Uploads
+
+### Change/Decision Description
+Added Azure Blob Storage integration for handling file uploads in the Perfect LifeTracker Pro application. This implementation includes:
+
+1. Backend API endpoints for single and multiple file uploads using Azure Blob Storage
+2. Reusable React component for file uploads with drag-and-drop functionality
+3. File metadata storage in the database with links to blob storage
+4. Demo page showcasing various file upload configurations
+
+### Rationale
+- Azure Blob Storage provides a scalable, cost-effective solution for storing user files
+- Centralizing file storage in Azure Blob Storage allows for better security, access control, and CDN integration
+- Separating file storage from application servers improves performance and reduces server load
+- Blob Storage integrates well with other Azure services used in the application
+
+### Alternatives Considered
+1. **Local File System Storage**: Rejected due to scalability issues and complications with container deployments
+2. **Azure Files**: Considered but rejected because Blob Storage is more cost-effective for this use case
+3. **Azure Data Lake Storage**: Too complex for the current requirements and better suited for big data analytics
+4. **Database Binary Storage**: Rejected due to performance issues with storing large files in the database
+
+### Implications
+- New environment variables required for Azure Blob Storage connection string and container name
+- Frontend components now include a reusable FileUpload component that integrates with the backend
+- File metadata is stored in the database with links to the actual files in Blob Storage
+- Added file upload demo page to showcase the functionality
+
+### References
+- [Azure Blob Storage Documentation](https://docs.microsoft.com/en-us/azure/storage/blobs/)
+- [Azure Storage SDK for JavaScript](https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/storage/storage-blob)
+- [React File Upload Best Practices](https://reactjs.org/docs/file-handling.html)
+
 ## Version History
 | Date | Version | Changes | Author |
 |------|---------|---------|--------|
@@ -686,4 +719,5 @@ Implemented Docker-based deployment strategy for both frontend and backend compo
 | 2024-04-09 | 1.8.0 | Added Azure DevOps agent troubleshooting improvements | Perfect LifeTracker Pro Team |
 | 2024-04-09 | 1.9.0 | Added GitHub Actions CI workflow implementation | Perfect LifeTracker Pro Team |
 | 2024-04-09 | 1.10.0 | Added Azure infrastructure as code with Terraform | Perfect LifeTracker Pro Team |
-| 2024-04-10 | 1.11.0 | Added Docker-based deployment and CI/CD pipeline update | Perfect LifeTracker Pro Team | 
+| 2024-04-10 | 1.11.0 | Added Docker-based deployment and CI/CD pipeline update | Perfect LifeTracker Pro Team |
+| 2025-04-12 | 1.12.0 | Added Azure Blob Storage for file uploads | Perfect LifeTracker Pro Team | 

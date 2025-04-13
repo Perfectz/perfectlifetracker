@@ -3,16 +3,16 @@
  * Card component for displaying fitness metrics with circular progress
  */
 import React from 'react';
-import { 
-  Card, 
-  CardContent, 
-  Typography, 
-  Box, 
-  CircularProgress, 
+import {
+  Card,
+  CardContent,
+  Typography,
+  Box,
+  CircularProgress,
   circularProgressClasses,
-  styled
+  styled,
 } from '@mui/material';
-import { terraColors } from '../theme';
+import { terraColors } from '../../src/theme';
 
 // Styled circular progress using Terra colors
 const TerraCircularProgress = styled(CircularProgress)(({ theme }) => ({
@@ -40,7 +40,7 @@ const FitnessMetricsCard: React.FC<FitnessMetricsCardProps> = ({
   steps = 8423,
   goal = 10000,
   progress = 75, // Default to 75% progress
-  title = "Fitness Metrics"
+  title = 'Fitness Metrics',
 }) => {
   return (
     <Card>
@@ -48,15 +48,17 @@ const FitnessMetricsCard: React.FC<FitnessMetricsCardProps> = ({
         <Typography variant="h6" color={terraColors.prussianBlue} gutterBottom>
           {title}
         </Typography>
-        
-        <Box sx={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          position: 'relative',
-          mt: 2
-        }}>
+
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+            mt: 2,
+          }}
+        >
           <Box sx={{ position: 'relative', display: 'inline-flex' }}>
             <BackgroundCircularProgress
               variant="determinate"
@@ -83,7 +85,12 @@ const FitnessMetricsCard: React.FC<FitnessMetricsCardProps> = ({
                 flexDirection: 'column',
               }}
             >
-              <Typography variant="h4" component="div" color={terraColors.prussianBlue} fontWeight="bold">
+              <Typography
+                variant="h4"
+                component="div"
+                color={terraColors.prussianBlue}
+                fontWeight="bold"
+              >
                 {progress}%
               </Typography>
               <Typography variant="caption" component="div" color={terraColors.softTeal}>
@@ -91,7 +98,7 @@ const FitnessMetricsCard: React.FC<FitnessMetricsCardProps> = ({
               </Typography>
             </Box>
           </Box>
-          
+
           <Box sx={{ mt: 3, textAlign: 'center' }}>
             <Typography variant="h4" color={terraColors.tropicalRain} fontWeight="bold">
               {steps.toLocaleString()}
@@ -106,4 +113,4 @@ const FitnessMetricsCard: React.FC<FitnessMetricsCardProps> = ({
   );
 };
 
-export default FitnessMetricsCard; 
+export default FitnessMetricsCard;

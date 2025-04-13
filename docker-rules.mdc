@@ -1,0 +1,53 @@
+# Docker Usage Rule for Perfect LifeTracker Pro
+
+This rule enforces the use of Docker for running the application to ensure consistency across environments and proper process management.
+
+## Usage
+
+Always use Docker commands through the NPM scripts when running, stopping, or restarting the application:
+
+1. Start the application:
+   - `npm start` - Start in production mode
+   - `npm run start:dev` - Start in development mode with hot reloading
+
+2. Clean restart:
+   - `npm run start:clean` - Clean all processes and start in production mode
+   - `npm run start:clean:dev` - Clean all processes and start in development mode
+
+3. Stop all containers:
+   - `npm run stop` - Stop all Docker containers and clean up processes
+
+## Implementation Details
+
+All the above commands use PowerShell scripts that:
+1. Kill any existing processes that might conflict with Docker
+2. Stop and remove any existing Docker containers
+3. Start the appropriate Docker containers based on the selected mode
+
+The scripts clean up:
+- All Docker containers related to the app
+- Processes using ports 3000-3003
+- Any orphaned processes from previous runs
+
+## When to Use
+
+You should ALWAYS:
+- Use Docker to run the application
+- Clean up all containers and processes before a fresh start
+- Use the provided npm scripts rather than direct Docker commands
+
+## Process Management
+
+The Docker workflow automatically manages:
+1. Container lifecycle and dependencies
+2. Port allocations (3000-3003)
+3. Environment variable configuration
+4. Volume mounts for development 
+5. Process cleanup on restart
+
+## Automatic Implementation
+
+Before launching the app, ALWAYS:
+1. Run `npm run stop` to ensure all previous instances are terminated
+2. Use `npm run start:clean:dev` for development work
+3. Use `npm run start:clean` for testing production builds 

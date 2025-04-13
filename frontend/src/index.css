@@ -43,16 +43,17 @@ html {
 }
 
 /* Touch-friendly tap targets */
-button, 
-a, 
-input, 
-select, 
+button,
+a,
+input,
+select,
 textarea {
   touch-action: manipulation;
 }
 
 /* Mobile-friendly links and buttons */
-a, button {
+a,
+button {
   min-height: 44px;
   min-width: 44px;
   display: inline-flex;
@@ -61,8 +62,8 @@ a, button {
 }
 
 /* Responsive media */
-img, 
-video, 
+img,
+video,
 iframe {
   max-width: 100%;
   height: auto;

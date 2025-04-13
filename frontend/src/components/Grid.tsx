@@ -21,10 +21,10 @@ interface GridProps extends Omit<BoxProps, 'sx'> {
 
 export const Grid = React.forwardRef<HTMLDivElement, GridProps>((props, ref) => {
   const { container, item, xs, sm, md, lg, xl, spacing, children, sx, ...other } = props;
-  
+
   // Generate base styles for grid
   let flexStyles = {};
-  
+
   if (container) {
     flexStyles = {
       display: 'flex',
@@ -35,7 +35,7 @@ export const Grid = React.forwardRef<HTMLDivElement, GridProps>((props, ref) => 
       }),
     };
   }
-  
+
   if (item) {
     flexStyles = {
       ...flexStyles,
@@ -44,10 +44,10 @@ export const Grid = React.forwardRef<HTMLDivElement, GridProps>((props, ref) => 
       }),
     };
   }
-  
+
   // Responsive styles
   const responsiveStyles = {};
-  
+
   if (xs !== undefined) {
     Object.assign(responsiveStyles, {
       flexBasis: xs === 'auto' ? 'auto' : `${(xs / 12) * 100}%`,
@@ -55,7 +55,7 @@ export const Grid = React.forwardRef<HTMLDivElement, GridProps>((props, ref) => 
       maxWidth: xs === 'auto' ? 'none' : `${(xs / 12) * 100}%`,
     });
   }
-  
+
   if (sm !== undefined) {
     Object.assign(responsiveStyles, {
       '@media (min-width: 600px)': {
@@ -65,7 +65,7 @@ export const Grid = React.forwardRef<HTMLDivElement, GridProps>((props, ref) => 
       },
     });
   }
-  
+
   if (md !== undefined) {
     Object.assign(responsiveStyles, {
       '@media (min-width: 900px)': {
@@ -75,7 +75,7 @@ export const Grid = React.forwardRef<HTMLDivElement, GridProps>((props, ref) => 
       },
     });
   }
-  
+
   if (lg !== undefined) {
     Object.assign(responsiveStyles, {
       '@media (min-width: 1200px)': {
@@ -85,7 +85,7 @@ export const Grid = React.forwardRef<HTMLDivElement, GridProps>((props, ref) => 
       },
     });
   }
-  
+
   if (xl !== undefined) {
     Object.assign(responsiveStyles, {
       '@media (min-width: 1536px)': {
@@ -95,7 +95,7 @@ export const Grid = React.forwardRef<HTMLDivElement, GridProps>((props, ref) => 
       },
     });
   }
-  
+
   // Combine all styles
   const combinedSx = {
     ...flexStyles,
@@ -112,4 +112,4 @@ export const Grid = React.forwardRef<HTMLDivElement, GridProps>((props, ref) => 
 
 Grid.displayName = 'Grid';
 
-export default Grid; 
+export default Grid;

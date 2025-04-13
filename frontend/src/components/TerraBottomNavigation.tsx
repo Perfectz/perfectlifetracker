@@ -3,18 +3,14 @@
  * Bottom navigation component for mobile view
  */
 import React from 'react';
-import { 
-  Paper, 
-  BottomNavigation, 
-  BottomNavigationAction,
-  styled 
-} from '@mui/material';
+import { Paper, BottomNavigation, BottomNavigationAction, styled } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import HomeIcon from '@mui/icons-material/Home';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import SchoolIcon from '@mui/icons-material/School';
 import ChecklistIcon from '@mui/icons-material/Checklist';
-import { terraColors } from '../theme';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import { terraColors } from '../../src/theme';
 
 interface NavigationItem {
   id: string;
@@ -28,26 +24,32 @@ const navigationItems: NavigationItem[] = [
     id: 'dashboard',
     label: 'Home',
     icon: <HomeIcon />,
-    path: '/terra-design'
+    path: '/dashboard',
   },
   {
     id: 'fitness',
     label: 'Fitness',
     icon: <FitnessCenterIcon />,
-    path: '/fitness'
+    path: '/fitness',
   },
   {
     id: 'development',
     label: 'Develop',
     icon: <SchoolIcon />,
-    path: '/development'
+    path: '/development',
   },
   {
     id: 'tasks',
     label: 'Tasks',
     icon: <ChecklistIcon />,
-    path: '/tasks'
-  }
+    path: '/tasks',
+  },
+  {
+    id: 'fileUpload',
+    label: 'Upload',
+    icon: <CloudUploadIcon />,
+    path: '/file-upload',
+  },
 ];
 
 // Styled BottomNavigationAction for Terra colors
@@ -100,7 +102,7 @@ const TerraBottomNavigationComponent: React.FC<TerraBottomNavigationProps> = ({
           height: '100%',
         }}
       >
-        {navigationItems.map((item) => (
+        {navigationItems.map(item => (
           <TerraBottomNavigationAction
             key={item.id}
             label={item.label}
@@ -113,4 +115,4 @@ const TerraBottomNavigationComponent: React.FC<TerraBottomNavigationProps> = ({
   );
 };
 
-export default TerraBottomNavigationComponent; 
+export default TerraBottomNavigationComponent;

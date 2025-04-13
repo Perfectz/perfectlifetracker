@@ -70,7 +70,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/users', userRoutes);
 app.use('/api/tasks', checkJwt, taskRoutes); // Protected routes
 app.use('/api/fitness', checkJwt, fitnessRoutes); // Protected routes
-app.use('/api/uploads', uploadRoutes); // File upload routes
+app.use('/api/uploads', checkJwt, uploadRoutes); // Protected file upload routes
 
 // Protected test route
 app.get('/api/protected', checkJwt, (req: JWTRequest, res) => {
