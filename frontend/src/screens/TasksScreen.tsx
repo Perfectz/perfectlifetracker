@@ -160,6 +160,7 @@ const TasksScreen: React.FC<TasksScreenProps> = () => {
                           ))}
                         </Box>
                       }
+                      secondaryTypographyProps={{ component: 'div' }}
                       sx={{ textDecoration: task.status === 'completed' ? 'line-through' : 'none' }}
                     />
                   </ListItem>

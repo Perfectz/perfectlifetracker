@@ -103,8 +103,17 @@ export const Grid = React.forwardRef<HTMLDivElement, GridProps>((props, ref) => 
     ...(sx || {}),
   };
 
+  // Suppress the MUI deprecation warnings by not passing deprecated props
+  const otherProps = { ...other };
+  delete otherProps.item;
+  delete otherProps.xs;
+  delete otherProps.sm;
+  delete otherProps.md;
+  delete otherProps.lg;
+  delete otherProps.xl;
+
   return (
-    <Box ref={ref} sx={combinedSx} {...other}>
+    <Box ref={ref} sx={combinedSx} {...otherProps}>
       {children}
     </Box>
   );

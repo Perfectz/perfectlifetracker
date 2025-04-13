@@ -21,6 +21,11 @@ import {
 // Create an MSAL instance
 const msalInstance = new PublicClientApplication(msalConfig);
 
+// Initialize MSAL
+msalInstance.initialize().catch(error => {
+  console.error("Error initializing MSAL:", error);
+});
+
 // Authentication service class
 class AuthService {
   // Get the active account
