@@ -18,7 +18,8 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  Button
+  Button,
+  ListItemButton
 } from '@mui/material';
 import { 
   Brightness4, 
@@ -180,18 +181,18 @@ const SettingsScreen: React.FC<SettingsScreenProps> = () => {
             Privacy & Security
           </Typography>
           <List>
-            <ListItem button>
+            <ListItemButton>
               <ListItemIcon><Security /></ListItemIcon>
               <ListItemText primary="Change Password" />
-            </ListItem>
-            <ListItem button>
+            </ListItemButton>
+            <ListItemButton>
               <ListItemIcon><Security /></ListItemIcon>
               <ListItemText primary="Two-Factor Authentication" />
-            </ListItem>
-            <ListItem button>
+            </ListItemButton>
+            <ListItemButton>
               <ListItemIcon><Security /></ListItemIcon>
               <ListItemText primary="Privacy Policy" />
-            </ListItem>
+            </ListItemButton>
           </List>
         </Paper>
 
@@ -205,14 +206,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = () => {
               <ListItemIcon><Info /></ListItemIcon>
               <ListItemText primary="App Version" secondary="1.0.0" />
             </ListItem>
-            <ListItem button>
+            <ListItemButton>
               <ListItemIcon><Info /></ListItemIcon>
               <ListItemText primary="Terms of Service" />
-            </ListItem>
-            <ListItem button>
+            </ListItemButton>
+            <ListItemButton>
               <ListItemIcon><Info /></ListItemIcon>
               <ListItemText primary="Help & Support" />
-            </ListItem>
+            </ListItemButton>
           </List>
         </Paper>
       </Container>

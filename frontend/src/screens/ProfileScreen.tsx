@@ -15,7 +15,8 @@ import {
   Divider,
   Button,
   Avatar,
-  Switch
+  Switch,
+  ListItemButton
 } from '@mui/material';
 import Grid from '../components/Grid';
 import {
@@ -185,18 +186,18 @@ const ProfileScreen: React.FC<ProfileScreenProps> = () => {
             Account Actions
           </Typography>
           <List>
-            <ListItem button>
+            <ListItemButton>
               <ListItemIcon><Security /></ListItemIcon>
               <ListItemText primary="Change Password" />
-            </ListItem>
-            <ListItem button>
+            </ListItemButton>
+            <ListItemButton>
               <ListItemIcon><GetApp /></ListItemIcon>
               <ListItemText primary="Download Your Data" />
-            </ListItem>
-            <ListItem button sx={{ color: 'error.main' }}>
+            </ListItemButton>
+            <ListItemButton sx={{ color: 'error.main' }}>
               <ListItemIcon><ExitToApp sx={{ color: 'error.main' }}/></ListItemIcon>
               <ListItemText primary="Logout" />
-            </ListItem>
+            </ListItemButton>
           </List>
         </Paper>
       </Container>
