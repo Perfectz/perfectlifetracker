@@ -15,9 +15,9 @@ import {
   Divider,
   Button,
   Avatar,
-  Grid,
   Switch
 } from '@mui/material';
+import Grid from '../components/Grid';
 import {
   AccountCircle,
   Edit,

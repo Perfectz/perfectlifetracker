@@ -16,9 +16,9 @@ import {
   Button,
   Tabs,
   Tab,
-  Fab,
-  Grid
+  Fab
 } from '@mui/material';
+import Grid from '../components/Grid';
 import {
   School,
   Book,
