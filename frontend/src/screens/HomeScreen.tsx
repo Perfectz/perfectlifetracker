@@ -3,7 +3,8 @@
  * Home screen for the web app
  */
 import React from 'react';
-import { Box, Card, Typography, Grid, Paper, LinearProgress } from '@mui/material';
+import { Box, Card, Typography, Paper, LinearProgress } from '@mui/material';
+import Grid from '../components/Grid';
 import { terraColors } from '../theme';
 import type { StackScreenProps } from '@react-navigation/stack';
 import type { MainTabParamList } from '../navigation/AppNavigator';

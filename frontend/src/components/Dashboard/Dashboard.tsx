@@ -3,7 +3,8 @@
  * Dashboard component with grid layout for widgets
  */
 import React, { ReactNode } from 'react';
-import { Box, Grid, Paper, Typography, useTheme } from '@mui/material';
+import { Box, Paper, Typography, useTheme } from '@mui/material';
+import Grid from '../../components/Grid';
 import { styled } from '@mui/material/styles';
 
 // Widget types
