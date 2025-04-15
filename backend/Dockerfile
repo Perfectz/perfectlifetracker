@@ -10,6 +10,9 @@ COPY package.json package-lock.json ./
 # Install dependencies with clean slate
 RUN npm ci
 
+# Install uuid explicitly with a version compatible with Node 20 and CommonJS
+RUN npm install uuid@9.0.1 --save
+
 # Copy all source files
 COPY . .
 
@@ -27,6 +30,9 @@ COPY package.json package-lock.json ./
 
 # Install only production dependencies
 RUN npm ci --omit=dev
+
+# Install uuid explicitly with a version compatible with Node 20 and CommonJS
+RUN npm install uuid@9.0.1 --save
 
 # Copy built files from build stage
 COPY --from=build /app/dist ./dist
@@ -50,11 +56,17 @@ WORKDIR /app
 # Copy package files
 COPY package.json package-lock.json ./
 
-# Install all dependencies
-RUN npm install
+# Install all dependencies including dev dependencies
+RUN npm ci
+
+# Install uuid explicitly with a version compatible with Node 20 and CommonJS
+RUN npm install uuid@9.0.1 --save
 
 # Copy source code
 COPY . .
+
+# Build the application
+RUN npm run build
 
 # Expose API port
 EXPOSE 3001

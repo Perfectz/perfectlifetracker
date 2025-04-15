@@ -31,6 +31,8 @@ import {
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { terraColors } from '../../theme';
+import Header from '../Header';
 
 // Constants
 const DRAWER_WIDTH = 240;
@@ -56,9 +58,10 @@ const navigationItems = [
 interface LayoutProps {
   children: ReactNode;
   title?: string;
+  useStandardHeader?: boolean;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, title = 'Perfect LifeTracker Pro' }) => {
+const Layout: React.FC<LayoutProps> = ({ children, title = 'Perfect LifeTracker Pro', useStandardHeader = false }) => {
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -116,6 +119,8 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'Perfect LifeTracker 
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.leavingScreen,
           }),
+          backgroundColor: terraColors.tropicalRain, // Match the terraColors theme
+          color: terraColors.white,
         }}
       >
         <Toolbar>
@@ -190,6 +195,10 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'Perfect LifeTracker 
         }}
       >
         <Toolbar /> {/* Spacer to push content below the AppBar */}
+        
+        {/* Optionally use the standard Header component */}
+        {useStandardHeader && <Header height={180} marginBottom={3} />}
+        
         <Box sx={{ flexGrow: 1 }}>
           {children}
         </Box>

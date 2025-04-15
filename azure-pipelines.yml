@@ -1,254 +1,193 @@
 trigger:
-  - master
-
-pool:
-  name: Default
+  branches:
+    include:
+      - main
+      - develop
+  paths:
+    include:
+      - frontend/**
+      - backend/**
+      - helm/**
 
 variables:
-  - name: NODE_VERSION
-    value: '20.18.1' # Keep specific version for stability
-  - name: NODE_PATH
-    value: 'C:\Program Files\nodejs'
-  - name: DOCKER_BUILDKIT
-    value: '1'
-  - name: FRONTEND_IMAGE_NAME
-    value: 'lifetrack-app'
-  - name: BACKEND_IMAGE_NAME
-    value: 'lifetrack-backend'
-  - name: CONTAINER_REGISTRY
-    value: 'yourregistry.azurecr.io'
-  - name: TAG
-    value: '$(Build.BuildNumber)'
+  # Azure Container Registry
+  acrName: 'perfectltpacr'
+  acrLoginServer: '$(acrName).azurecr.io'
+  
+  # Kubernetes/AKS
+  aksResourceGroup: 'perfectltp-rg'
+  aksClusterName: 'perfectltp-aks'
+  
+  # Helm 
+  helmReleaseName: 'perfectltp'
+  helmChartPath: 'helm/perfectltp'
+  
+  # Branch-specific settings
+  ${{ if eq(variables['Build.SourceBranchName'], 'main') }}:
+    environment: 'production'
+    imageTag: '$(Build.BuildId)'
+    kubernetesNamespace: 'perfectltp-prod'
+  ${{ if eq(variables['Build.SourceBranchName'], 'develop') }}:
+    environment: 'staging'
+    imageTag: 'dev-$(Build.BuildId)'
+    kubernetesNamespace: 'perfectltp-staging'
 
 stages:
-  - stage: BuildAndTest
-    displayName: 'Build and Test'
-    jobs:
-      - job: BuildAndTest
-        displayName: 'Build and Test All'
-        steps:
-          # Verify Docker is installed
-          - task: PowerShell@2
-            inputs:
-              targetType: 'inline'
-              script: |
-                $dockerVersion = docker --version
-                Write-Host "Docker version: $dockerVersion"
-                if ($LASTEXITCODE -ne 0) {
-                  Write-Host "##vso[task.logissue type=error]Docker is not available"
-                  exit 1
-                }
-              workingDirectory: '$(System.DefaultWorkingDirectory)'
-            displayName: 'Verify Docker'
+- stage: Build
+  displayName: 'Build and Push Images'
+  jobs:
+  - job: BuildFrontend
+    displayName: 'Build Frontend'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: Docker@2
+      displayName: 'Build frontend image'
+      inputs:
+        command: 'build'
+        containerRegistry: 'ACR'
+        repository: 'frontend'
+        dockerfile: 'frontend/Dockerfile.unified'
+        buildContext: '$(System.DefaultWorkingDirectory)'
+        tags: |
+          $(imageTag)
+          latest
+    
+    - task: Docker@2
+      displayName: 'Push frontend image'
+      inputs:
+        command: 'push'
+        containerRegistry: 'ACR'
+        repository: 'frontend'
+        tags: |
+          $(imageTag)
+          latest
 
-          # Build Frontend (Build the React App first, then create Docker image)
-          - task: PowerShell@2
-            displayName: 'Build Frontend React App'
-            inputs:
-              targetType: 'inline'
-              script: |
-                # Install dependencies and build
-                cd frontend
-                npm ci
-                npm run build
-                
-                # Create temporary .dockerignore that allows /build directory
-                $originalDockerignore = ".dockerignore"
-                $backupDockerignore = ".dockerignore.bak"
-                
-                if (Test-Path $originalDockerignore) {
-                  Move-Item $originalDockerignore $backupDockerignore -Force
-                  @"
-                node_modules
-                npm-debug.log
-                "@ | Out-File -Encoding ASCII $originalDockerignore
-                }
-                
-                # Return to root directory
-                cd ..
-              workingDirectory: '$(System.DefaultWorkingDirectory)'
+  - job: BuildBackend
+    displayName: 'Build Backend'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: Docker@2
+      displayName: 'Build backend image'
+      inputs:
+        command: 'build'
+        containerRegistry: 'ACR'
+        repository: 'backend'
+        dockerfile: 'backend/Dockerfile'
+        buildContext: '$(System.DefaultWorkingDirectory)'
+        tags: |
+          $(imageTag)
+          latest
+    
+    - task: Docker@2
+      displayName: 'Push backend image'
+      inputs:
+        command: 'push'
+        containerRegistry: 'ACR'
+        repository: 'backend'
+        tags: |
+          $(imageTag)
+          latest
 
-          # Build Frontend Docker Image
-          - task: Docker@2
-            displayName: 'Build Frontend Docker Image'
-            inputs:
-              command: 'build'
-              Dockerfile: 'frontend/Dockerfile.fixed'
-              buildContext: 'frontend'
-              tags: |
-                $(FRONTEND_IMAGE_NAME):$(TAG)
-                $(FRONTEND_IMAGE_NAME):latest
-
-          # Restore original .dockerignore
-          - task: PowerShell@2
-            displayName: 'Restore Frontend .dockerignore'
-            inputs:
-              targetType: 'inline'
-              script: |
-                cd frontend
-                $originalDockerignore = ".dockerignore"
-                $backupDockerignore = ".dockerignore.bak"
-                
-                if (Test-Path $backupDockerignore) {
-                  Move-Item $backupDockerignore $originalDockerignore -Force
-                }
-                
-                cd ..
-              workingDirectory: '$(System.DefaultWorkingDirectory)'
-
-          # Build Backend Docker Image
-          - task: Docker@2
-            displayName: 'Build Backend Docker Image'
-            inputs:
-              command: 'build'
-              Dockerfile: 'backend/Dockerfile'
-              buildContext: 'backend'
-              tags: |
-                $(BACKEND_IMAGE_NAME):$(TAG)
-                $(BACKEND_IMAGE_NAME):latest
-
-          # Create docker-compose file for deployment
-          - task: PowerShell@2
-            displayName: 'Create Deployment Compose File'
-            inputs:
-              targetType: 'inline'
-              script: |
-                @"
-                version: "3.9"
-                services:
-                  frontend:
-                    image: $(FRONTEND_IMAGE_NAME):$(TAG)
-                    ports:
-                      - "8080:80"
-                    depends_on:
-                      - backend
-                    restart: always
-
-                  backend:
-                    image: $(BACKEND_IMAGE_NAME):$(TAG)
-                    ports:
-                      - "3001:3001"
-                    environment:
-                      - NODE_ENV=production
-                      - PORT=3001
-                    restart: always
-                    healthcheck:
-                      test: ["CMD", "curl", "-f", "http://localhost:3001/api/health"]
-                      interval: 30s
-                      timeout: 10s
-                      retries: 3
-                      start_period: 30s
-                "@ | Out-File -Encoding ASCII "$(Build.ArtifactStagingDirectory)/docker-compose.yml"
-              workingDirectory: '$(System.DefaultWorkingDirectory)'
-
-          # Optional: Push Docker images to registry if configured
-          # Uncomment to enable pushing to registry
-          # - task: Docker@2
-          #   displayName: 'Push Frontend Image to Registry'
-          #   inputs:
-          #     containerRegistry: 'dockerRegistry'
-          #     repository: '$(FRONTEND_IMAGE_NAME)'
-          #     command: 'push'
-          #     tags: |
-          #       $(TAG)
-          #       latest
+- stage: Deploy
+  displayName: 'Deploy to $(environment)'
+  dependsOn: Build
+  jobs:
+  - deployment: DeployToAKS
+    displayName: 'Deploy to Kubernetes'
+    environment: $(environment)
+    pool:
+      vmImage: 'ubuntu-latest'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
           
-          # - task: Docker@2
-          #   displayName: 'Push Backend Image to Registry'
-          #   inputs:
-          #     containerRegistry: 'dockerRegistry'
-          #     repository: '$(BACKEND_IMAGE_NAME)'
-          #     command: 'push'
-          #     tags: |
-          #       $(TAG)
-          #       latest
-
-          # Save Docker images as artifacts
-          - task: PowerShell@2
-            displayName: 'Save Docker Images as Artifacts'
+          - task: HelmInstaller@1
+            displayName: 'Install Helm'
             inputs:
-              targetType: 'inline'
-              script: |
-                # Create directory for Docker images
-                New-Item -Path "$(Build.ArtifactStagingDirectory)/docker-images" -ItemType Directory -Force
-                
-                # Save Docker images
-                docker save $(FRONTEND_IMAGE_NAME):$(TAG) | gzip > "$(Build.ArtifactStagingDirectory)/docker-images/frontend-image.tar.gz"
-                docker save $(BACKEND_IMAGE_NAME):$(TAG) | gzip > "$(Build.ArtifactStagingDirectory)/docker-images/backend-image.tar.gz"
-                
-                # Create deployment script
-                @"
-                #!/bin/bash
-                # Load Docker images
-                gunzip -c frontend-image.tar.gz | docker load
-                gunzip -c backend-image.tar.gz | docker load
-                
-                # Run docker-compose
-                docker-compose up -d
-                "@ | Out-File -Encoding ASCII "$(Build.ArtifactStagingDirectory)/docker-images/deploy.sh"
-                
-                # Create Windows version
-                @"
-                @echo off
-                echo Loading Docker images...
-                docker load -i frontend-image.tar.gz
-                docker load -i backend-image.tar.gz
-                
-                echo Starting containers...
-                docker-compose up -d
-                "@ | Out-File -Encoding ASCII "$(Build.ArtifactStagingDirectory)/docker-images/deploy.cmd"
-              workingDirectory: '$(System.DefaultWorkingDirectory)'
-
-          # Publish artifacts
-          - task: PublishBuildArtifacts@1
-            displayName: 'Publish Docker Images and Compose File'
-            inputs:
-              PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-              ArtifactName: 'container-deployment'
-              publishLocation: 'Container'
-
-  # Deployment Stage
-  - stage: Deploy
-    displayName: 'Deploy'
-    dependsOn: BuildAndTest
-    condition: succeeded()
-    jobs:
-      - job: DeployJob
-        displayName: 'Deploy Containerized Application'
-        steps:
-          # Download artifacts
-          - task: DownloadBuildArtifacts@0
-            inputs:
-              buildType: 'current'
-              downloadType: 'specific'
-              itemPattern: 'container-deployment/**'
-              downloadPath: '$(System.ArtifactsDirectory)'
-            displayName: 'Download Build Artifacts'
+              helmVersionToInstall: 'latest'
           
-          # Deploy with Docker
-          - task: PowerShell@2
+          - task: AzureCLI@2
+            displayName: 'AKS Login'
             inputs:
-              targetType: 'inline'
-              script: |
-                # Navigate to the deployment directory
-                cd "$(System.ArtifactsDirectory)/container-deployment"
+              azureSubscription: 'AzureSubscription'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                az aks get-credentials --resource-group $(aksResourceGroup) --name $(aksClusterName) --overwrite-existing
                 
-                # Display available files
-                Get-ChildItem -Recurse
+                # Create namespace if it doesn't exist
+                kubectl get namespace $(kubernetesNamespace) || kubectl create namespace $(kubernetesNamespace)
                 
-                # Stop existing containers if they exist
-                docker-compose down
+                # Create secret for ACR pull
+                kubectl create secret docker-registry acr-auth \
+                  --docker-server=$(acrLoginServer) \
+                  --docker-username=$(acrUser) \
+                  --docker-password=$(acrPassword) \
+                  --namespace=$(kubernetesNamespace) \
+                  --dry-run=client -o yaml | kubectl apply -f -
+          
+          - task: HelmDeploy@0
+            displayName: 'Helm upgrade'
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscription: 'AzureSubscription'
+              azureResourceGroup: '$(aksResourceGroup)'
+              kubernetesCluster: '$(aksClusterName)'
+              namespace: '$(kubernetesNamespace)'
+              command: 'upgrade'
+              chartType: 'FilePath'
+              chartPath: '$(helmChartPath)'
+              releaseName: '$(helmReleaseName)'
+              overrideValues: |
+                image.tag=$(imageTag)
+                image.pullSecrets[0].name=acr-auth
+                global.environment=$(environment)
+                global.domain=$(domain)
+              valueFile: '$(helmChartPath)/values.yaml'
+              install: true
+              waitForExecution: true
+              arguments: '--atomic --timeout 10m0s'
+          
+          - task: AzureCLI@2
+            displayName: 'Verify Deployment'
+            inputs:
+              azureSubscription: 'AzureSubscription'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                kubectl get pods -n $(kubernetesNamespace) -l app.kubernetes.io/instance=$(helmReleaseName)
                 
-                # Load the Docker images
-                cd docker-images
-                docker load -i frontend-image.tar.gz
-                docker load -i backend-image.tar.gz
-                cd ..
+                # Check frontend deployment
+                frontend_status=$(kubectl rollout status deployment/$(helmReleaseName)-frontend -n $(kubernetesNamespace) --timeout=300s)
+                echo $frontend_status
                 
-                # Start the containers
-                docker-compose up -d
+                # Check backend deployment
+                backend_status=$(kubectl rollout status deployment/$(helmReleaseName)-backend -n $(kubernetesNamespace) --timeout=300s)
+                echo $backend_status
                 
-                # Verify the containers are running
-                docker ps
-              workingDirectory: '$(System.DefaultWorkingDirectory)'
-            displayName: 'Deploy with Docker'
+                # Check ingress
+                kubectl get ingress -n $(kubernetesNamespace)
+
+- stage: Test
+  displayName: 'Post-Deployment Tests'
+  dependsOn: Deploy
+  jobs:
+  - job: IntegrationTests
+    displayName: 'Run Integration Tests'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - script: echo "Running integration tests against $(environment)"
+      displayName: 'Integration Tests'
+
+  - job: LoadTests
+    displayName: 'Run Load Tests'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - script: echo "Running load tests against $(environment)"
+      displayName: 'Load Tests'

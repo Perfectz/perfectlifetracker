@@ -1,0 +1,140 @@
+## Global configuration
+global:
+  environment: production
+  domain: perfectltp.example.com
+
+## Image configuration
+image:
+  registry: perfectltp.azurecr.io
+  pullPolicy: Always
+  tag: latest
+  pullSecrets: []
+  # - name: acr-secret
+
+## Frontend configuration
+frontend:
+  name: frontend
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 256Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  livenessProbe:
+    path: /
+    initialDelaySeconds: 20
+    periodSeconds: 15
+  readinessProbe:
+    path: /
+    initialDelaySeconds: 10
+    periodSeconds: 5
+
+## Backend configuration
+backend:
+  name: backend
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 8
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  livenessProbe:
+    path: /api/health
+    initialDelaySeconds: 30
+    periodSeconds: 20
+  readinessProbe:
+    path: /api/health
+    initialDelaySeconds: 15
+    periodSeconds: 10
+  pdb:
+    enabled: true
+    minAvailable: 2
+
+## Service configuration
+service:
+  frontend:
+    type: ClusterIP
+    port: 80
+    targetPort: 80
+  backend:
+    type: ClusterIP
+    port: 3000
+    targetPort: 3000
+
+## Ingress configuration
+ingress:
+  enabled: true
+  className: azure-application-gateway
+  annotations:
+    kubernetes.io/ingress.class: azure/application-gateway
+    appgw.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: perfectltp.example.com
+      paths:
+        - path: /api
+          pathType: Prefix
+          backend: backend
+        - path: /
+          pathType: Prefix
+          backend: frontend
+  tls:
+    - secretName: perfectltp-tls-secret
+      hosts:
+        - perfectltp.example.com
+
+## Configuration and Secrets
+config:
+  # Frontend environment variables
+  frontend:
+    VITE_API_URL: "https://perfectltp.example.com/api"
+    VITE_APP_ENVIRONMENT: "production"
+  
+  # Backend environment variables
+  backend:
+    NODE_ENV: "production"
+    PORT: "3000"
+    CORS_ORIGIN: "https://perfectltp.example.com"
+    COSMOS_DB_ENDPOINT: "https://cosmos-db-placeholder"
+
+secrets:
+  # Azure AD B2C authentication
+  adClientId: ""
+  adClientSecret: ""
+  adTenantId: ""
+  
+  # Database credentials
+  cosmosDbKey: ""
+  
+  # Azure OpenAI Service
+  azureOpenaiApiKey: ""
+  azureOpenaiEndpoint: ""
+  
+  # Azure Storage
+  azureStorageConnectionString: ""
+
+## Network policies
+networkPolicies:
+  enabled: false
+
+## Cert Manager configuration
+certManager:
+  enabled: false
+  issuerName: letsencrypt-prod
+  issuerKind: ClusterIssuer 

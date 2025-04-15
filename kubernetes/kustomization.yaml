@@ -1,0 +1,30 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Common labels for all resources
+commonLabels:
+  app.kubernetes.io/name: perfectltp
+  app.kubernetes.io/part-of: perfectltp-app
+
+resources:
+  # Configuration resources
+  - config/configmap.yaml
+  - config/secrets.yaml
+  
+  # Frontend resources
+  - frontend/deployment.yaml
+  - frontend/service.yaml
+  - frontend/hpa.yaml
+  
+  # Backend resources
+  - backend/deployment.yaml
+  - backend/service.yaml
+  - backend/hpa.yaml
+  - backend/pdb.yaml
+  
+  # Ingress for external access
+  - ingress.yaml
+
+# Configuration of behavior
+configurations:
+  - configurations.yaml 

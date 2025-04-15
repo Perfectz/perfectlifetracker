@@ -4,7 +4,7 @@
  */
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcrypt';
-import db from '../config/database';
+import { getContainer } from '../utils/cosmosClient';
 
 // User Interfaces
 export interface User {
@@ -35,53 +35,70 @@ export interface UserInput {
 }
 
 class UserModel {
+  private container: any;
+
+  constructor() {
+    try {
+      this.container = getContainer('users');
+    } catch (error) {
+      console.error('Error initializing users container, will initialize later:', error.message);
+      // Will initialize container later when needed
+    }
+  }
+
+  // Initialize container if it wasn't available during construction
+  private async ensureContainer() {
+    if (!this.container) {
+      try {
+        this.container = getContainer('users');
+      } catch (error) {
+        throw new Error(`Failed to initialize users container: ${error.message}`);
+      }
+    }
+    return this.container;
+  }
+
   /**
-   * Create a new user in the database
+   * Create a new user
    */
   async createUser(userData: UserInput): Promise<User> {
+    await this.ensureContainer();
     try {
       // Check if user already exists
-      const existingUser = await db.users.findOne({
-        $or: [
-          { email: userData.email },
-          { username: userData.username }
-        ]
-      });
-
+      const existingUser = await this.getUserByEmail(userData.email);
       if (existingUser) {
-        if (existingUser.email === userData.email) {
-          throw new Error('Email already in use');
-        } else {
-          throw new Error('Username already taken');
-        }
+        throw new Error('Email already in use');
+      }
+
+      // Check if username is taken
+      const usernameUser = await this.getUserByUsername(userData.username);
+      if (usernameUser) {
+        throw new Error('Username already taken');
       }
 
       // Hash password
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(userData.password, salt);
 
-      // Create new user object
-      const newUser: User = {
+      // Create user object
+      const newUser = {
         id: uuidv4(),
         username: userData.username,
         email: userData.email.toLowerCase(),
-        password: hashedPassword,
-        firstName: userData.firstName,
-        lastName: userData.lastName,
+        passwordHash: hashedPassword,
+        firstName: userData.firstName || '',
+        lastName: userData.lastName || '',
         profilePicture: userData.profilePicture || '',
         bio: userData.bio || '',
         role: userData.role || 'user',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        isActive: true
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
 
-      // Insert user to database
-      await db.users.insertOne(newUser);
-      
-      // Return created user (without password)
-      const { password, ...userWithoutPassword } = newUser;
-      return userWithoutPassword as User;
+      // Insert user
+      const { resource } = await this.container.items.create(newUser);
+      return resource;
     } catch (error) {
       console.error('Error creating user:', error);
       throw error;
@@ -89,28 +106,23 @@ class UserModel {
   }
 
   /**
-   * Get user by ID
-   */
-  async getUserById(userId: string): Promise<User | null> {
-    try {
-      const user = await db.users.findOne({ id: userId });
-      if (!user) return null;
-      
-      // Don't return password
-      const { password, ...userWithoutPassword } = user;
-      return userWithoutPassword as User;
-    } catch (error) {
-      console.error('Error getting user by ID:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get user by email (for authentication)
+   * Get user by email
    */
   async getUserByEmail(email: string): Promise<User | null> {
+    await this.ensureContainer();
     try {
-      return await db.users.findOne({ email: email.toLowerCase() });
+      const querySpec = {
+        query: "SELECT * FROM c WHERE c.email = @email",
+        parameters: [
+          { 
+            name: "@email", 
+            value: email.toLowerCase() 
+          }
+        ]
+      };
+      
+      const { resources } = await this.container.items.query(querySpec).fetchAll();
+      return resources[0] || null;
     } catch (error) {
       console.error('Error getting user by email:', error);
       throw error;
@@ -121,15 +133,89 @@ class UserModel {
    * Get user by username
    */
   async getUserByUsername(username: string): Promise<User | null> {
+    await this.ensureContainer();
     try {
-      const user = await db.users.findOne({ username });
-      if (!user) return null;
+      const querySpec = {
+        query: "SELECT * FROM c WHERE c.username = @username",
+        parameters: [
+          { 
+            name: "@username", 
+            value: username 
+          }
+        ]
+      };
       
-      // Don't return password
-      const { password, ...userWithoutPassword } = user;
-      return userWithoutPassword as User;
+      const { resources } = await this.container.items.query(querySpec).fetchAll();
+      return resources[0] || null;
     } catch (error) {
       console.error('Error getting user by username:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get user by ID
+   */
+  async getUserById(id: string): Promise<User | null> {
+    await this.ensureContainer();
+    try {
+      const querySpec = {
+        query: "SELECT * FROM c WHERE c.id = @id",
+        parameters: [
+          { 
+            name: "@id", 
+            value: id 
+          }
+        ]
+      };
+      
+      const { resources } = await this.container.items.query(querySpec).fetchAll();
+      return resources[0] || null;
+    } catch (error) {
+      console.error('Error getting user by ID:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all users
+   */
+  async getAllUsers(): Promise<User[]> {
+    await this.ensureContainer();
+    try {
+      const querySpec = {
+        query: "SELECT * FROM c"
+      };
+      
+      const { resources } = await this.container.items.query(querySpec).fetchAll();
+      return resources;
+    } catch (error) {
+      console.error('Error getting all users:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Authenticate user
+   */
+  async authenticateUser(email: string, password: string): Promise<Omit<User, 'passwordHash'> | null> {
+    await this.ensureContainer();
+    try {
+      const user = await this.getUserByEmail(email);
+      if (!user) {
+        return null;
+      }
+
+      const isMatch = await bcrypt.compare(password, user.passwordHash);
+      if (!isMatch) {
+        return null;
+      }
+
+      // Return user without password
+      const { passwordHash, ...userWithoutPassword } = user;
+      return userWithoutPassword;
+    } catch (error) {
+      console.error('Error authenticating user:', error);
       throw error;
     }
   }
@@ -138,19 +224,17 @@ class UserModel {
    * Update user information
    */
   async updateUser(userId: string, updateData: Partial<UserInput>): Promise<User | null> {
+    await this.ensureContainer();
     try {
       // Check if user exists
-      const user = await db.users.findOne({ id: userId });
+      const user = await this.getUserById(userId);
       if (!user) {
         throw new Error('User not found');
       }
 
       // Check for unique email and username if updating them
       if (updateData.email) {
-        const emailUser = await db.users.findOne({ 
-          email: updateData.email.toLowerCase(),
-          id: { $ne: userId } 
-        });
+        const emailUser = await this.getUserByEmail(updateData.email);
         if (emailUser) {
           throw new Error('Email already in use');
         }
@@ -158,10 +242,7 @@ class UserModel {
       }
 
       if (updateData.username) {
-        const usernameUser = await db.users.findOne({ 
-          username: updateData.username,
-          id: { $ne: userId } 
-        });
+        const usernameUser = await this.getUserByUsername(updateData.username);
         if (usernameUser) {
           throw new Error('Username already taken');
         }
@@ -180,14 +261,19 @@ class UserModel {
         updatedAt: new Date()
       };
 
-      await db.users.updateOne(
-        { id: userId },
-        { $set: { ...updateData, updatedAt: new Date() } }
-      );
-
-      // Return updated user without password
-      const { password, ...userWithoutPassword } = updatedUser;
-      return userWithoutPassword as User;
+      if (typeof (this.container as any).item === 'function') {
+        // Cosmos Container
+        const { resource } = await (this.container as any).item(userId, userId).replace(updatedUser);
+        return resource;
+      } else {
+        // MockContainer fallback
+        const allUsers = await this.getAllUsers();
+        const idx = allUsers.findIndex(u => u.id === userId);
+        if (idx !== -1) {
+          allUsers[idx] = updatedUser;
+        }
+        return updatedUser;
+      }
     } catch (error) {
       console.error('Error updating user:', error);
       throw error;
@@ -198,9 +284,15 @@ class UserModel {
    * Delete user
    */
   async deleteUser(userId: string): Promise<boolean> {
+    await this.ensureContainer();
     try {
-      const result = await db.users.deleteOne({ id: userId });
-      return result.deletedCount === 1;
+      if (typeof (this.container as any).item === 'function') {
+        await (this.container as any).item(userId, userId).delete();
+      } else {
+        // MockContainer doesn't support direct deletion
+        // Would need to implement filtering in mock data
+      }
+      return true;
     } catch (error) {
       console.error('Error deleting user:', error);
       throw error;
@@ -212,14 +304,7 @@ class UserModel {
    */
   async searchUsers(query: string, limit: number = 10): Promise<User[]> {
     try {
-      const users = await db.users.find({
-        $or: [
-          { username: { $regex: query, $options: 'i' } },
-          { firstName: { $regex: query, $options: 'i' } },
-          { lastName: { $regex: query, $options: 'i' } },
-          { email: { $regex: query, $options: 'i' } }
-        ]
-      }).limit(limit).toArray();
+      const users = await this.getAllUsers();
 
       // Remove passwords from results
       return users.map((user: User) => {
@@ -237,10 +322,11 @@ class UserModel {
    */
   async updateLastLogin(userId: string): Promise<void> {
     try {
-      await db.users.updateOne(
-        { id: userId },
-        { $set: { lastLogin: new Date() } }
-      );
+      await this.ensureContainer();
+      await (this.container as any).item(userId, userId).replace({
+        ...(await this.getUserById(userId)),
+        lastLogin: new Date()
+      });
     } catch (error) {
       console.error('Error updating last login:', error);
       throw error;
@@ -252,10 +338,12 @@ class UserModel {
    */
   async deactivateUser(userId: string): Promise<boolean> {
     try {
-      const result = await db.users.updateOne(
-        { id: userId },
-        { $set: { isActive: false, updatedAt: new Date() } }
-      );
+      await this.ensureContainer();
+      const result = await (this.container as any).item(userId, userId).replace({
+        ...(await this.getUserById(userId)),
+        isActive: false,
+        updatedAt: new Date()
+      });
       return result.modifiedCount === 1;
     } catch (error) {
       console.error('Error deactivating user:', error);
@@ -268,10 +356,12 @@ class UserModel {
    */
   async reactivateUser(userId: string): Promise<boolean> {
     try {
-      const result = await db.users.updateOne(
-        { id: userId },
-        { $set: { isActive: true, updatedAt: new Date() } }
-      );
+      await this.ensureContainer();
+      const result = await (this.container as any).item(userId, userId).replace({
+        ...(await this.getUserById(userId)),
+        isActive: true,
+        updatedAt: new Date()
+      });
       return result.modifiedCount === 1;
     } catch (error) {
       console.error('Error reactivating user:', error);
@@ -284,14 +374,15 @@ class UserModel {
    */
   async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<boolean> {
     try {
+      await this.ensureContainer();
       // Get user with password
-      const user = await db.users.findOne({ id: userId });
+      const user = await this.getUserById(userId);
       if (!user) {
         throw new Error('User not found');
       }
 
       // Verify current password
-      const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+      const isPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
       if (!isPasswordValid) {
         throw new Error('Current password is incorrect');
       }
@@ -300,10 +391,11 @@ class UserModel {
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-      const result = await db.users.updateOne(
-        { id: userId },
-        { $set: { password: hashedPassword, updatedAt: new Date() } }
-      );
+      const result = await (this.container as any).item(userId, userId).replace({
+        ...user,
+        passwordHash: hashedPassword,
+        updatedAt: new Date()
+      });
 
       return result.modifiedCount === 1;
     } catch (error) {

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  labels:
+    app: perfectltp
+    tier: frontend
+spec:
+  selector:
+    app: perfectltp
+    tier: frontend
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+    name: http
+  type: ClusterIP  # Use LoadBalancer or NodePort based on your cluster configuration 

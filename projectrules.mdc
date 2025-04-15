@@ -1,0 +1,34 @@
+# ... existing code ...
+- Always use TypeScript strict mode
+- Follow functional component pattern with hooks instead of class components
+- Use consistent naming conventions (PascalCase for components, camelCase for functions/variables)
+- Keep functions small, focused, and with a single responsibility
+- Use proper TypeScript interfaces and types - avoid using 'any'
+- Implement proper error handling in all async operations
+- Use proper dependency injection and service abstraction
+- Follow the container/presentation component pattern
+- Implement comprehensive unit tests for all business logic
+- Use destructuring for props and state
+- Group related state with useReducer when appropriate
+- Use React Context and hooks for state management where appropriate
+- Avoid prop drilling more than 2 levels deep
+- Avoid inline styles - use Material UI's styling system consistently
+- Use React.memo() and useCallback() appropriately for performance
+- Use proper ESLint and Prettier configuration
+- Write meaningful, descriptive variable and function names
+- Avoid magic numbers and strings, use constants instead
+- Use async/await instead of Promise chains for better readability
+- Implement proper error boundaries in React components
+- **MANDATORY: Use TDD (Test-Driven Development) and BDD (Behavior-Driven Development) methodologies for all new features and bug fixes.**
+    - Write tests before implementation (TDD) and describe expected behaviors in human-readable scenarios (BDD).
+    - Rationale: These practices ensure code reliability, maintainability, and clear communication of requirements, reducing bugs and improving developer confidence.
+
+# Dependency and Version Management
+- **Explicit Version Pinning:** Always specify exact versions for all dependencies in package.json to avoid unexpected breaking changes.
+- **Regular Dependency Audits:** Run `npm audit` or equivalent regularly to identify and address vulnerabilities or incompatibilities.
+- **Compatibility Checks:** Before upgrading any dependency, check compatibility with the current codebase and other dependencies. Use release notes and changelogs.
+- **Document Breaking Changes:** If a dependency upgrade introduces breaking changes or requires workarounds, document these in the decisions_log.md and update system_requirements.md if needed.
+- **Lockfile Maintenance:** Always commit the lockfile (package-lock.json or yarn.lock) and ensure it is up to date with the codebase.
+- **Automated Tooling:** Use tools like Renovate or Dependabot to automate dependency updates, but always review and test updates before merging.
+- **CI Enforcement:** Ensure CI checks for dependency consistency and fails builds if lockfiles or versions are out of sync.
+# ... existing code ... 

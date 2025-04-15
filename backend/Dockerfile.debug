@@ -1,0 +1,31 @@
+# Use Node.js 20 Alpine as base image
+FROM node:20-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package.json package-lock.json ./
+
+# Install all dependencies including dev dependencies
+RUN npm install
+
+# Install uuid explicitly
+RUN npm install uuid
+
+# Install ts-node globally
+RUN npm install -g ts-node typescript
+
+# Copy all source files
+COPY . .
+
+# Expose API port
+EXPOSE 3001
+
+# Set environment variables
+ENV NODE_ENV=development
+ENV PORT=3001
+ENV USE_MOCK_DATABASE=true
+
+# Start the server with ts-node
+CMD ["npx", "ts-node", "src/index.ts"] 

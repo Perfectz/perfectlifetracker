@@ -10,9 +10,10 @@ import { msalInstance } from './services/authService';
 import { AuthProvider } from './services/AuthContext';
 import { AuthModalsProvider } from './hooks/useAuthModals';
 import { FrontendAuthBridge } from './services/FrontendAuthBridge';
-import { createMuiTheme } from '../../src/theme';
+import { createMuiTheme } from './theme';
 import { responsiveFontSizes } from '@mui/material/styles';
 import ErrorBoundary from './components/ErrorBoundary';
+import { Routes, Route } from 'react-router-dom';
 
 // Navigation components
 import ResponsiveNavigator from './navigation/ResponsiveNavigator';
@@ -21,7 +22,7 @@ import ResponsiveNavigator from './navigation/ResponsiveNavigator';
 const theme = responsiveFontSizes(createMuiTheme(false));
 
 // Main App with Authentication Provider
-function App() {
+const App: React.FC = () => {
   return (
     <ErrorBoundary>
       <ThemeProvider theme={theme}>
@@ -30,7 +31,9 @@ function App() {
           <AuthProvider>
             <FrontendAuthBridge>
               <AuthModalsProvider>
-                <ResponsiveNavigator />
+                <Routes>
+                  <Route path="*" element={<ResponsiveNavigator />} />
+                </Routes>
               </AuthModalsProvider>
             </FrontendAuthBridge>
           </AuthProvider>
@@ -38,6 +41,6 @@ function App() {
       </ThemeProvider>
     </ErrorBoundary>
   );
-}
+};
 
 export default App;

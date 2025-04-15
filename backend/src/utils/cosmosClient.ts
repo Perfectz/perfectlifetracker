@@ -7,13 +7,21 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Flag to use mock database instead of Cosmos DB
-const useMockDatabase = process.env.USE_MOCK_DATABASE === 'true';
+// Determine if we should use mock database:
+// 1. Explicit setting in env var
+// 2. Development environment without Cosmos credentials
+// 3. Missing Cosmos credentials
+const isDevelopment = process.env.NODE_ENV === 'development';
+const hasCosmosCredentials = !!(process.env.COSMOS_DB_ENDPOINT && process.env.COSMOS_DB_KEY);
+let useMockDatabase = 
+  process.env.USE_MOCK_DATABASE === 'true' || 
+  (isDevelopment && !hasCosmosCredentials) ||
+  !hasCosmosCredentials;
 
 // Environment variables for Cosmos DB connection
-const cosmosEndpoint = process.env.COSMOSDB_ENDPOINT || '';
-const cosmosKey = process.env.COSMOSDB_KEY || '';
-const databaseId = process.env.COSMOSDB_DATABASE || 'lifetrackpro-db';
+const cosmosEndpoint = process.env.COSMOS_DB_ENDPOINT || '';
+const cosmosKey = process.env.COSMOS_DB_KEY || '';
+const databaseId = process.env.COSMOS_DB_DATABASE || 'lifetrackpro-db';
 
 // Container IDs
 const containersConfig = {
@@ -85,6 +93,33 @@ class MockContainer {
       }
     };
   }
+
+  // Add item method that supports direct item access (not just through items())
+  async item(id: string, partitionKey: string) {
+    return {
+      read: async () => {
+        const item = this.data.find(i => i.id === id);
+        if (!item) throw { code: 404, message: `Item with id ${id} not found` };
+        return { resource: item };
+      },
+      replace: async (newItem: any) => {
+        const index = this.data.findIndex(i => i.id === id);
+        if (index >= 0) {
+          this.data[index] = newItem;
+          return { resource: newItem };
+        }
+        throw { code: 404, message: `Item with id ${id} not found` };
+      },
+      delete: async () => {
+        const index = this.data.findIndex(i => i.id === id);
+        if (index >= 0) {
+          this.data.splice(index, 1);
+          return { resource: {} };
+        }
+        throw { code: 404, message: `Item with id ${id} not found` };
+      }
+    };
+  }
 }
 
 class MockDatabase {
@@ -98,24 +133,37 @@ class MockDatabase {
   };
 }
 
-// Cosmos client instance or mock
+// Initialize mock DB or Cosmos client
 let client: CosmosClient;
 let database: Database | MockDatabase;
 let containers: { [key: string]: Container | MockContainer } = {};
 let mockContainers: { [key: string]: MockContainer } = {};
 
 if (useMockDatabase) {
-  console.log('Using mock in-memory database');
+  console.log('Using mock in-memory database - no Cosmos DB connection required');
   database = new MockDatabase();
 } else {
-  console.log(`Using Cosmos DB at ${cosmosEndpoint}`);
-  client = new CosmosClient({
-    endpoint: cosmosEndpoint,
-    key: cosmosKey,
-    connectionPolicy: {
-      requestTimeout: 30000 // 30 seconds timeout for requests
+  if (!cosmosEndpoint || !cosmosKey) {
+    console.warn('Cosmos DB endpoint or key is missing. Falling back to mock database');
+    database = new MockDatabase();
+    useMockDatabase = true;
+  } else {
+    console.log(`Using Cosmos DB at ${cosmosEndpoint}`);
+    try {
+      client = new CosmosClient({
+        endpoint: cosmosEndpoint,
+        key: cosmosKey,
+        connectionPolicy: {
+          requestTimeout: 30000 // 30 seconds timeout for requests
+        }
+      });
+    } catch (error) {
+      console.error('Failed to initialize Cosmos client:', error);
+      console.log('Falling back to mock database');
+      database = new MockDatabase();
+      useMockDatabase = true;
     }
-  });
+  }
 }
 
 /**
@@ -126,15 +174,23 @@ export async function initializeCosmosDB() {
     if (useMockDatabase) {
       console.log('Initializing mock database...');
       
+      // Initialize mockContainers if needed
+      if (!mockContainers) {
+        mockContainers = {};
+      }
+      
       // Create mock containers
       for (const [containerName, containerId] of Object.entries(containersConfig)) {
-        const { container } = await database.containers.createIfNotExists({
-          id: containerId
-        });
-        containers[containerName] = container;
+        if (!mockContainers[containerId]) {
+          mockContainers[containerId] = new MockContainer(containerId);
+        }
+        
+        // Register container
+        containers[containerName] = mockContainers[containerId];
         console.log(`Mock container ${containerId} initialized`);
       }
       
+      console.log('Mock database initialization complete');
     } else {
       console.log(`Initializing Cosmos DB connection to ${cosmosEndpoint}...`);
       
@@ -158,7 +214,6 @@ export async function initializeCosmosDB() {
       }
     }
     
-    console.log(useMockDatabase ? 'Mock database initialization complete' : 'Cosmos DB initialization complete');
     return true;
   } catch (error) {
     console.error(`Error initializing ${useMockDatabase ? 'mock database' : 'Cosmos DB'}:`, error);
@@ -170,10 +225,48 @@ export async function initializeCosmosDB() {
  * Gets a specific container by name
  */
 export function getContainer(containerName: string): Container | MockContainer {
-  if (!containers[containerName]) {
-    throw new Error(`Container ${containerName} not initialized`);
+  try {
+    if (!containers[containerName]) {
+      // Check if database is initialized
+      if (!database) {
+        throw new Error('Database not initialized');
+      }
+      
+      // If mockContainers exists and we're in mock mode, check there
+      if (useMockDatabase && mockContainers && mockContainers[containerName]) {
+        containers[containerName] = mockContainers[containerName];
+        return containers[containerName];
+      }
+      
+      // Attempt to initialize the container dynamically
+      console.log(`Container ${containerName} requested but not yet initialized, initializing now...`);
+      if (useMockDatabase) {
+        if (!mockContainers) {
+          mockContainers = {};
+        }
+        mockContainers[containerName] = new MockContainer(containerName);
+        containers[containerName] = mockContainers[containerName];
+        console.log(`Mock container ${containerName} initialized on demand`);
+      } else {
+        // For real Cosmos, this should be handled differently
+        throw new Error(`Container ${containerName} not initialized`);
+      }
+    }
+    return containers[containerName];
+  } catch (error) {
+    console.error(`Error getting container ${containerName}:`, error);
+    if (useMockDatabase) {
+      // Auto-create mock container on demand
+      console.log(`Creating mock container ${containerName} on demand due to error`);
+      if (!mockContainers) {
+        mockContainers = {};
+      }
+      mockContainers[containerName] = new MockContainer(containerName);
+      containers[containerName] = mockContainers[containerName];
+      return containers[containerName];
+    }
+    throw error;
   }
-  return containers[containerName];
 }
 
 /**

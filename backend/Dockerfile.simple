@@ -1,0 +1,31 @@
+# Use Node.js 20 Alpine as base image
+FROM node:20-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package.json package-lock.json ./
+
+# Install all dependencies including dev dependencies
+RUN npm install
+
+# Install uuid explicitly with a compatible version
+RUN npm install uuid@9.0.1 --save
+
+# Copy all source files
+COPY . .
+
+# Build the TypeScript code
+RUN npm run build
+
+# Expose API port
+EXPOSE 3001
+
+# Set environment variables
+ENV NODE_ENV=development
+ENV PORT=3001
+ENV USE_MOCK_DATABASE=true
+
+# Start the server using a direct command that first initializes the database
+CMD ["/bin/sh", "-c", "node -e \"require('./dist/utils/cosmosClient').initializeCosmosDB().then(() => { console.log('Database initialized successfully'); }).catch(err => { console.error('Failed to initialize database:', err); process.exit(1); })\" && npm run dev"] 

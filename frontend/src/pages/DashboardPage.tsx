@@ -9,7 +9,7 @@ import Dashboard, { Widget } from '../components/Dashboard';
 
 const DashboardPage: React.FC = () => {
   return (
-    <Layout title="Dashboard">
+    <Layout title="Dashboard" useStandardHeader={true}>
       <Dashboard>
         {/* Welcome Widget */}
         <Widget 

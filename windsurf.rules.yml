@@ -1,0 +1,55 @@
+# Windsurf Rules for Perfect LifeTracker Pro
+# This file enforces and documents the required development and deployment workflows for this project.
+
+rules:
+  - id: enforce-docker-npm-scripts
+    description: |
+      All app lifecycle operations (start, stop, restart) MUST be performed using the provided npm scripts, which invoke Docker and manage all related processes.
+    enforcement:
+      - Only use these npm scripts for running/stopping the app:
+          - npm start
+          - npm run start:dev
+          - npm run start:clean
+          - npm run start:clean:dev
+          - npm run stop
+      - Do NOT run Docker commands directly or bypass the scripts.
+
+  - id: container-cleanup-before-start
+    description: |
+      Before starting the application, always ensure all previous Docker containers and related processes are stopped and cleaned up.
+    enforcement:
+      - Always run: npm run stop before any start command.
+      - Ensure no orphaned processes are using ports 3000-3003.
+
+  - id: port-allocation
+    description: |
+      The application must only use ports 3000-3003 for frontend/backend services. These are managed by Docker Compose.
+    enforcement:
+      - Do not manually start services on these ports outside Docker.
+
+  - id: env-configuration
+    description: |
+      All environment variables should be configured via Docker Compose or .env files managed by the npm scripts.
+    enforcement:
+      - Do not override environment variables manually at runtime.
+
+  - id: volume-mounts-for-dev
+    description: |
+      For development, Docker Compose mounts local source directories as volumes for hot reloading.
+    enforcement:
+      - Do not edit files inside running containers; always edit on the host.
+
+workflow:
+  development:
+    steps:
+      - Run: npm run stop
+      - Run: npm run start:clean:dev
+  production:
+    steps:
+      - Run: npm run stop
+      - Run: npm run start:clean
+
+notes:
+  - Always use the provided scripts for process and container management.
+  - Never bypass Docker Compose or npm scripts for app lifecycle operations.
+  - See docker-rules.mdc for legacy documentation.

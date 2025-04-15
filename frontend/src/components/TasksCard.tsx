@@ -2,7 +2,7 @@
  * frontend/src/components/TasksCard.tsx
  * Card component for displaying and managing user tasks
  */
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -57,11 +57,39 @@ const TasksCard: React.FC<TasksCardProps> = ({
 }) => {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
 
-  const handleToggleTask = (taskId: number) => {
+  // Memoize the toggle handler to prevent re-renders
+  const handleToggleTask = useCallback((taskId: number) => {
     setTasks(prevTasks =>
       prevTasks.map(task => (task.id === taskId ? { ...task, completed: !task.completed } : task))
     );
-  };
+  }, []);
+
+  // Memoize the rendered task list
+  const renderedTasks = useMemo(() => (
+    tasks.map(task => (
+      <ListItem
+        key={task.id}
+        disablePadding
+        secondaryAction={null}
+      >
+        <ListItemButton onClick={() => handleToggleTask(task.id)}>
+          <ListItemIcon sx={{ minWidth: 40 }}>
+            <TerraCheckbox
+              edge="start"
+              checked={task.completed}
+              tabIndex={-1}
+              disableRipple
+            />
+          </ListItemIcon>
+          {task.completed ? (
+            <CompletedTaskText primary={task.name} />
+          ) : (
+            <ListItemText primary={task.name} />
+          )}
+        </ListItemButton>
+      </ListItem>
+    ))
+  ), [tasks, handleToggleTask]);
 
   return (
     <Card>
@@ -71,32 +99,7 @@ const TasksCard: React.FC<TasksCardProps> = ({
         </Typography>
 
         <List sx={{ mt: 1 }}>
-          {tasks.map(task => (
-            <ListItem
-              key={task.id}
-              disablePadding
-              sx={{
-                borderBottom: `1px solid ${terraColors.pearl}`,
-                py: 0.5,
-              }}
-            >
-              <ListItemButton role={undefined} onClick={() => handleToggleTask(task.id)} dense>
-                <ListItemIcon sx={{ minWidth: 40 }}>
-                  <TerraCheckbox
-                    edge="start"
-                    checked={task.completed}
-                    tabIndex={-1}
-                    disableRipple
-                  />
-                </ListItemIcon>
-                {task.completed ? (
-                  <CompletedTaskText primary={task.name} />
-                ) : (
-                  <ListItemText primary={task.name} />
-                )}
-              </ListItemButton>
-            </ListItem>
-          ))}
+          {renderedTasks}
         </List>
       </CardContent>
     </Card>

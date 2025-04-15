@@ -1,0 +1,31 @@
+version: "3.9"
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.simple
+    container_name: lifetrack-frontend-dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://backend:3001
+      - ROLLUP_NATIVE_MODULES=false
+      - ROLLUP_SKIP_NODEJS_NATIVE=true
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.simple
+    container_name: lifetrack-backend-dev
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - USE_MOCK_DATABASE=true
+    restart: unless-stopped 

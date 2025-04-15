@@ -4,7 +4,7 @@
  */
 import React, { useEffect, useState, useCallback } from 'react';
 import { useMediaQuery } from '@mui/material';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { terraColors } from '../theme';
 
 // Desktop components
@@ -89,6 +89,8 @@ const ResponsiveNavigator: React.FC = () => {
   // This allows testing the UI without a backend
   const isDevelopment = import.meta.env.MODE === 'development';
   const { isAuthenticated: authState } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   
   // During development, override the auth state for UI testing
   // This lets us test the authenticated UI even if auth services aren't available
@@ -142,10 +144,56 @@ const ResponsiveNavigator: React.FC = () => {
   // Handle navigation item click
   const handleNavItemClick = (item: string) => {
     setActiveItem(item);
+    navigate(`/${item === 'dashboard' ? '' : item}`);
   };
+
+  // Effect to set active item based on current location
+  useEffect(() => {
+    const path = location.pathname.substring(1) || 'dashboard';
+    setActiveItem(path);
+  }, [location]);
 
   // Determine if mobile based on state, not directly from the query
   const isMobile = layoutMode === 'mobile';
+
+  // Render the appropriate component based on the current path
+  const renderContent = () => {
+    const path = location.pathname;
+    
+    // If not authenticated, only allow login and register routes
+    if (!isAuthenticated) {
+      if (path === '/login') return <LoginScreen />;
+      if (path === '/register') return <RegisterScreen />;
+      return <Navigate to="/login" replace />;
+    }
+    
+    // Authenticated routes
+    switch (path) {
+      case '/':
+      case '/basic':
+        return <BasicPage />;
+      case '/test':
+        return <TestPage />;
+      case '/dashboard':
+        return <DashboardPage />;
+      case '/home':
+        return <UniversalHomeScreen />;
+      case '/fitness':
+        return <FitnessScreen />;
+      case '/development':
+        return <DevelopmentScreen />;
+      case '/tasks':
+        return <TasksScreen />;
+      case '/profile':
+        return <ProfileScreen />;
+      case '/settings':
+        return <SettingsScreen />;
+      case '/file-upload':
+        return <FileUploadDemo />;
+      default:
+        return <Navigate to="/" replace />;
+    }
+  };
 
   return (
     <ErrorBoundary>
@@ -179,20 +227,7 @@ const ResponsiveNavigator: React.FC = () => {
               padding: isMobile ? '16px' : '24px',
               backgroundColor: terraColors.pearl
             }}>
-              <Routes>
-                <Route path="/" element={<BasicPage />} />
-                <Route path="/basic" element={<BasicPage />} />
-                <Route path="/test" element={<TestPage />} />
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/home" element={<UniversalHomeScreen />} />
-                <Route path="/fitness" element={<FitnessScreen />} />
-                <Route path="/development" element={<DevelopmentScreen />} />
-                <Route path="/tasks" element={<TasksScreen />} />
-                <Route path="/profile" element={<ProfileScreen />} />
-                <Route path="/settings" element={<SettingsScreen />} />
-                <Route path="/file-upload" element={<FileUploadDemo />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
+              {renderContent()}
             </div>
           </div>
           
@@ -233,11 +268,7 @@ const ResponsiveNavigator: React.FC = () => {
                 </button>
               </div>
             )}
-            <Routes>
-              <Route path="/login" element={<LoginScreen />} />
-              <Route path="/register" element={<RegisterScreen />} />
-              <Route path="*" element={<Navigate to="/login" replace />} />
-            </Routes>
+            {renderContent()}
           </div>
         </div>
       )}

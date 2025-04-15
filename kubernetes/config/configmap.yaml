@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: perfectltp-config
+  labels:
+    app: perfectltp
+data:
+  # Frontend environment variables
+  VITE_API_URL: "http://backend-service:3000/api"
+  VITE_APP_ENVIRONMENT: "production"
+  
+  # Backend environment variables
+  NODE_ENV: "production"
+  PORT: "3000"
+  CORS_ORIGIN: "https://perfectltp.example.com"
+  
+  # Azure connection settings (replace with actual values in a Secret for production)
+  COSMOS_DB_ENDPOINT: "https://cosmos-db-placeholder"
+  AZURE_STORAGE_CONNECTION_STRING: "placeholder" 

@@ -2,220 +2,191 @@
  * frontend/src/screens/SettingsScreen.tsx
  * Application settings and preferences screen (web version)
  */
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Box,
   Container,
-  Paper,
-  Typography,
-  List,
   ListItem,
-  ListItemText,
   ListItemIcon,
-  Switch,
-  Divider,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
+  ListItemText,
   Button,
-  ListItemButton
+  Divider,
+  SelectChangeEvent,
+  Typography,
+  Info
 } from '@mui/material';
 import { 
-  Brightness4, 
-  Brightness7, 
-  CloudSync, 
-  Backup, 
-  Language, 
-  CalendarToday, 
-  AccessTime, 
-  Security, 
-  Info
+  Info as InfoIcon
 } from '@mui/icons-material';
-import { terraColors } from '../theme';
+
+import { 
+  SettingsSection, 
+  ToggleSetting, 
+  SelectSetting,
+  ActionButton,
+  settingsStyles,
+  displaySettings,
+  dataSettings,
+  regionalSettings,
+  securitySettings,
+  aboutSettings
+} from './settings';
+
 import type { StackScreenProps } from '@react-navigation/stack';
 import type { MainTabParamList } from '../navigation/AppNavigator';
 
 type SettingsScreenProps = StackScreenProps<MainTabParamList, 'Settings'>;
 
 const SettingsScreen: React.FC<SettingsScreenProps> = () => {
+  // Display Settings state
   const [darkMode, setDarkMode] = useState(false);
   const [compactMode, setCompactMode] = useState(false);
+  
+  // Data Settings state
   const [cloudSync, setCloudSync] = useState(true);
   const [autoBackup, setAutoBackup] = useState(false);
+  
+  // Regional Settings state
   const [language, setLanguage] = useState('en');
   const [dateFormat, setDateFormat] = useState('MM/DD/YYYY');
   const [timeFormat, setTimeFormat] = useState('12h');
   const [weekStartDay, setWeekStartDay] = useState('Sunday');
 
+  // Toggle setting change handlers
+  const handleToggleChange = useCallback((settingId: string, currentValue: boolean) => {
+    switch (settingId) {
+      case 'darkMode':
+        setDarkMode(!currentValue);
+        break;
+      case 'compactMode':
+        setCompactMode(!currentValue);
+        break;
+      case 'cloudSync':
+        setCloudSync(!currentValue);
+        break;
+      case 'autoBackup':
+        setAutoBackup(!currentValue);
+        break;
+    }
+  }, []);
+
+  // Select setting change handlers
+  const handleSelectChange = useCallback((settingId: string, event: SelectChangeEvent) => {
+    const value = event.target.value;
+    switch (settingId) {
+      case 'language':
+        setLanguage(value);
+        break;
+      case 'dateFormat':
+        setDateFormat(value);
+        break;
+      case 'timeFormat':
+        setTimeFormat(value);
+        break;
+      case 'weekStartDay':
+        setWeekStartDay(value);
+        break;
+    }
+  }, []);
+
+  // Action button handlers
+  const handleActionClick = useCallback((actionId: string) => {
+    // Implement action handlers
+    console.log(`Action clicked: ${actionId}`);
+  }, []);
+
   return (
-    <Box sx={{ 
-      flex: 1, 
-      backgroundColor: terraColors.pearl,
-      p: 2,
-      overflow: 'auto'
-    }}>
+    <Box sx={settingsStyles.container}>
       <Container maxWidth="md">
-        <Typography variant="h5" sx={{ color: terraColors.prussianBlue, mb: 3 }}>
+        <Typography variant="h5" sx={settingsStyles.pageTitle}>
           Settings
         </Typography>
 
         {/* Display Settings */}
-        <Paper sx={{ mb: 3, p: 2, borderRadius: 2 }}>
-          <Typography variant="h6" sx={{ color: terraColors.prussianBlue, mb: 1 }}>
-            Display
-          </Typography>
-          <List>
-            <ListItem>
-              <ListItemIcon>{darkMode ? <Brightness4 /> : <Brightness7 />}</ListItemIcon>
-              <ListItemText primary="Dark Mode" />
-              <Switch checked={darkMode} onChange={() => setDarkMode(!darkMode)} />
-            </ListItem>
-            <ListItem>
-              <ListItemIcon><CloudSync /></ListItemIcon>
-              <ListItemText primary="Compact Mode" />
-              <Switch checked={compactMode} onChange={() => setCompactMode(!compactMode)} />
-            </ListItem>
-          </List>
-        </Paper>
+        <SettingsSection title="Display">
+          {displaySettings.map(setting => (
+            <ToggleSetting
+              key={setting.id}
+              icon={setting.getIcon(setting.id === 'darkMode' ? darkMode : compactMode)}
+              label={setting.label}
+              checked={setting.id === 'darkMode' ? darkMode : compactMode}
+              onChange={() => handleToggleChange(
+                setting.id, 
+                setting.id === 'darkMode' ? darkMode : compactMode
+              )}
+            />
+          ))}
+        </SettingsSection>
 
         {/* Data and Storage */}
-        <Paper sx={{ mb: 3, p: 2, borderRadius: 2 }}>
-          <Typography variant="h6" sx={{ color: terraColors.prussianBlue, mb: 1 }}>
-            Data & Storage
-          </Typography>
-          <List>
-            <ListItem>
-              <ListItemIcon><CloudSync /></ListItemIcon>
-              <ListItemText primary="Cloud Sync" />
-              <Switch checked={cloudSync} onChange={() => setCloudSync(!cloudSync)} />
-            </ListItem>
-            <ListItem>
-              <ListItemIcon><Backup /></ListItemIcon>
-              <ListItemText primary="Automatic Backup" />
-              <Switch checked={autoBackup} onChange={() => setAutoBackup(!autoBackup)} />
-            </ListItem>
-            <ListItem>
-              <Button variant="outlined" sx={{ mt: 1 }}>Manage Storage</Button>
-            </ListItem>
-          </List>
-        </Paper>
+        <SettingsSection title="Data & Storage">
+          {dataSettings.map(setting => (
+            <ToggleSetting
+              key={setting.id}
+              icon={setting.getIcon(setting.id === 'cloudSync' ? cloudSync : autoBackup)}
+              label={setting.label}
+              checked={setting.id === 'cloudSync' ? cloudSync : autoBackup}
+              onChange={() => handleToggleChange(
+                setting.id, 
+                setting.id === 'cloudSync' ? cloudSync : autoBackup
+              )}
+            />
+          ))}
+          <ListItem>
+            <Button variant="outlined" sx={settingsStyles.buttonContainer}>
+              Manage Storage
+            </Button>
+          </ListItem>
+        </SettingsSection>
 
         {/* Regional Settings */}
-        <Paper sx={{ mb: 3, p: 2, borderRadius: 2 }}>
-          <Typography variant="h6" sx={{ color: terraColors.prussianBlue, mb: 1 }}>
-            Regional
-          </Typography>
-          <List>
-            <ListItem>
-              <ListItemIcon><Language /></ListItemIcon>
-              <FormControl fullWidth sx={{ m: 1 }}>
-                <InputLabel id="language-select-label">Language</InputLabel>
-                <Select
-                  labelId="language-select-label"
-                  value={language}
-                  label="Language"
-                  onChange={(e) => setLanguage(e.target.value)}
-                >
-                  <MenuItem value="en">English</MenuItem>
-                  <MenuItem value="es">Español</MenuItem>
-                  <MenuItem value="fr">Français</MenuItem>
-                </Select>
-              </FormControl>
-            </ListItem>
-            <Divider sx={{ my: 1 }} />
-            <ListItem>
-              <ListItemIcon><CalendarToday /></ListItemIcon>
-              <FormControl fullWidth sx={{ m: 1 }}>
-                <InputLabel id="date-format-select-label">Date Format</InputLabel>
-                <Select
-                  labelId="date-format-select-label"
-                  value={dateFormat}
-                  label="Date Format"
-                  onChange={(e) => setDateFormat(e.target.value)}
-                >
-                  <MenuItem value="MM/DD/YYYY">MM/DD/YYYY</MenuItem>
-                  <MenuItem value="DD/MM/YYYY">DD/MM/YYYY</MenuItem>
-                  <MenuItem value="YYYY-MM-DD">YYYY-MM-DD</MenuItem>
-                </Select>
-              </FormControl>
-            </ListItem>
-            <Divider sx={{ my: 1 }} />
-            <ListItem>
-              <ListItemIcon><AccessTime /></ListItemIcon>
-              <FormControl fullWidth sx={{ m: 1 }}>
-                <InputLabel id="time-format-select-label">Time Format</InputLabel>
-                <Select
-                  labelId="time-format-select-label"
-                  value={timeFormat}
-                  label="Time Format"
-                  onChange={(e) => setTimeFormat(e.target.value)}
-                >
-                  <MenuItem value="12h">12-hour</MenuItem>
-                  <MenuItem value="24h">24-hour</MenuItem>
-                </Select>
-              </FormControl>
-            </ListItem>
-            <Divider sx={{ my: 1 }} />
-            <ListItem>
-              <ListItemIcon><CalendarToday /></ListItemIcon>
-              <FormControl fullWidth sx={{ m: 1 }}>
-                <InputLabel id="week-start-select-label">Week Starts On</InputLabel>
-                <Select
-                  labelId="week-start-select-label"
-                  value={weekStartDay}
-                  label="Week Starts On"
-                  onChange={(e) => setWeekStartDay(e.target.value)}
-                >
-                  <MenuItem value="Sunday">Sunday</MenuItem>
-                  <MenuItem value="Monday">Monday</MenuItem>
-                </Select>
-              </FormControl>
-            </ListItem>
-          </List>
-        </Paper>
+        <SettingsSection title="Regional">
+          {regionalSettings.map((setting, index) => (
+            <React.Fragment key={setting.id}>
+              {index > 0 && <Divider sx={settingsStyles.divider} />}
+              <SelectSetting
+                icon={setting.icon}
+                label={setting.label}
+                labelId={setting.labelId}
+                value={
+                  setting.id === 'language' ? language :
+                  setting.id === 'dateFormat' ? dateFormat :
+                  setting.id === 'timeFormat' ? timeFormat : weekStartDay
+                }
+                options={setting.options}
+                onChange={(e) => handleSelectChange(setting.id, e)}
+              />
+            </React.Fragment>
+          ))}
+        </SettingsSection>
 
         {/* Privacy and Security */}
-        <Paper sx={{ mb: 3, p: 2, borderRadius: 2 }}>
-          <Typography variant="h6" sx={{ color: terraColors.prussianBlue, mb: 1 }}>
-            Privacy & Security
-          </Typography>
-          <List>
-            <ListItemButton>
-              <ListItemIcon><Security /></ListItemIcon>
-              <ListItemText primary="Change Password" />
-            </ListItemButton>
-            <ListItemButton>
-              <ListItemIcon><Security /></ListItemIcon>
-              <ListItemText primary="Two-Factor Authentication" />
-            </ListItemButton>
-            <ListItemButton>
-              <ListItemIcon><Security /></ListItemIcon>
-              <ListItemText primary="Privacy Policy" />
-            </ListItemButton>
-          </List>
-        </Paper>
+        <SettingsSection title="Privacy & Security">
+          {securitySettings.map(setting => (
+            <ActionButton
+              key={setting.id}
+              icon={setting.icon}
+              label={setting.label}
+              onClick={() => handleActionClick(setting.id)}
+            />
+          ))}
+        </SettingsSection>
 
         {/* About */}
-        <Paper sx={{ p: 2, borderRadius: 2 }}>
-          <Typography variant="h6" sx={{ color: terraColors.prussianBlue, mb: 1 }}>
-            About
-          </Typography>
-          <List>
-            <ListItem>
-              <ListItemIcon><Info /></ListItemIcon>
-              <ListItemText primary="App Version" secondary="1.0.0" />
-            </ListItem>
-            <ListItemButton>
-              <ListItemIcon><Info /></ListItemIcon>
-              <ListItemText primary="Terms of Service" />
-            </ListItemButton>
-            <ListItemButton>
-              <ListItemIcon><Info /></ListItemIcon>
-              <ListItemText primary="Help & Support" />
-            </ListItemButton>
-          </List>
-        </Paper>
+        <SettingsSection title="About" marginBottom={false}>
+          <ListItem>
+            <ListItemIcon><InfoIcon /></ListItemIcon>
+            <ListItemText primary="App Version" secondary="1.0.0" />
+          </ListItem>
+          {aboutSettings.map(setting => (
+            <ActionButton
+              key={setting.id}
+              icon={setting.icon}
+              label={setting.label}
+              onClick={() => handleActionClick(setting.id)}
+            />
+          ))}
+        </SettingsSection>
       </Container>
     </Box>
   );

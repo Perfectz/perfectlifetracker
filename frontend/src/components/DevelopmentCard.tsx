@@ -2,7 +2,7 @@
  * frontend/src/components/DevelopmentCard.tsx
  * Card component for tracking personal development activities
  */
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -51,26 +51,30 @@ const DevelopmentCard: React.FC<DevelopmentCardProps> = ({
   activities = sampleActivities,
   title = 'Development',
 }) => {
+  // Memoize the rendered activities list
+  const renderedActivities = useMemo(() => (
+    activities.map(activity => (
+      <Box key={activity.id} sx={{ mt: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+          <Typography variant="body2" color={terraColors.maastrichtBlue}>
+            {activity.name}
+          </Typography>
+          <Typography variant="body2" color={terraColors.tropicalRain} fontWeight="medium">
+            {activity.progress}%
+          </Typography>
+        </Box>
+        <TerraLinearProgress variant="determinate" value={activity.progress} />
+      </Box>
+    ))
+  ), [activities]);
+
   return (
     <Card>
       <CardContent>
         <Typography variant="h6" color={terraColors.prussianBlue} gutterBottom>
           {title}
         </Typography>
-
-        {activities.map(activity => (
-          <Box key={activity.id} sx={{ mt: 3 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-              <Typography variant="body2" color={terraColors.maastrichtBlue}>
-                {activity.name}
-              </Typography>
-              <Typography variant="body2" color={terraColors.tropicalRain} fontWeight="medium">
-                {activity.progress}%
-              </Typography>
-            </Box>
-            <TerraLinearProgress variant="determinate" value={activity.progress} />
-          </Box>
-        ))}
+        {renderedActivities}
       </CardContent>
     </Card>
   );

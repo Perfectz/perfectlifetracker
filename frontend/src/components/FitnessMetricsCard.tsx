@@ -2,7 +2,7 @@
  * frontend/src/components/FitnessMetricsCard.tsx
  * Card component for displaying fitness metrics with circular progress
  */
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -42,6 +42,9 @@ const FitnessMetricsCard: React.FC<FitnessMetricsCardProps> = ({
   progress = 75, // Default to 75% progress
   title = 'Fitness Metrics',
 }) => {
+  // Memoize the formatted steps string
+  const formattedSteps = useMemo(() => steps.toLocaleString(), [steps]);
+
   return (
     <Card>
       <CardContent>
@@ -101,7 +104,7 @@ const FitnessMetricsCard: React.FC<FitnessMetricsCardProps> = ({
 
           <Box sx={{ mt: 3, textAlign: 'center' }}>
             <Typography variant="h4" color={terraColors.tropicalRain} fontWeight="bold">
-              {steps.toLocaleString()}
+              {formattedSteps}
             </Typography>
             <Typography variant="body2" color={terraColors.prussianBlue}>
               Steps Today
