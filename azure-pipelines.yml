@@ -1,3 +1,6 @@
+# Top-level schema for pipeline
+$schema: https://raw.githubusercontent.com/microsoft/azure-pipelines-vscode/master/service-schema.json
+
 trigger:
   branches:
     include:
@@ -13,6 +16,7 @@ variables:
   # Azure Container Registry
   acrName: 'perfectltpacr'
   acrLoginServer: '$(acrName).azurecr.io'
+  containerRegistryServiceConnection: 'ACR'
   
   # Kubernetes/AKS
   aksResourceGroup: 'perfectltp-rg'
@@ -41,54 +45,28 @@ stages:
     pool:
       vmImage: 'ubuntu-latest'
     steps:
-    - task: Docker@2
-      displayName: 'Build frontend image'
+    - task: PowerShell@2
+      displayName: 'Build & Push Frontend Image'
       inputs:
-        command: 'build'
-        containerRegistry: 'ACR'
-        repository: 'frontend'
-        dockerfile: 'frontend/Dockerfile.unified'
-        buildContext: '$(System.DefaultWorkingDirectory)'
-        tags: |
-          $(imageTag)
-          latest
-    
-    - task: Docker@2
-      displayName: 'Push frontend image'
-      inputs:
-        command: 'push'
-        containerRegistry: 'ACR'
-        repository: 'frontend'
-        tags: |
-          $(imageTag)
-          latest
+        targetType: 'inline'
+        script: |
+          az acr login --name $(acrName)
+          docker build -f frontend/Dockerfile.unified -t $(acrLoginServer)/frontend:$(imageTag) --target prod .
+          docker push $(acrLoginServer)/frontend:$(imageTag)
 
   - job: BuildBackend
     displayName: 'Build Backend'
     pool:
       vmImage: 'ubuntu-latest'
     steps:
-    - task: Docker@2
-      displayName: 'Build backend image'
+    - task: PowerShell@2
+      displayName: 'Build & Push Backend Image'
       inputs:
-        command: 'build'
-        containerRegistry: 'ACR'
-        repository: 'backend'
-        dockerfile: 'backend/Dockerfile'
-        buildContext: '$(System.DefaultWorkingDirectory)'
-        tags: |
-          $(imageTag)
-          latest
-    
-    - task: Docker@2
-      displayName: 'Push backend image'
-      inputs:
-        command: 'push'
-        containerRegistry: 'ACR'
-        repository: 'backend'
-        tags: |
-          $(imageTag)
-          latest
+        targetType: 'inline'
+        script: |
+          az acr login --name $(acrName)
+          docker build -f backend/Dockerfile -t $(acrLoginServer)/backend:$(imageTag) .
+          docker push $(acrLoginServer)/backend:$(imageTag)
 
 - stage: Deploy
   displayName: 'Deploy to $(environment)'
