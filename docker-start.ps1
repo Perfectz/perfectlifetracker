@@ -1,4 +1,4 @@
-# docker-start.ps1
+y# docker-start.ps1
 # Script to start Perfect LifeTracker Pro using Docker
 param(
     [switch]$dev = $false
