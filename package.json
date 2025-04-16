@@ -14,8 +14,11 @@
     "build:backend": "docker-compose build backend",
     "test": "echo \"Error: no test specified\" && exit 1",
     "frontend": "cd frontend && npm run dev",
-    "backend": "cd backend && npm start",
-    "dev": "cd frontend && npm run dev"
+    "backend": "cd backend && npm run dev",
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install",
+    "kill": "powershell -ExecutionPolicy Bypass -File ./kill-react.ps1",
+    "dev:clean": "npm run kill && npm run dev"
   },
   "keywords": [
     "productivity",
@@ -25,5 +28,8 @@
     "fitness"
   ],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
 } 

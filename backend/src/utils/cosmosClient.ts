@@ -43,59 +43,43 @@ class MockContainer {
     console.log(`Mock container ${id} created`);
   }
 
-  async items() {
-    return {
-      create: async (item: any) => {
-        const itemWithId = { ...item, id: item.id || Date.now().toString() };
-        this.data.push(itemWithId);
-        return { resource: itemWithId };
-      },
-      query: async (query: any) => {
-        // Very simple mock query implementation
-        return {
-          fetchAll: async () => {
-            // Filter based on a simple query condition if specified
-            let filteredData = [...this.data];
-            
-            if (query && query.parameters) {
-              for (const param of query.parameters) {
-                if (param.name === '@userId') {
-                  filteredData = filteredData.filter(item => item.userId === param.value);
-                }
-              }
+  // Fix items implementation to match Cosmos DB API more closely
+  items = {
+    create: async (item: any) => {
+      const itemWithId = { ...item, id: item.id || Date.now().toString() };
+      this.data.push(itemWithId);
+      return { resource: itemWithId };
+    },
+    query: (query: any) => {
+      return {
+        fetchAll: async () => {
+          // Very simple mock query implementation
+          let filteredData = [...this.data];
+          
+          if (query && query.parameters) {
+            for (const param of query.parameters) {
+              const paramName = param.name.replace('@', '');
+              filteredData = filteredData.filter(item => item[paramName] === param.value);
             }
-            
-            return { resources: filteredData };
           }
-        };
-      },
-      upsert: async (item: any) => {
-        const index = this.data.findIndex(i => i.id === item.id);
-        if (index >= 0) {
-          this.data[index] = item;
-        } else {
-          this.data.push(item);
+          
+          return { resources: filteredData };
         }
-        return { resource: item };
-      },
-      read: async (id: string) => {
-        const item = this.data.find(i => i.id === id);
-        if (!item) throw new Error(`Item with id ${id} not found`);
-        return { resource: item };
-      },
-      delete: async (id: string) => {
-        const index = this.data.findIndex(i => i.id === id);
-        if (index >= 0) {
-          this.data.splice(index, 1);
-          return { resource: {} };
-        }
-        throw new Error(`Item with id ${id} not found`);
+      };
+    },
+    upsert: async (item: any) => {
+      const index = this.data.findIndex(i => i.id === item.id);
+      if (index >= 0) {
+        this.data[index] = item;
+      } else {
+        this.data.push(item);
       }
-    };
-  }
+      return { resource: item };
+    }
+  };
 
-  // Add item method that supports direct item access (not just through items())
-  async item(id: string, partitionKey: string) {
+  // Add item method that supports direct item access
+  item(id: string, partitionKey: string) {
     return {
       read: async () => {
         const item = this.data.find(i => i.id === id);

@@ -191,3 +191,39 @@ For moving to production:
 1. Use multi-stage Docker builds to reduce image size
 2. Implement proper caching strategies
 3. Configure appropriate resource limits for containers 
+
+## Volume Mount Issues in Docker
+
+### Problem: `package.json not found` or files missing in container despite volume mounts
+
+**Symptom:** When using volume mounts in Docker Compose like:
+```yaml
+volumes:
+  - ./backend:/app:cached
+```
+
+You see errors like:
+```
+Error: ENOENT: no such file or directory, open '/app/package.json'
+```
+
+**Causes:**
+1. Path permissions issues or inconsistencies between Windows and Linux paths
+2. Docker Desktop settings not allowing access to the directory
+3. Incorrect paths in the volume mount
+
+**Solutions:**
+1. **Check file paths carefully**: Ensure the paths in your Docker Compose file are correct and point to existing directories.
+2. **Check Docker Desktop File Sharing**: Make sure the drive containing your codebase is shared with Docker Desktop.
+3. **Use direct command execution**: If Docker mounts are problematic, run services directly on your host for development.
+4. **Disable SELinux or AppArmor**: These security features can sometimes interfere with volume mounts.
+5. **Restart Docker Desktop**: Sometimes a full restart of Docker Desktop can fix mounting issues.
+
+### Problem: Files modified in the container don't update on the host
+
+**Symptom:** Changes made to files inside the container aren't reflected in host files.
+
+**Solution:**
+1. Use bidirectional mounts with the `:delegated` or `:cached` option
+2. Check file ownership and permissions
+3. Make sure you're modifying files in the mounted directory, not elsewhere in the container 

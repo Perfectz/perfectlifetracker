@@ -1,5 +1,8 @@
 # docker-start.ps1
 # Script to start Perfect LifeTracker Pro using Docker
+param(
+    [switch]$dev = $false
+)
 
 Write-Host "STARTING: Preparing to start application using Docker..." -ForegroundColor Cyan
 
@@ -19,19 +22,16 @@ try {
     exit 1
 }
 
-# 3. Choose between development and production mode
-param(
-    [switch]$dev = $false
-)
+# 3. Choose between development and production mode (param already declared above)
 
 if ($dev) {
     # Development mode - with hot reloading
     Write-Host "STARTING: Starting in DEVELOPMENT mode with hot reloading" -ForegroundColor Cyan
-    docker-compose up --profile dev app-dev backend-dev
+    docker-compose --profile dev up --build frontend-dev backend-dev
 } else {
     # Production mode - optimized build
     Write-Host "STARTING: Starting in PRODUCTION mode" -ForegroundColor Cyan
-    docker-compose up app backend
+    docker-compose up --build frontend backend
 }
 
 # Note: This script will keep running until Ctrl+C is pressed to stop the containers 

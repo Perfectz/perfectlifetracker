@@ -3,7 +3,7 @@
  * Navigation component with theme switching and authentication state
  */
 import React, { useState } from 'react';
-import { Routes, Route, Link as RouterLink, useLocation } from 'react-router-dom';
+import { Outlet, Link as RouterLink, useLocation } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import {
@@ -23,14 +23,12 @@ import {
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import MenuIcon from '@mui/icons-material/Menu';
-import { useAuth } from '../services/AuthContext';
-import HomePage from '../pages/HomePage';
-import DashboardPage from '../pages/DashboardPage';
-import LoginPage from '../pages/LoginPage';
+import { useAuth } from '../services/MockAuthContext';
+import { useThemeMode } from '../theme';
 import LoginButton from './LoginButton';
 import UserMenu from './UserMenu';
-import ProtectedRoute from './ProtectedRoute';
 import Header from './Header';
+import Footer from './Footer';
 
 // Header wrapper that only shows on certain routes
 const ConditionalHeader = () => {
@@ -44,15 +42,13 @@ const ConditionalHeader = () => {
 
 // Navigation component with auth state
 const Navigation = () => {
-  const [themeMode, setThemeMode] = useState<'light' | 'dark'>('light');
+  const location = useLocation();
+  if (location.pathname.startsWith('/dashboard')) return null;
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { isAuthenticated } = useAuth();
-
-  const toggleTheme = () => {
-    setThemeMode(prev => (prev === 'light' ? 'dark' : 'light'));
-  };
+  const { isDarkMode, toggleTheme } = useThemeMode();
 
   const toggleDrawer = (open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => {
     if (
@@ -103,11 +99,11 @@ const Navigation = () => {
           <Button
             onClick={toggleTheme}
             color="inherit"
-            startIcon={themeMode === 'light' ? <Brightness4Icon /> : <Brightness7Icon />}
+            startIcon={isDarkMode ? <Brightness7Icon /> : <Brightness4Icon />}
             fullWidth
             sx={{ justifyContent: 'flex-start' }}
           >
-            {themeMode === 'light' ? 'Dark' : 'Light'} Mode
+            {isDarkMode ? 'Light' : 'Dark'} Mode
           </Button>
         </ListItem>
       </List>
@@ -115,7 +111,7 @@ const Navigation = () => {
   );
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <AppBar position="static">
         <Toolbar>
           {isMobile && (
@@ -131,7 +127,7 @@ const Navigation = () => {
             </IconButton>
           )}
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Perfect LifeTracker Pro - Vite Edition
+            Perfect LifeTracker Pro
           </Typography>
           {!isMobile && (
             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
@@ -149,9 +145,9 @@ const Navigation = () => {
               <Button
                 onClick={toggleTheme}
                 color="inherit"
-                startIcon={themeMode === 'light' ? <Brightness4Icon /> : <Brightness7Icon />}
+                startIcon={isDarkMode ? <Brightness7Icon /> : <Brightness4Icon />}
               >
-                {themeMode === 'light' ? 'Dark' : 'Light'}
+                {isDarkMode ? 'Light' : 'Dark'}
               </Button>
             </Box>
           )}
@@ -167,9 +163,8 @@ const Navigation = () => {
 
       <Container
         sx={{
-          pt: 2,
-          pb: 4,
-          minHeight: 'calc(100vh - 64px)',
+          flexGrow: 1,
+          py: 4,
           display: 'flex',
           flexDirection: 'column',
         }}
@@ -177,19 +172,10 @@ const Navigation = () => {
         {/* Add the header back, conditionally based on route */}
         <ConditionalHeader />
         
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route 
-            path="/dashboard" 
-            element={
-              <ProtectedRoute>
-                <DashboardPage />
-              </ProtectedRoute>
-            } 
-          />
-        </Routes>
+        {/* Outlet renders the current route */}
+        <Outlet />
       </Container>
+      <Footer />
     </Box>
   );
 };

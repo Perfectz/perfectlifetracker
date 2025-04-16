@@ -3,7 +3,6 @@
  * Model for task operations
  */
 import { v4 as uuidv4 } from 'uuid';
-import { CosmosClient } from '@azure/cosmos';
 import dotenv from 'dotenv';
 import { getContainer } from '../utils/cosmosClient';
 
@@ -59,17 +58,9 @@ export interface UpdateTaskInput {
 }
 
 export class TaskModel {
-  private client: CosmosClient;
-  private database: string;
   private container: any;
 
   constructor() {
-    const endpoint = process.env.COSMOSDB_ENDPOINT || '';
-    const key = process.env.COSMOSDB_KEY || '';
-    
-    this.client = new CosmosClient({ endpoint, key });
-    this.database = process.env.COSMOSDB_DATABASE || 'perfectltp';
-    
     try {
       this.container = getContainer('tasks');
     } catch (error) {

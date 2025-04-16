@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   frontend:
     build:
@@ -11,11 +9,15 @@ services:
     environment:
       - NODE_ENV=development
       - VITE_API_URL=http://backend:3001
-      - ROLLUP_NATIVE_MODULES=false
-      - ROLLUP_SKIP_NODEJS_NATIVE=true
     depends_on:
       - backend
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000", "||", "exit", "0"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
   backend:
     build:
@@ -28,4 +30,15 @@ services:
       - NODE_ENV=development
       - PORT=3001
       - USE_MOCK_DATABASE=true
-    restart: unless-stopped 
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3001/health", "||", "exit", "0"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+networks:
+  default:
+    name: perfectltp_network
+    driver: bridge 

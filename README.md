@@ -1,121 +1,164 @@
 # Perfect LifeTracker Pro
 
-A comprehensive AI-powered personal assistant application designed to help users track fitness goals, personal development activities, and daily tasks.
+Perfect LifeTracker Pro is an AI-powered personal assistant application for tracking fitness goals, personal development, and daily tasks.
+
+## Project Overview
+
+This application helps users track:
+- Fitness goals and metrics
+- Personal development activities
+- Daily tasks and to-dos
+- Custom goals and achievements
+
+## Tech Stack
+
+- **Frontend**: React with TypeScript, Material UI
+- **Backend**: Express.js with TypeScript
+- **Database**: Azure Cosmos DB (with MongoDB API compatibility)
+- **Authentication**: Microsoft Entra ID (Azure AD)
+- **Storage**: Azure Blob Storage
+- **Deployment**: Docker, Kubernetes on Azure
+
+## Development Setup
+
+### Prerequisites
+
+- Node.js (v20+)
+- npm (v9+)
+- Docker and Docker Compose (for containerized development)
+- PowerShell (for Windows users)
+
+### Environment Setup
+
+1. Clone the repository:
+   ```
+   git clone <repository-url>
+   cd PerfectLTP
+   ```
+
+2. Create `.env` files:
+   - Create `.env` in the root directory
+   - Create `frontend/.env` 
+   - Create `backend/.env`
+
+   You can use the following templates and adjust as needed:
+
+   **Root .env**:
+   ```
+   FRONTEND_PORT=8080
+   BACKEND_PORT=3001
+   AZURE_CLIENT_ID=d9764c39-1eb9-4963-83a0-e8ba859c8965
+   AZURE_AUTHORITY=https://login.microsoftonline.com/78e9993f-a208-4c38-9d9d-6b15f0d2407d
+   AZURE_REDIRECT_URI=http://localhost:8080
+   USE_MOCK_DATABASE=true
+   ```
+
+   **Frontend .env**:
+   ```
+   VITE_REACT_APP_AZURE_CLIENT_ID=d9764c39-1eb9-4963-83a0-e8ba859c8965
+   VITE_REACT_APP_AZURE_AUTHORITY=https://login.microsoftonline.com/78e9993f-a208-4c38-9d9d-6b15f0d2407d
+   VITE_REACT_APP_AZURE_REDIRECT_URI=http://localhost:3000
+   VITE_API_URL=http://localhost:3001
+   ```
+
+   **Backend .env**:
+   ```
+   PORT=3001
+   NODE_ENV=development
+   USE_MOCK_DATABASE=true
+   COSMOS_DB_ENDPOINT=https://localhost:8081
+   COSMOS_DB_KEY=dummy-key-for-development
+   COSMOS_DB_DATABASE=lifetracker
+   MONGODB_URI=mongodb://localhost:27017/perfectltp
+   AZURE_CLIENT_ID=d9764c39-1eb9-4963-83a0-e8ba859c8965
+   AZURE_AUTHORITY=https://login.microsoftonline.com/78e9993f-a208-4c38-9d9d-6b15f0d2407d
+   FRONTEND_URL=http://localhost:3000
+   ```
+
+3. Install dependencies:
+   ```
+   npm run install:all
+   ```
+
+### Running the Application
+
+#### Development Mode
+
+To run both frontend and backend in development mode:
+
+```
+npm run dev
+```
+
+If you encounter "port already in use" errors, use:
+
+```
+npm run dev:clean
+```
+
+#### Running in Docker
+
+For docker-based development:
+
+```
+npm run start:dev
+```
+
+For production mode:
+
+```
+npm run start
+```
+
+To clean up Docker containers and start fresh:
+
+```
+npm run start:clean:dev
+```
+
+### Access the Application
+
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:3001
+- API Health Check: http://localhost:3001/api/health
 
 ## Project Structure
 
-The project is organized into three main components:
-
-- **Frontend**: React with TypeScript, Material UI (Vite)
-- **Backend**: Express.js with TypeScript, MongoDB
-- **Infrastructure**: Docker containers with Docker Compose orchestration
-
-## Getting Started
-
-### Running the Application with Docker (Recommended)
-
-The application is designed to run using Docker for consistency and proper process management:
-
-```bash
-# Clone the repository
-git clone https://github.com/Perfectz/perfectlifetrack-pro.git
-cd perfectlifetrack-pro
-
-# Install root-level dependencies
-npm install
-
-# Start the application in development mode (with hot reloading)
-npm run start:clean:dev
-
-# Or start in production mode
-npm run start:clean
+```
+PerfectLTP/
+├── frontend/           # React frontend application
+│   ├── public/         # Static assets
+│   │   ├── components/ # React components
+│   │   ├── pages/      # Page components
+│   │   ├── services/   # Service layer (API, Auth)
+│   │   ├── hooks/      # Custom React hooks
+│   │   └── utils/      # Utility functions
+│   └── package.json    # Frontend dependencies
+│
+├── backend/            # Express.js backend API
+│   ├── src/            # Source code
+│   │   ├── routes/     # API route definitions
+│   │   ├── models/     # Data models
+│   │   ├── utils/      # Utility functions
+│   │   └── config/     # Configuration files
+│   └── package.json    # Backend dependencies
+│
+├── docker-compose.yml  # Docker composition config
+└── package.json        # Root package.json
 ```
 
-When you're done, you can stop all containers with:
+## Authentication
 
-```bash
-npm run stop
-```
+The application uses Microsoft Entra ID (formerly Azure AD) for authentication. This includes:
 
-### Available npm Scripts
+- Microsoft account login
+- Google login (federated through Entra ID)
+- Multi-factor authentication support
+- Single sign-on capabilities
 
-| Command               | Description                                              |
-|-----------------------|----------------------------------------------------------|
-| `npm start`           | Start the application in production mode                 |
-| `npm run start:dev`   | Start the application in development mode                |
-| `npm run start:clean` | Clean all processes and start in production mode         |
-| `npm run start:clean:dev` | Clean all processes and start in development mode    |
-| `npm run stop`        | Stop all Docker containers and clean up processes        |
-| `npm run build`       | Build all Docker images                                  |
-| `npm run build:frontend` | Build only the frontend Docker image                  |
-| `npm run build:backend` | Build only the backend Docker image                    |
+## License
 
-### Manual Startup (Not Recommended)
-
-If you need to run components without Docker (not recommended for development):
-
-```bash
-# Frontend
-cd frontend
-npm install
-npm run dev
-
-# Backend
-cd backend
-npm install
-npm start
-```
-
-### Running the Backend
-
-The backend uses Azure Functions:
-
-```bash
-# Navigate to the backend directory
-cd backend
-
-# Install dependencies
-npm install
-
-# Start the development server
-npm start
-```
-
-### Infrastructure as Code
-
-The project uses Terraform to define and manage Azure infrastructure:
-
-```bash
-# Navigate to the terraform directory
-cd terraform
-
-# Initialize Terraform
-terraform init
-
-# Plan the deployment
-terraform plan -out=tfplan
-
-# Apply the configuration
-terraform apply tfplan
-```
-
-## Development Workflow
-
-1. Make your changes
-2. Test locally
-3. Commit your changes
-4. Push to the repository
-5. The CI/CD pipeline will handle deployment
-
-## Additional Documentation
-
-For more detailed documentation, see:
-
-- [Frontend Documentation](./frontend/README.md)
-- [Architecture Design](./documentation/architecture_design.md)
-- [System Requirements](./documentation/system_requirements.md)
-- [Decisions Log](./documentation/decisions_log.md)
-- [Terraform Infrastructure](./terraform/README.md)
+ISC License
 
 ## 🚀 Features
 

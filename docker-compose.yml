@@ -1,23 +1,22 @@
-# version: "3.9" (removed as per Docker Compose deprecation warning)
+# Docker Compose configuration for Perfect LifeTracker Pro
+# Uses multi-stage builds and production-ready configurations
 
+version: '3.8'
 services:
-  # Unified frontend container (builds and serves the app)
-  app:
+  # Frontend service (React/Vite app served by Nginx)
+  frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.unified
-    container_name: lifetrack-app
+      dockerfile: Dockerfile
+      target: prod
+    container_name: lifetrack-frontend
     ports:
-      - "${APP_PORT:-80}:80"
-      - "${DEV_PORT:-3000}:3000"
+      - "${FRONTEND_PORT:-8080}:80"
     environment:
-      - NODE_ENV=${NODE_ENV:-production}
+      - VITE_API_URL=http://backend:3001
       - VITE_REACT_APP_AZURE_CLIENT_ID=${AZURE_CLIENT_ID:-d9764c39-1eb9-4963-83a0-e8ba859c8965}
       - VITE_REACT_APP_AZURE_AUTHORITY=https://login.microsoftonline.com/78e9993f-a208-4c38-9d9d-6b15f0d2407d
-      - VITE_REACT_APP_AZURE_REDIRECT_URI=${AZURE_REDIRECT_URI:-http://localhost:3000}
-      - VITE_API_URL=http://backend:3001
-      - ROLLUP_NATIVE_MODULES=false
-      - ROLLUP_SKIP_NODEJS_NATIVE=true
+      - VITE_REACT_APP_AZURE_REDIRECT_URI=${AZURE_REDIRECT_URI:-http://localhost:8080}
     depends_on:
       - backend
     healthcheck:
@@ -27,54 +26,32 @@ services:
       retries: 3
       start_period: 20s
     restart: unless-stopped
+    networks:
+      - app-network
 
-  # Development mode service (uses the same image but with different env vars)
-  app-dev:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.unified
-    container_name: lifetrack-app-dev
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=development
-      - VITE_REACT_APP_AZURE_CLIENT_ID=${AZURE_CLIENT_ID:-d9764c39-1eb9-4963-83a0-e8ba859c8965}
-      - VITE_REACT_APP_AZURE_AUTHORITY=https://login.microsoftonline.com/78e9993f-a208-4c38-9d9d-6b15f0d2407d
-      - VITE_REACT_APP_AZURE_REDIRECT_URI=${AZURE_REDIRECT_URI:-http://localhost:3000}
-      - VITE_API_URL=http://backend:3001
-      - ROLLUP_NATIVE_MODULES=false
-      - ROLLUP_SKIP_NODEJS_NATIVE=true
-    depends_on:
-      - backend
-    restart: unless-stopped
-    volumes:
-      # Mount source for hot-reloading in development, but use a named volume for node_modules
-      - ./frontend:/app
-      - frontend_node_modules:/app/node_modules
-    profiles: ["dev"]
-
+  # Backend service (Node.js Express API)
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-      target: production
+      target: prod
     container_name: lifetrack-backend
     ports:
       - "${BACKEND_PORT:-3001}:3001"
     environment:
-      - NODE_ENV=${NODE_ENV:-production}
+      - NODE_ENV=production
       - PORT=3001
-      # Add Cosmos DB connection and configuration
+      # Cosmos DB Configuration
       - COSMOS_DB_ENDPOINT=${COSMOS_DB_ENDPOINT:-https://localhost:8081}
       - COSMOS_DB_KEY=${COSMOS_DB_KEY:-dummy-key-for-development}
       - COSMOS_DB_DATABASE=${COSMOS_DB_DATABASE:-lifetracker}
-      # Add other environment variables
+      # MongoDB Configuration (alternative to Cosmos DB)
+      - MONGODB_URI=${MONGODB_URI:-mongodb://localhost:27017/perfectltp}
+      # Azure Authentication
       - AZURE_CLIENT_ID=${AZURE_CLIENT_ID:-d9764c39-1eb9-4963-83a0-e8ba859c8965}
       - AZURE_AUTHORITY=${AZURE_AUTHORITY:-https://login.microsoftonline.com/78e9993f-a208-4c38-9d9d-6b15f0d2407d}
-      # Use mock database in Docker environment
+      # Database Mode
       - USE_MOCK_DATABASE=true
-    volumes:
-      - backend_node_modules:/app/node_modules
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3001/api/health"]
       interval: 30s
@@ -82,8 +59,58 @@ services:
       retries: 3
       start_period: 20s
     restart: unless-stopped
+    networks:
+      - app-network
+    depends_on:
+      - mongo
 
-  # Development backend option
+  # MongoDB service for development and production
+  mongo:
+    image: mongo:7.0
+    container_name: lifetrack-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - app-network
+
+# Custom development mode setup using profiles
+# Usage: docker-compose --profile dev up
+  # Development mode frontend (with hot reload)
+  frontend-dev:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development
+    container_name: lifetrack-frontend-dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - VITE_REACT_APP_AZURE_CLIENT_ID=${AZURE_CLIENT_ID:-d9764c39-1eb9-4963-83a0-e8ba859c8965}
+      - VITE_REACT_APP_AZURE_AUTHORITY=https://login.microsoftonline.com/78e9993f-a208-4c38-9d9d-6b15f0d2407d
+      - VITE_REACT_APP_AZURE_REDIRECT_URI=${AZURE_REDIRECT_URI:-http://localhost:3000}
+      - VITE_API_URL=http://backend-dev:3001
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    command: npm run dev -- --host 0.0.0.0
+    depends_on:
+      - backend-dev
+    restart: unless-stopped
+    networks:
+      - app-network
+    profiles: ["dev"]
+
+  # Development mode backend (with hot reload)
   backend-dev:
     build:
       context: ./backend
@@ -95,47 +122,35 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=3001
-      # Add Cosmos DB connection and configuration for dev environment
+      # Cosmos DB Configuration
       - COSMOS_DB_ENDPOINT=${COSMOS_DB_ENDPOINT:-https://localhost:8081}
       - COSMOS_DB_KEY=${COSMOS_DB_KEY:-dummy-key-for-development}
       - COSMOS_DB_DATABASE=${COSMOS_DB_DATABASE:-lifetracker}
-      # Add other environment variables
+      # MongoDB Configuration (alternative to Cosmos DB)
+      - MONGODB_URI=${MONGODB_URI:-mongodb://localhost:27017/perfectltp}
+      # Azure Authentication
       - AZURE_CLIENT_ID=${AZURE_CLIENT_ID:-d9764c39-1eb9-4963-83a0-e8ba859c8965}
       - AZURE_AUTHORITY=${AZURE_AUTHORITY:-https://login.microsoftonline.com/78e9993f-a208-4c38-9d9d-6b15f0d2407d}
-    volumes:
-      - ./backend:/app    # Mount for development hot-reload
-      - backend_dev_node_modules:/app/node_modules
-    restart: unless-stopped
-    profiles: ["dev"]
-
-  # New debug backend service
-  backend-debug:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile.debug
-    container_name: lifetrack-backend-debug
-    ports:
-      - "3001:3001"
-    environment:
-      - NODE_ENV=development
-      - PORT=3001
-      # Add Cosmos DB connection and configuration for dev environment
-      - COSMOS_DB_ENDPOINT=${COSMOS_DB_ENDPOINT:-https://localhost:8081}
-      - COSMOS_DB_KEY=${COSMOS_DB_KEY:-dummy-key-for-development}
-      - COSMOS_DB_DATABASE=${COSMOS_DB_DATABASE:-lifetracker}
-      # Add other environment variables
-      - AZURE_CLIENT_ID=${AZURE_CLIENT_ID:-d9764c39-1eb9-4963-83a0-e8ba859c8965}
-      - AZURE_AUTHORITY=${AZURE_AUTHORITY:-https://login.microsoftonline.com/78e9993f-a208-4c38-9d9d-6b15f0d2407d}
-      # Use mock database for testing
-      - USE_MOCK_DATABASE=true
+      # CORS settings
+      - FRONTEND_URL=http://localhost:3000
     volumes:
       - ./backend:/app
-      - backend_debug_node_modules:/app/node_modules
+      - backend_node_modules:/app/node_modules
+    command: npm run dev
     restart: unless-stopped
+    networks:
+      - app-network
+    depends_on:
+      - mongo
+    profiles: ["dev"]
 
-# Volumes for development
+# Shared volumes for node_modules (avoids problems with mounted volumes)
 volumes:
-  backend_node_modules: 
-  backend_dev_node_modules:
-  backend_debug_node_modules:
-  frontend_node_modules:
+#  frontend_node_modules: # Temporarily removed for clean build
+  backend_node_modules:
+  mongo_data:
+
+# Custom network for service communication
+networks:
+  app-network:
+    driver: bridge

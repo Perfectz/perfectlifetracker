@@ -7,10 +7,10 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
-    strictPort: false,
+    strictPort: true,
   },
   build: {
-    outDir: 'build',
+    outDir: 'dist',
     sourcemap: true,
     rollupOptions: {
       input: {
@@ -27,7 +27,10 @@ export default defineConfig({
     include: [
       'react', 
       'react-dom', 
-      'react-dom/client'
+      'react-dom/client',
+      'date-fns',
+      '@mui/x-date-pickers',
+      '@date-io/date-fns'
     ],
     force: true,
   },

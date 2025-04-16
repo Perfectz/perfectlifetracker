@@ -7,7 +7,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { expressjwt, Request as JWTRequest } from 'express-jwt';
 import jwksRsa from 'jwks-rsa';
-import { initializeDatabase, seedDatabase } from './utils/dbInit';
+import { initializeDatabase } from './utils/dbInit';
 
 // Import routes
 import userRoutes from './routes/userRoutes';
@@ -15,8 +15,10 @@ import taskRoutes from './routes/taskRoutes';
 import fitnessRoutes from './routes/fitnessRoutes';
 import uploadRoutes from './routes/uploadRoutes';
 
+// Initialize environment variables
 dotenv.config();
 
+// Create Express app
 const app = express();
 const port = process.env.PORT || 3001;
 
@@ -95,11 +97,6 @@ async function startServer() {
   try {
     // Initialize and seed the database
     await initializeDatabase();
-    
-    // Seed database in development mode
-    if (process.env.NODE_ENV !== 'production') {
-      await seedDatabase();
-    }
     
     // Start Express server
     app.listen(port, () => {

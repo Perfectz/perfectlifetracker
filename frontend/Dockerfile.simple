@@ -1,28 +1,30 @@
-# Use Node.js 20 bullseye image as the base
+# Use Node.js 20 Bullseye as base image
 FROM node:20-bullseye
 
-# Set the working directory
+# Set working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json (if exists)
+# Copy package files first to leverage Docker layer caching
 COPY package*.json ./
 
-# Install dependencies with legacy peer deps flag for compatibility
+# Install dependencies
 RUN npm install --legacy-peer-deps
 
-# Copy all files from the frontend directory
+# Copy all source files
 COPY . .
 
-# Expose port 3000
+# Create start.sh script and make it executable
+RUN echo '#!/bin/sh' > /app/start.sh && \
+    echo 'echo "Starting frontend application..."' >> /app/start.sh && \
+    echo 'exec npm run dev -- --host 0.0.0.0 --config vite.config.skip-native.js' >> /app/start.sh && \
+    chmod +x /app/start.sh
+
+# Expose the port
 EXPOSE 3000
 
 # Set environment variables
 ENV NODE_ENV=development
-ENV PORT=3000
 ENV VITE_API_URL=http://backend:3001
 
-# Create a startup script to handle frontend startup with retries
-RUN echo '#!/bin/sh\necho "Starting frontend application..."\nnpm run dev -- --host 0.0.0.0' > /app/start.sh && chmod +x /app/start.sh
-
-# Start the Vite development server
-CMD ["/app/start.sh"] 
+# Start the application using the script
+CMD ["/bin/sh", "/app/start.sh"] 

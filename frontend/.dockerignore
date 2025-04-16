@@ -22,8 +22,17 @@ yarn-error.log*
 coverage
 .nyc_output
 
-# Environment variables
+# Environment variables (but not .env for production)
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Do NOT ignore package.json and package-lock.json
+# Do NOT ignore src directory
+# Do NOT ignore public directory
+
+Dockerfile*
+*.md
+.pnp
+.env*

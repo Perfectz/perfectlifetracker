@@ -4,7 +4,7 @@
  */
 import React from 'react';
 import { Button, CircularProgress } from '@mui/material';
-import { useAuth } from '../services/AuthContext';
+import { useAuth } from '../services/MockAuthContext';
 
 const LoginButton = () => {
   const { signIn, isLoading } = useAuth();
@@ -24,7 +24,7 @@ const LoginButton = () => {
       {isLoading ? (
         <CircularProgress size={24} color="inherit" />
       ) : (
-        'Sign in with Microsoft'
+        'Sign in (Demo)'
       )}
     </Button>
   );

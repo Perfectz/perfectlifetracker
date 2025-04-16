@@ -14,7 +14,6 @@ This directory contains components for the Terra Design System implementation of
 
 ### Layout Components
 
-- **TerraLayout**: Main layout component that wraps all other components and handles responsive behavior
 - **TerraAppBar**: App bar with searchbox and user avatar
 - **TerraLeftNavigation**: Desktop navigation drawer (200px width)
 - **TerraBottomNavigation**: Mobile navigation bar (bottom of screen)
@@ -32,14 +31,6 @@ This directory contains components for the Terra Design System implementation of
 - **TerraMobileView**: Mockup of mobile app interface
 
 ## Usage
-
-### Terra Layout
-
-```jsx
-<TerraLayout>
-  {/* Your content here */}
-</TerraLayout>
-```
 
 ### Card Components
 
@@ -62,14 +53,12 @@ This directory contains components for the Terra Design System implementation of
 
 ## Demo Pages
 
-These components are demonstrated on two pages:
+These components are demonstrated on one page:
 
 1. `/terra-design`: Shows the design components in isolation
-2. `/terra-layout`: Shows the components within the Terra layout system
 
 ## Implementation Notes
 
 - All components use the `terraColors` object exported from the theme file
 - Components are responsive and adapt to desktop and mobile viewports
-- The layout automatically handles the switch between desktop and mobile views
 - Card components use static mock data for demonstration purposes 

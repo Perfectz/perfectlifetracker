@@ -31,6 +31,9 @@ RUN npm install --legacy-peer-deps --omit=optional --force
 # Copy the rest of the application
 COPY . .
 
+# Use SimpleIndex.tsx instead of index.tsx since there might be an issue with index.tsx
+RUN cp -f src/SimpleIndex.tsx src/index.tsx
+
 # Create nginx config for production
 RUN mkdir -p /var/www/html && \
     chown -R www-data:www-data /var/www/html && \
@@ -105,7 +108,9 @@ export default defineConfig({ \n\
 });' > /app/vite.config.dev.js
 
 # Build the application using the skip-native config
-RUN ROLLUP_SKIP_NODEJS_NATIVE=true NODE_OPTIONS="--max-old-space-size=4096" npx vite build --config vite.config.skip-native.js || (echo "Build failed, creating dummy files" && mkdir -p /app/dist && echo "<html><body><h1>Build Failed</h1><p>Check logs for details</p></body></html>" > /app/dist/index.html)
+RUN ROLLUP_SKIP_NODEJS_NATIVE=true ROLLUP_NATIVE_MODULES=false NODE_OPTIONS="--max-old-space-size=4096" npm install --no-optional --force && \
+    ROLLUP_SKIP_NODEJS_NATIVE=true ROLLUP_NATIVE_MODULES=false NODE_OPTIONS="--max-old-space-size=4096" npx vite build --config vite.config.skip-native.js --debug 2>&1 || \
+    (echo "Build failed with error code $?. Check logs for details" && mkdir -p /app/dist && echo "<html><body><h1>Build Failed</h1><p>Check logs for details</p></body></html>" > /app/dist/index.html)
 
 # Make sure the dist directory exists
 RUN ls -la /app/dist || (mkdir -p /app/dist && echo "<html><body><h1>Build Failed</h1><p>Check logs for details</p></body></html>" > /app/dist/index.html)

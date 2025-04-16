@@ -5,13 +5,10 @@ FROM node:20-alpine AS build
 WORKDIR /app
 
 # Copy package files for dependency installation
-COPY package.json package-lock.json ./
+COPY package*.json ./
 
 # Install dependencies with clean slate
-RUN npm ci
-
-# Install uuid explicitly with a version compatible with Node 20 and CommonJS
-RUN npm install uuid@9.0.1 --save
+RUN npm install
 
 # Copy all source files
 COPY . .
@@ -20,19 +17,19 @@ COPY . .
 RUN npm run build
 
 # Production stage: Smaller image for production
-FROM node:20-alpine AS production
+FROM node:20-alpine AS prod
 
 # Set working directory
 WORKDIR /app
 
 # Copy package files
-COPY package.json package-lock.json ./
+COPY package*.json ./
 
 # Install only production dependencies
-RUN npm ci --omit=dev
+RUN npm install --only=production
 
-# Install uuid explicitly with a version compatible with Node 20 and CommonJS
-RUN npm install uuid@9.0.1 --save
+# Explicitly install MongoDB driver
+RUN npm install mongodb@5.7.0 --save
 
 # Copy built files from build stage
 COPY --from=build /app/dist ./dist
@@ -61,6 +58,9 @@ RUN npm ci
 
 # Install uuid explicitly with a version compatible with Node 20 and CommonJS
 RUN npm install uuid@9.0.1 --save
+
+# Explicitly install MongoDB driver
+RUN npm install mongodb@5.7.0 --save
 
 # Copy source code
 COPY . .

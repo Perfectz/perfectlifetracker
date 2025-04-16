@@ -29,10 +29,18 @@ import {
   AccountCircle as ProfileIcon,
   ChevronLeft as ChevronLeftIcon
 } from '@mui/icons-material';
+import HomeIcon from '@mui/icons-material/Home';
 import { styled } from '@mui/material/styles';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { terraColors } from '../../theme';
 import Header from '../Header';
+import Footer from '../Footer';
+import { useThemeMode } from '../../theme';
+import Brightness4Icon from '@mui/icons-material/Brightness4';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
+import { useAuth } from '../../services/MockAuthContext';
+import LoginButton from '../LoginButton';
+import UserMenu from '../UserMenu';
 
 // Constants
 const DRAWER_WIDTH = 240;
@@ -46,23 +54,26 @@ const DrawerHeader = styled('div')(({ theme }) => ({
   justifyContent: 'flex-end',
 }));
 
-// Navigation items
+// Navigation items with Home and protected flags
 const navigationItems = [
-  { name: 'Dashboard', path: '/dashboard', icon: <DashboardIcon /> },
-  { name: 'Tasks', path: '/tasks', icon: <TasksIcon /> },
-  { name: 'Fitness', path: '/fitness', icon: <FitnessIcon /> },
-  { name: 'Settings', path: '/settings', icon: <SettingsIcon /> },
-  { name: 'Profile', path: '/profile', icon: <ProfileIcon /> }
+  { name: 'Home', path: '/', icon: <HomeIcon />, protected: false },
+  { name: 'Dashboard', path: '/dashboard', icon: <DashboardIcon />, protected: true },
+  { name: 'Tasks', path: '/dashboard/tasks', icon: <TasksIcon />, protected: true },
+  { name: 'Fitness', path: '/dashboard/fitness', icon: <FitnessIcon />, protected: true },
+  { name: 'Settings', path: '/dashboard/settings', icon: <SettingsIcon />, protected: true },
+  { name: 'Profile', path: '/dashboard/profile', icon: <ProfileIcon />, protected: true }
 ];
 
 interface LayoutProps {
-  children: ReactNode;
+  children?: ReactNode;
   title?: string;
   useStandardHeader?: boolean;
 }
 
 const Layout: React.FC<LayoutProps> = ({ children, title = 'Perfect LifeTracker Pro', useStandardHeader = false }) => {
   const theme = useTheme();
+  const { isDarkMode, toggleTheme } = useThemeMode();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -73,6 +84,8 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'Perfect LifeTracker 
     setOpen(!open);
   };
 
+  // Filter items based on authentication
+  const drawerItems = navigationItems.filter(item => !item.protected || isAuthenticated);
   const drawer = (
     <>
       <DrawerHeader>
@@ -87,7 +100,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'Perfect LifeTracker 
       </DrawerHeader>
       <Divider />
       <List>
-        {navigationItems.map((item) => (
+        {drawerItems.map((item) => (
           <ListItem key={item.name} disablePadding>
             <ListItemButton 
               selected={location.pathname === item.path}
@@ -105,7 +118,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'Perfect LifeTracker 
   );
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <CssBaseline />
       
       {/* Top AppBar */}
@@ -133,9 +146,16 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'Perfect LifeTracker 
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div">
+          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             {title}
           </Typography>
+          {/* Theme toggle and user menu */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <IconButton onClick={toggleTheme} color="inherit">
+              {isDarkMode ? <Brightness7Icon /> : <Brightness4Icon />}
+            </IconButton>
+            {isAuthenticated ? <UserMenu /> : <LoginButton />}
+          </Box>
         </Toolbar>
       </AppBar>
       
@@ -177,8 +197,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'Perfect LifeTracker 
       </Box>
       
       {/* Main Content */}
-      <Box
-        component="main"
+      <Box component="main"
         sx={{
           flexGrow: 1,
           p: 3,
@@ -188,7 +207,6 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'Perfect LifeTracker 
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.leavingScreen,
           }),
-          height: '100vh',
           overflow: 'auto',
           display: 'flex',
           flexDirection: 'column',
@@ -200,9 +218,11 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'Perfect LifeTracker 
         {useStandardHeader && <Header height={180} marginBottom={3} />}
         
         <Box sx={{ flexGrow: 1 }}>
-          {children}
+          <Outlet />
         </Box>
       </Box>
+      {/* Footer at the bottom of the layout */}
+      <Footer />
     </Box>
   );
 };

@@ -31,4 +31,11 @@
 - **Lockfile Maintenance:** Always commit the lockfile (package-lock.json or yarn.lock) and ensure it is up to date with the codebase.
 - **Automated Tooling:** Use tools like Renovate or Dependabot to automate dependency updates, but always review and test updates before merging.
 - **CI Enforcement:** Ensure CI checks for dependency consistency and fails builds if lockfiles or versions are out of sync.
+
+# DOCKER & CONTAINERIZATION
+
+- For all Docker and containerization standards, refer to `docker-best-practices.md` in the project root.
+- Do not duplicate Docker rules here; keep all Docker-specific best practices, troubleshooting, and examples in the dedicated file.
+- All team members must follow the latest guidance in `docker-best-practices.md` for Dockerfile, Compose, and containerization workflows.
+
 # ... existing code ... 

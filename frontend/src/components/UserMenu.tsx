@@ -4,7 +4,7 @@
  */
 import React, { useState } from 'react';
 import { Button, Menu, MenuItem, Avatar, Typography } from '@mui/material';
-import { useAuth } from '../services/AuthContext';
+import { useAuth } from '../services/MockAuthContext';
 
 const UserMenu = () => {
   const { user, signOut } = useAuth();
@@ -38,7 +38,7 @@ const UserMenu = () => {
       >
         <Avatar
           alt={user?.name || 'User'}
-          src={user?.picture}
+          src="/avatar-placeholder.png"
           sx={{ width: 32, height: 32 }}
         />
         <Typography variant="body1" sx={{ display: { xs: 'none', sm: 'block' } }}>

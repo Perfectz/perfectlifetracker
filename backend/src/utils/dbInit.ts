@@ -5,7 +5,7 @@
 import { initializeCosmosDB } from './cosmosClient';
 import UserModel from '../models/UserModel';
 import FitnessModel from '../models/FitnessModel';
-import TaskModel from '../models/TaskModel';
+import { TaskModel } from '../models/TaskModel';
 import bcrypt from 'bcrypt';
 
 /**

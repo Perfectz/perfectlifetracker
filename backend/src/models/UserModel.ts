@@ -3,7 +3,18 @@
  * Handles user-related database operations
  */
 import { v4 as uuidv4 } from 'uuid';
-import bcrypt from 'bcrypt';
+// Support both possible bcrypt implementations
+let bcrypt: any;
+try {
+  bcrypt = require('bcryptjs');
+} catch (error) {
+  try {
+    bcrypt = require('bcrypt');
+  } catch (err) {
+    console.error('Failed to load bcrypt or bcryptjs');
+    throw new Error('No bcrypt implementation available');
+  }
+}
 import { getContainer } from '../utils/cosmosClient';
 
 // User Interfaces
@@ -11,15 +22,15 @@ export interface User {
   id: string;
   username: string;
   email: string;
-  password: string;
+  passwordHash: string; // Renamed from password to be more explicit
   firstName: string;
   lastName: string;
   profilePicture?: string;
   bio?: string;
   role: 'admin' | 'user';
-  createdAt: Date;
-  updatedAt: Date;
-  lastLogin?: Date;
+  createdAt: string; // Store as ISO string
+  updatedAt: string; // Store as ISO string
+  lastLogin?: string; // Store as ISO string
   isActive: boolean;
 }
 
@@ -34,7 +45,7 @@ export interface UserInput {
   role?: 'admin' | 'user';
 }
 
-class UserModel {
+export class UserModel {
   private container: any;
 
   constructor() {
@@ -61,44 +72,48 @@ class UserModel {
   /**
    * Create a new user
    */
-  async createUser(userData: UserInput): Promise<User> {
+  async createUser(userInput: UserInput): Promise<User> {
     await this.ensureContainer();
     try {
-      // Check if user already exists
-      const existingUser = await this.getUserByEmail(userData.email);
-      if (existingUser) {
+      // Convert email to lowercase
+      userInput.email = userInput.email.toLowerCase();
+      
+      // Check if user with email already exists
+      const existingUserByEmail = await this.getUserByEmail(userInput.email);
+      if (existingUserByEmail) {
         throw new Error('Email already in use');
       }
-
-      // Check if username is taken
-      const usernameUser = await this.getUserByUsername(userData.username);
-      if (usernameUser) {
+      
+      // Check if user with username already exists
+      const existingUserByUsername = await this.getUserByUsername(userInput.username);
+      if (existingUserByUsername) {
         throw new Error('Username already taken');
       }
-
+      
       // Hash password
       const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(userData.password, salt);
-
+      const hashedPassword = await bcrypt.hash(userInput.password, salt);
+      
       // Create user object
-      const newUser = {
-        id: uuidv4(),
-        username: userData.username,
-        email: userData.email.toLowerCase(),
+      const now = new Date().toISOString();
+      const user: User = {
+        id: `user_${uuidv4()}`,
+        username: userInput.username,
+        email: userInput.email,
         passwordHash: hashedPassword,
-        firstName: userData.firstName || '',
-        lastName: userData.lastName || '',
-        profilePicture: userData.profilePicture || '',
-        bio: userData.bio || '',
-        role: userData.role || 'user',
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        firstName: userInput.firstName,
+        lastName: userInput.lastName,
+        profilePicture: userInput.profilePicture || null,
+        bio: userInput.bio || null,
+        role: userInput.role || 'user',
+        createdAt: now,
+        updatedAt: now,
+        isActive: true
       };
-
-      // Insert user
-      const { resource } = await this.container.items.create(newUser);
-      return resource;
+      
+      // Save user to database
+      const { resource: createdUser } = await this.container.items.create(user);
+      return createdUser;
     } catch (error) {
       console.error('Error creating user:', error);
       throw error;
@@ -233,47 +248,41 @@ class UserModel {
       }
 
       // Check for unique email and username if updating them
-      if (updateData.email) {
+      if (updateData.email && updateData.email !== user.email) {
         const emailUser = await this.getUserByEmail(updateData.email);
-        if (emailUser) {
+        if (emailUser && emailUser.id !== userId) {
           throw new Error('Email already in use');
         }
         updateData.email = updateData.email.toLowerCase();
       }
 
-      if (updateData.username) {
+      if (updateData.username && updateData.username !== user.username) {
         const usernameUser = await this.getUserByUsername(updateData.username);
-        if (usernameUser) {
+        if (usernameUser && usernameUser.id !== userId) {
           throw new Error('Username already taken');
         }
       }
 
       // Hash password if it's being updated
+      let passwordUpdate = {};
       if (updateData.password) {
         const salt = await bcrypt.genSalt(10);
-        updateData.password = await bcrypt.hash(updateData.password, salt);
+        const hashedPassword = await bcrypt.hash(updateData.password, salt);
+        passwordUpdate = { passwordHash: hashedPassword };
+        // Remove the plain password from the update data
+        delete updateData.password;
       }
 
       // Update user
       const updatedUser = {
         ...user,
         ...updateData,
-        updatedAt: new Date()
+        ...passwordUpdate,
+        updatedAt: new Date().toISOString()
       };
 
-      if (typeof (this.container as any).item === 'function') {
-        // Cosmos Container
-        const { resource } = await (this.container as any).item(userId, userId).replace(updatedUser);
-        return resource;
-      } else {
-        // MockContainer fallback
-        const allUsers = await this.getAllUsers();
-        const idx = allUsers.findIndex(u => u.id === userId);
-        if (idx !== -1) {
-          allUsers[idx] = updatedUser;
-        }
-        return updatedUser;
-      }
+      const { resource } = await this.container.item(userId, userId).replace(updatedUser);
+      return resource;
     } catch (error) {
       console.error('Error updating user:', error);
       throw error;
@@ -286,12 +295,7 @@ class UserModel {
   async deleteUser(userId: string): Promise<boolean> {
     await this.ensureContainer();
     try {
-      if (typeof (this.container as any).item === 'function') {
-        await (this.container as any).item(userId, userId).delete();
-      } else {
-        // MockContainer doesn't support direct deletion
-        // Would need to implement filtering in mock data
-      }
+      await this.container.item(userId, userId).delete();
       return true;
     } catch (error) {
       console.error('Error deleting user:', error);
@@ -303,13 +307,23 @@ class UserModel {
    * Search users
    */
   async searchUsers(query: string, limit: number = 10): Promise<User[]> {
+    await this.ensureContainer();
     try {
+      // For a more sophisticated search, you might want to implement a proper search query
+      // This is a simple implementation that gets all users and filters client-side
       const users = await this.getAllUsers();
+      
+      const filteredUsers = users.filter(user => 
+        user.username.toLowerCase().includes(query.toLowerCase()) || 
+        user.email.toLowerCase().includes(query.toLowerCase()) ||
+        user.firstName.toLowerCase().includes(query.toLowerCase()) ||
+        user.lastName.toLowerCase().includes(query.toLowerCase())
+      ).slice(0, limit);
 
       // Remove passwords from results
-      return users.map((user: User) => {
-        const { password, ...userWithoutPassword } = user;
-        return userWithoutPassword as User;
+      return filteredUsers.map((user: User) => {
+        const { passwordHash, ...userWithoutPassword } = user;
+        return userWithoutPassword as any;
       });
     } catch (error) {
       console.error('Error searching users:', error);
@@ -321,12 +335,20 @@ class UserModel {
    * Update last login time
    */
   async updateLastLogin(userId: string): Promise<void> {
+    await this.ensureContainer();
     try {
-      await this.ensureContainer();
-      await (this.container as any).item(userId, userId).replace({
-        ...(await this.getUserById(userId)),
-        lastLogin: new Date()
-      });
+      const user = await this.getUserById(userId);
+      if (!user) {
+        throw new Error('User not found');
+      }
+      
+      const updatedUser = {
+        ...user,
+        lastLogin: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      await this.container.item(userId, userId).replace(updatedUser);
     } catch (error) {
       console.error('Error updating last login:', error);
       throw error;
@@ -337,14 +359,21 @@ class UserModel {
    * Deactivate user account
    */
   async deactivateUser(userId: string): Promise<boolean> {
+    await this.ensureContainer();
     try {
-      await this.ensureContainer();
-      const result = await (this.container as any).item(userId, userId).replace({
-        ...(await this.getUserById(userId)),
+      const user = await this.getUserById(userId);
+      if (!user) {
+        throw new Error('User not found');
+      }
+      
+      const updatedUser = {
+        ...user,
         isActive: false,
-        updatedAt: new Date()
-      });
-      return result.modifiedCount === 1;
+        updatedAt: new Date().toISOString()
+      };
+      
+      await this.container.item(userId, userId).replace(updatedUser);
+      return true;
     } catch (error) {
       console.error('Error deactivating user:', error);
       throw error;
@@ -355,14 +384,21 @@ class UserModel {
    * Reactivate user account
    */
   async reactivateUser(userId: string): Promise<boolean> {
+    await this.ensureContainer();
     try {
-      await this.ensureContainer();
-      const result = await (this.container as any).item(userId, userId).replace({
-        ...(await this.getUserById(userId)),
+      const user = await this.getUserById(userId);
+      if (!user) {
+        throw new Error('User not found');
+      }
+      
+      const updatedUser = {
+        ...user,
         isActive: true,
-        updatedAt: new Date()
-      });
-      return result.modifiedCount === 1;
+        updatedAt: new Date().toISOString()
+      };
+      
+      await this.container.item(userId, userId).replace(updatedUser);
+      return true;
     } catch (error) {
       console.error('Error reactivating user:', error);
       throw error;
@@ -373,8 +409,8 @@ class UserModel {
    * Change user password
    */
   async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<boolean> {
+    await this.ensureContainer();
     try {
-      await this.ensureContainer();
       // Get user with password
       const user = await this.getUserById(userId);
       if (!user) {
@@ -391,13 +427,14 @@ class UserModel {
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-      const result = await (this.container as any).item(userId, userId).replace({
+      const updatedUser = {
         ...user,
         passwordHash: hashedPassword,
-        updatedAt: new Date()
-      });
+        updatedAt: new Date().toISOString()
+      };
 
-      return result.modifiedCount === 1;
+      await this.container.item(userId, userId).replace(updatedUser);
+      return true;
     } catch (error) {
       console.error('Error changing password:', error);
       throw error;
