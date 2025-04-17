@@ -1,5 +1,5 @@
 # Top-level schema for pipeline
-$schema: https://raw.githubusercontent.com/microsoft/azure-pipelines-vscode/master/service-schema.json
+# $schema: https://raw.githubusercontent.com/microsoft/azure-pipelines-vscode/master/service-schema.json
 
 trigger:
   branches:
