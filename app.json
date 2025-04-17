@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "da135c20-0c8e-4414-af78-d95eed847ca5"
+      }
+    },
+    "android": {
+      "package": "com.perfectz.perfectlifetrackerpro"
+    }
+  }
+}
