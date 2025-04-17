@@ -9,6 +9,8 @@ trigger:
       - develop
   paths:
     include:
+      - azure-pipelines-pre-checkout.yml
+      - azure-pipelines.yml
       - frontend/**
       - backend/**
       - helm/**
