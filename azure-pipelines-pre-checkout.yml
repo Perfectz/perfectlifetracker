@@ -4,6 +4,7 @@ $schema: https://raw.githubusercontent.com/microsoft/azure-pipelines-vscode/mast
 trigger:
   branches:
     include:
+      - master
       - main
       - develop
   paths:
@@ -37,6 +38,39 @@ variables:
     kubernetesNamespace: 'perfectltp-staging'
 
 stages:
+- stage: GrantAcrPermissions
+  displayName: 'Grant ACR Push Rights to Pipeline SP'
+  jobs:
+  - job: ACRRoleAssignment
+    displayName: 'Ensure SP has AcrPush role'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: AzureCLI@2
+      displayName: 'Assign AcrPush role to service principal'
+      inputs:
+        azureSubscription: 'AzureSubscription'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          # Retrieve the DevOps service endpoint for ACR
+          spnId=$(az devops service-endpoint show \
+                  --project $(System.TeamProject) \
+                  --name ACR \
+                  --org https://dev.azure.com/$(System.TeamProjectCollection) \
+                  --query authorization.parameters.serviceprincipalid -o tsv)
+          # Retrieve the ACR resource ID
+          acrId=$(az acr show --name $(acrName) --query id -o tsv)
+          # Assign AcrPush role if not already assigned
+          existing=$(az role assignment list \
+                     --assignee $spnId --scope $acrId --role AcrPush -o tsv)
+          if [ -z "$existing" ]; then
+            az role assignment create --assignee $spnId --role AcrPush --scope $acrId
+            echo "🔐 Granted AcrPush to SP $spnId on $acrId"
+          else
+            echo "✅ SP already has AcrPush on $acrId"
+          fi
+
 - stage: Build
   displayName: 'Build and Push Images'
   jobs:
