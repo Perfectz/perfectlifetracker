@@ -1,275 +1,171 @@
+# Top-level schema for pipeline
+$schema: https://raw.githubusercontent.com/microsoft/azure-pipelines-vscode/master/service-schema.json
+
 trigger:
-  - master
-
-pool:
-  name: Default
-
-# This is a specialized pipeline that runs cleanup steps BEFORE checkout
-# It's designed to handle corrupted node_modules directories in the agent workspace
-
-resources:
-  repositories:
-  - repository: self
-    clean: false # Important: Set to false to avoid Git clean which fails with corrupted directories
+  branches:
+    include:
+      - main
+      - develop
+  paths:
+    include:
+      - frontend/**
+      - backend/**
+      - helm/**
 
 variables:
-  - name: NODE_VERSION
-    value: '20.18.1'
-  - name: NODE_PATH
-    value: 'C:\Program Files\nodejs'
-  - name: WORK_DIR
-    value: '$(Pipeline.Workspace)'
+  # Azure Container Registry
+  acrName: 'perfectltpacr'
+  acrLoginServer: '$(acrName).azurecr.io'
+  containerRegistryServiceConnection: 'ACR'
+  
+  # Kubernetes/AKS
+  aksResourceGroup: 'perfectltp-rg'
+  aksClusterName: 'perfectltp-aks'
+  
+  # Helm 
+  helmReleaseName: 'perfectltp'
+  helmChartPath: 'helm/perfectltp'
+  
+  # Branch-specific settings
+  ${{ if eq(variables['Build.SourceBranchName'], 'main') }}:
+    environment: 'production'
+    imageTag: '$(Build.BuildId)'
+    kubernetesNamespace: 'perfectltp-prod'
+  ${{ if eq(variables['Build.SourceBranchName'], 'develop') }}:
+    environment: 'staging'
+    imageTag: 'dev-$(Build.BuildId)'
+    kubernetesNamespace: 'perfectltp-staging'
 
 stages:
-  - stage: CleanupAndBuild
-    displayName: 'Cleanup and Build'
-    jobs:
-      - job: Cleanup
-        displayName: 'Workspace Cleanup'
-        steps:
-          # Manually clean node_modules directories before checkout
-          - task: PowerShell@2
-            displayName: 'Clean Corrupted Directories'
-            inputs:
-              targetType: 'inline'
-              script: |
-                Write-Host "==== Starting Pre-Checkout Workspace Cleanup ====" -ForegroundColor Cyan
-                Write-Host "Current directory: $(System.DefaultWorkingDirectory)" -ForegroundColor Yellow
-                Write-Host "Workspace directory: $(Pipeline.Workspace)" -ForegroundColor Yellow
-                
-                # Function to handle directory cleanup with robust error handling
-                function Clean-Directory {
-                    param (
-                        [string]$Path
-                    )
-                    
-                    if (-not (Test-Path $Path)) {
-                        Write-Host "Path not found: $Path" -ForegroundColor Yellow
-                        return
-                    }
-                    
-                    Write-Host "Cleaning directory: $Path" -ForegroundColor Cyan
-                    
-                    try {
-                        # First try normal removal
-                        Remove-Item -Path $Path -Recurse -Force -ErrorAction Stop
-                        Write-Host "Successfully removed directory" -ForegroundColor Green
-                    }
-                    catch {
-                        Write-Host "Standard removal failed: $($_.Exception.Message)" -ForegroundColor Red
-                        
-                        try {
-                            # Try using robocopy with MIR (mirror) to an empty directory
-                            Write-Host "Attempting robocopy method..." -ForegroundColor Yellow
-                            
-                            # Create empty temp directory
-                            $emptyDir = New-Item -Path "$env:TEMP\empty_dir_$(Get-Random)" -ItemType Directory -Force
-                            
-                            # Use robocopy to purge the directory
-                            robocopy $emptyDir.FullName $Path /MIR /NFL /NDL /NJH /NJS /NC /NS /MT:8
-                            
-                            # Remove empty directory
-                            Remove-Item -Path $emptyDir.FullName -Force -ErrorAction SilentlyContinue
-                            
-                            Write-Host "Robocopy cleanup completed" -ForegroundColor Green
-                        }
-                        catch {
-                            Write-Host "Robocopy method failed: $($_.Exception.Message)" -ForegroundColor Red
-                            
-                            try {
-                                # Last resort - try using cmd.exe rd command
-                                Write-Host "Attempting command prompt RD method..." -ForegroundColor Yellow
-                                cmd /c "rd /s /q `"$Path`""
-                                
-                                if (-not (Test-Path $Path)) {
-                                    Write-Host "Successfully removed directory using RD command" -ForegroundColor Green
-                                }
-                                else {
-                                    Write-Host "RD command method failed" -ForegroundColor Red
-                                }
-                            }
-                            catch {
-                                Write-Host "All cleanup methods failed for $Path" -ForegroundColor Red
-                            }
-                        }
-                    }
-                }
-                
-                # Clean specific problematic directories
-                $problematicDirs = @(
-                    "$(Pipeline.Workspace)\1\s\frontend\node_modules",
-                    "$(Pipeline.Workspace)\1\s\backend\node_modules"
-                )
-                
-                foreach ($dir in $problematicDirs) {
-                    if (Test-Path (Split-Path -Parent $dir)) {
-                        Write-Host "Cleaning problematic directory: $dir" -ForegroundColor Yellow
-                        Clean-Directory -Path $dir
-                    }
-                }
-                
-                # Clean source directory if it exists
-                $sourceDir = "$(Pipeline.Workspace)\1\s"
-                if (Test-Path $sourceDir) {
-                    Write-Host "Cleaning source directory: $sourceDir" -ForegroundColor Yellow
-                    Clean-Directory -Path $sourceDir
-                }
-                
-                Write-Host "==== Pre-Checkout Workspace Cleanup Completed ====" -ForegroundColor Cyan
-              failOnStderr: false
-              pwsh: true
-      
-      - job: BuildAndTest
-        displayName: 'Build and Test'
-        dependsOn: Cleanup
-        steps:
-          # Get sources with checkout (should work now that corrupted directories are removed)
+- stage: Build
+  displayName: 'Build and Push Images'
+  jobs:
+  - job: BuildFrontend
+    displayName: 'Build Frontend'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: PowerShell@2
+      displayName: 'Build & Push Frontend Image'
+      inputs:
+        targetType: 'inline'
+        script: |
+          az acr login --name $(acrName)
+          docker build -f frontend/Dockerfile.unified -t $(acrLoginServer)/frontend:$(imageTag) --target prod .
+          docker push $(acrLoginServer)/frontend:$(imageTag)
+
+  - job: BuildBackend
+    displayName: 'Build Backend'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: PowerShell@2
+      displayName: 'Build & Push Backend Image'
+      inputs:
+        targetType: 'inline'
+        script: |
+          az acr login --name $(acrName)
+          docker build -f backend/Dockerfile -t $(acrLoginServer)/backend:$(imageTag) .
+          docker push $(acrLoginServer)/backend:$(imageTag)
+
+- stage: Deploy
+  displayName: 'Deploy to $(environment)'
+  dependsOn: Build
+  jobs:
+  - deployment: DeployToAKS
+    displayName: 'Deploy to Kubernetes'
+    environment: $(environment)
+    pool:
+      vmImage: 'ubuntu-latest'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
           - checkout: self
-            clean: true
-            
-          # Verify Node.js
-          - task: BatchScript@1
-            inputs:
-              filename: 'verify-node.cmd'
-              arguments: '"$(NODE_PATH)"'
-              modifyEnvironment: true
-            displayName: 'Verify Node.js'
-            continueOnError: true
-
-          # Clean Frontend node_modules directory (extra precaution)
-          - task: PowerShell@2
-            inputs:
-              targetType: 'inline'
-              script: |
-                Write-Host "Cleaning frontend node_modules directory..."
-                if (Test-Path "$(System.DefaultWorkingDirectory)/frontend/node_modules") {
-                  try {
-                    Remove-Item -Path "$(System.DefaultWorkingDirectory)/frontend/node_modules" -Force -Recurse -ErrorAction Stop
-                    Write-Host "Successfully cleaned node_modules directory"
-                  }
-                  catch {
-                    Write-Host "##vso[task.logissue type=warning]Could not remove node_modules directory normally"
-                    Write-Host "Attempting force clean with robocopy..."
-                    
-                    # Create an empty directory to use with robocopy
-                    $emptyDir = New-Item -Path "$(System.DefaultWorkingDirectory)/empty" -ItemType Directory -Force
-                    
-                    # Use robocopy to purge the directory (MIR = mirror empty directory)
-                    robocopy $emptyDir.FullName "$(System.DefaultWorkingDirectory)/frontend/node_modules" /MIR /NFL /NDL /NJH /NJS /NC /NS /MT:8
-                    
-                    # Remove the empty directory
-                    Remove-Item -Path $emptyDir.FullName -Force -Recurse
-                    
-                    Write-Host "Force clean completed"
-                  }
-                }
-                else {
-                  Write-Host "node_modules directory doesn't exist, no cleanup needed"
-                }
-              workingDirectory: '$(System.DefaultWorkingDirectory)'
-            displayName: 'Clean Frontend node_modules'
-
-          # Build Frontend
-          - task: BatchScript@1
-            inputs:
-              filename: 'build-frontend.cmd'
-              arguments: '"$(NODE_PATH)"'
-              workingFolder: '$(System.DefaultWorkingDirectory)'
-            displayName: 'Build Frontend'
-
-          # Test Frontend
-          - task: BatchScript@1
-            inputs:
-              filename: 'test-frontend.cmd'
-              arguments: '"$(NODE_PATH)"'
-              workingFolder: '$(System.DefaultWorkingDirectory)'
-            displayName: 'Test Frontend'
           
-          # Publish Frontend
-          - task: PublishBuildArtifacts@1
+          - task: HelmInstaller@1
+            displayName: 'Install Helm'
             inputs:
-              PathtoPublish: 'frontend/build'
-              ArtifactName: 'frontend'
-              publishLocation: 'Container'
-            displayName: 'Publish Frontend Artifacts'
+              helmVersionToInstall: 'latest'
+          
+          - task: AzureCLI@2
+            displayName: 'AKS Login'
+            inputs:
+              azureSubscription: 'AzureSubscription'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                az aks get-credentials --resource-group $(aksResourceGroup) --name $(aksClusterName) --overwrite-existing
+                
+                # Create namespace if it doesn't exist
+                kubectl get namespace $(kubernetesNamespace) || kubectl create namespace $(kubernetesNamespace)
+                
+                # Create secret for ACR pull
+                kubectl create secret docker-registry acr-auth \
+                  --docker-server=$(acrLoginServer) \
+                  --docker-username=$(acrUser) \
+                  --docker-password=$(acrPassword) \
+                  --namespace=$(kubernetesNamespace) \
+                  --dry-run=client -o yaml | kubectl apply -f -
+          
+          - task: HelmDeploy@0
+            displayName: 'Helm upgrade'
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscription: 'AzureSubscription'
+              azureResourceGroup: '$(aksResourceGroup)'
+              kubernetesCluster: '$(aksClusterName)'
+              namespace: '$(kubernetesNamespace)'
+              command: 'upgrade'
+              chartType: 'FilePath'
+              chartPath: '$(helmChartPath)'
+              releaseName: '$(helmReleaseName)'
+              overrideValues: |
+                image.tag=$(imageTag)
+                image.pullSecrets[0].name=acr-auth
+                global.environment=$(environment)
+                global.domain=$(domain)
+              valueFile: '$(helmChartPath)/values.yaml'
+              install: true
+              waitForExecution: true
+              arguments: '--atomic --timeout 10m0s'
+          
+          - task: AzureCLI@2
+            displayName: 'Verify Deployment'
+            inputs:
+              azureSubscription: 'AzureSubscription'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                kubectl get pods -n $(kubernetesNamespace) -l app.kubernetes.io/instance=$(helmReleaseName)
+                
+                # Check frontend deployment
+                frontend_status=$(kubectl rollout status deployment/$(helmReleaseName)-frontend -n $(kubernetesNamespace) --timeout=300s)
+                echo $frontend_status
+                
+                # Check backend deployment
+                backend_status=$(kubectl rollout status deployment/$(helmReleaseName)-backend -n $(kubernetesNamespace) --timeout=300s)
+                echo $backend_status
+                
+                # Check ingress
+                kubectl get ingress -n $(kubernetesNamespace)
 
-          # Clean Backend node_modules directory (extra precaution)
-          - task: PowerShell@2
-            inputs:
-              targetType: 'inline'
-              script: |
-                Write-Host "Cleaning backend node_modules directory..."
-                if (Test-Path "$(System.DefaultWorkingDirectory)/backend/node_modules") {
-                  try {
-                    Remove-Item -Path "$(System.DefaultWorkingDirectory)/backend/node_modules" -Force -Recurse -ErrorAction Stop
-                    Write-Host "Successfully cleaned node_modules directory"
-                  }
-                  catch {
-                    Write-Host "##vso[task.logissue type=warning]Could not remove node_modules directory normally"
-                    Write-Host "Attempting force clean with robocopy..."
-                    
-                    # Create an empty directory to use with robocopy
-                    $emptyDir = New-Item -Path "$(System.DefaultWorkingDirectory)/empty" -ItemType Directory -Force
-                    
-                    # Use robocopy to purge the directory (MIR = mirror empty directory)
-                    robocopy $emptyDir.FullName "$(System.DefaultWorkingDirectory)/backend/node_modules" /MIR /NFL /NDL /NJH /NJS /NC /NS /MT:8
-                    
-                    # Remove the empty directory
-                    Remove-Item -Path $emptyDir.FullName -Force -Recurse
-                    
-                    Write-Host "Force clean completed"
-                  }
-                }
-                else {
-                  Write-Host "node_modules directory doesn't exist, no cleanup needed"
-                }
-              workingDirectory: '$(System.DefaultWorkingDirectory)'
-            displayName: 'Clean Backend node_modules'
+- stage: Test
+  displayName: 'Post-Deployment Tests'
+  dependsOn: Deploy
+  jobs:
+  - job: IntegrationTests
+    displayName: 'Run Integration Tests'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - script: echo "Running integration tests against $(environment)"
+      displayName: 'Integration Tests'
 
-          # Build Backend
-          - task: BatchScript@1
-            inputs:
-              filename: 'build-backend.cmd'
-              arguments: '"$(NODE_PATH)"'
-              workingFolder: '$(System.DefaultWorkingDirectory)'
-            displayName: 'Build Backend'
-
-          # Test Backend
-          - task: BatchScript@1
-            inputs:
-              filename: 'test-backend.cmd'
-              arguments: '"$(NODE_PATH)"'
-              workingFolder: '$(System.DefaultWorkingDirectory)'
-            displayName: 'Test Backend'
-
-          # Publish Backend
-          - task: PublishBuildArtifacts@1
-            inputs:
-              PathtoPublish: 'backend/dist'
-              ArtifactName: 'backend'
-              publishLocation: 'Container'
-            displayName: 'Publish Backend Artifacts'
-
-  # Deployment Stage
-  - stage: Deploy
-    displayName: 'Deploy'
-    dependsOn: CleanupAndBuild
-    condition: succeeded()
-    jobs:
-      - job: DeployJob
-        displayName: 'Deploy Application'
-        steps:
-          - task: DownloadBuildArtifacts@0
-            inputs:
-              buildType: 'current'
-              downloadType: 'specific'
-              itemPattern: '**'
-              downloadPath: '$(System.ArtifactsDirectory)'
-            displayName: 'Download Build Artifacts'
-
-          - task: BatchScript@1
-            inputs:
-              filename: 'deploy.cmd'
-              arguments: '"$(System.ArtifactsDirectory)" "$(Build.ArtifactStagingDirectory)"'
-              workingFolder: '$(System.DefaultWorkingDirectory)'
-            displayName: 'Deploy Application' 
+  - job: LoadTests
+    displayName: 'Run Load Tests'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - script: echo "Running load tests against $(environment)"
+      displayName: 'Load Tests'
