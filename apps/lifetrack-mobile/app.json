@@ -3,6 +3,9 @@
     "name": "lifetrack-mobile",
     "slug": "lifetrack-mobile",
     "version": "1.0.0",
+    "plugins": [
+      "expo-dev-client"
+    ],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -19,10 +22,16 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.anonymous.lifetrackmobile"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "0d66eb96-20df-424f-a486-ac7894c83aee"
+      }
     }
   }
 }
