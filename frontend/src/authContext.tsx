@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { AccountInfo, InteractionRequiredAuthError } from '@azure/msal-browser';
-import { msalInstance, loginRequest, protectedResources } from './authConfig';
+import { AccountInfo } from '@azure/msal-browser';
+import { msalInstance, loginRequest } from './authConfig';
 
 // Types
 interface AuthContextProps {
@@ -13,6 +13,21 @@ interface AuthContextProps {
   error: string | null;
 }
 
+// Mock user for development
+const mockUser: AccountInfo = {
+  homeAccountId: 'mock-account-id',
+  localAccountId: 'mock-local-id',
+  environment: 'localhost',
+  tenantId: 'mock-tenant',
+  username: 'user@example.com',
+  name: 'Demo User'
+};
+
+// Mock token for development
+const generateMockToken = (): string => {
+  return `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkRlbW8gVXNlciIsImlhdCI6MTUxNjIzOTAyMn0.${Math.random().toString(36).substring(2)}`;
+};
+
 // Create context
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
@@ -22,20 +37,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<AccountInfo | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-
+  
+  // Check for existing session
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        // Check if user is already signed in
-        const accounts = msalInstance.getAllAccounts();
+        // For development: check if we have a saved auth state in session storage
+        const savedAuth = sessionStorage.getItem('mock_auth_state');
         
-        if (accounts.length > 0) {
+        if (savedAuth === 'authenticated') {
           setIsAuthenticated(true);
-          setUser(accounts[0]);
+          setUser(mockUser);
         }
       } catch (err) {
-        setError('Failed to initialize authentication');
-        console.error(err);
+        console.error('Auth initialization error:', err);
       } finally {
         setIsLoading(false);
       }
@@ -47,16 +62,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (): Promise<void> => {
     try {
       setIsLoading(true);
-      const response = await msalInstance.loginPopup(loginRequest);
       
-      if (response) {
+      // For development: simulate successful login without actual MSAL
+      setTimeout(() => {
         setIsAuthenticated(true);
-        setUser(response.account);
-      }
+        setUser(mockUser);
+        sessionStorage.setItem('mock_auth_state', 'authenticated');
+        setIsLoading(false);
+      }, 1000);
     } catch (err) {
       setError('Login failed');
       console.error(err);
-    } finally {
       setIsLoading(false);
     }
   };
@@ -64,48 +80,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = (): void => {
     try {
       setIsLoading(true);
-      msalInstance.logout();
-      setIsAuthenticated(false);
-      setUser(null);
+      
+      // For development: clear mock auth state
+      setTimeout(() => {
+        setIsAuthenticated(false);
+        setUser(null);
+        sessionStorage.removeItem('mock_auth_state');
+        setIsLoading(false);
+      }, 500);
     } catch (err) {
       setError('Logout failed');
       console.error(err);
-    } finally {
       setIsLoading(false);
     }
   };
 
   const acquireToken = async (scopes: string[]): Promise<string | null> => {
-    if (!isAuthenticated || !user) {
+    if (!isAuthenticated) {
       return null;
     }
 
-    try {
-      const silentRequest = {
-        scopes,
-        account: user,
-      };
-
-      const response = await msalInstance.acquireTokenSilent(silentRequest);
-      return response.accessToken;
-    } catch (err) {
-      if (err instanceof InteractionRequiredAuthError) {
-        try {
-          const response = await msalInstance.acquireTokenPopup({
-            ...loginRequest,
-            scopes,
-          });
-          return response.accessToken;
-        } catch (popupErr) {
-          setError('Failed to acquire token');
-          console.error(popupErr);
-          return null;
-        }
-      }
-      setError('Failed to acquire token silently');
-      console.error(err);
-      return null;
-    }
+    // For development: return a mock token
+    return Promise.resolve(generateMockToken());
   };
 
   const contextValue: AuthContextProps = {

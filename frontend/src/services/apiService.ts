@@ -26,7 +26,7 @@ export const callApi = async <T>(
     scopes = protectedResources.apiProfile.scopes,
   } = config;
 
-  let requestHeaders = { ...headers };
+  const requestHeaders = { ...headers };
   
   // Add authentication token if needed
   if (requiresAuth) {

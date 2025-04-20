@@ -1,11 +1,22 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import './App.css';
 
-// Import custom components
+// Import lightweight components directly
 import SignInButton from './components/auth/SignInButton';
 import SignOutButton from './components/auth/SignOutButton';
-import ProfileContent from './components/profile/ProfileContent';
 import { useAuth } from './authContext';
+import ErrorBoundary from './components/common/ErrorBoundary';
+
+// Lazy-load heavier components
+const ProfileContent = lazy(() => import('./components/profile/ProfileContent'));
+
+// Simple loading spinner component
+const Spinner = () => (
+  <div className="spinner">
+    <div className="spinner-circle"></div>
+    <p>Loading...</p>
+  </div>
+);
 
 function App() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -28,14 +39,18 @@ function App() {
       </header>
 
       <main className="app-content">
-        {!isAuthenticated ? (
-          <div className="welcome-container">
-            <h2>Welcome to LifeTracker Pro</h2>
-            <p>Please sign in to access your profile and track your progress.</p>
-          </div>
-        ) : (
-          <ProfileContent />
-        )}
+        <ErrorBoundary>
+          {!isAuthenticated ? (
+            <div className="welcome-container">
+              <h2>Welcome to LifeTracker Pro</h2>
+              <p>Please sign in to access your profile and track your progress.</p>
+            </div>
+          ) : (
+            <Suspense fallback={<Spinner />}>
+              <ProfileContent />
+            </Suspense>
+          )}
+        </ErrorBoundary>
       </main>
     </div>
   );

@@ -6,12 +6,12 @@ import {
   PublicClientApplication 
 } from "@azure/msal-browser";
 
-// MSAL configuration
+// MSAL configuration - Using demo values for development
 export const msalConfig: Configuration = {
   auth: {
-    clientId: "YOUR_CLIENT_ID", // Replace with your Azure AD B2C client ID
-    authority: "https://YOUR_TENANT.b2clogin.com/YOUR_TENANT.onmicrosoft.com/B2C_1_signupsignin", // Replace with your Azure AD B2C authority
-    knownAuthorities: ["YOUR_TENANT.b2clogin.com"], // Replace with your Azure AD B2C known authorities
+    clientId: "11111111-1111-1111-1111-111111111111", // Demo client ID
+    // For development, we'll use a common endpoint that doesn't require actual B2C configuration
+    authority: "https://login.microsoftonline.com/common",
     redirectUri: window.location.origin,
   },
   cache: {
@@ -66,22 +66,22 @@ export const signInRedirectParams: RedirectRequest = {
   prompt: "select_account"
 };
 
-// Protected resources
+// Protected resources with demo scope values
 export const protectedResources = {
   apiProfile: {
     endpoint: "http://localhost:4000/api/profile",
-    scopes: ["https://YOUR_TENANT.onmicrosoft.com/api/user.read"]
+    scopes: ["api://demo/user.read"]
   },
   apiTasks: {
     endpoint: "http://localhost:4000/api/tasks",
-    scopes: ["https://YOUR_TENANT.onmicrosoft.com/api/tasks.read", "https://YOUR_TENANT.onmicrosoft.com/api/tasks.write"]
+    scopes: ["api://demo/tasks.read", "api://demo/tasks.write"]
   }
 };
 
 // API configuration
 export const apiConfig = {
-  baseUrl: process.env.REACT_APP_API_BASE_URL,
-  scopes: [process.env.REACT_APP_AZURE_AD_B2C_API_SCOPE],
+  baseUrl: "http://localhost:4000",
+  scopes: ["api://demo/user.read"],
 };
 
 // Create and export the MSAL instance for use in other files
