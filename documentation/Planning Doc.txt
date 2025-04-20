@@ -1,0 +1,79 @@
+Here’s a streamlined, day‑by‑day 30‑day plan for **LifeTracker Pro**—organized so every step builds on the last, with clear deliverables each day to minimize integration headaches.
+
+---
+
+## 🛠 Tech Stack
+
+- **Frontend**  
+  React 18 + TypeScript, Material UI 5, React Router 6, React Query, Redux Toolkit, Axios, Recharts, CSS Modules, Jest + React Testing Library  
+- **Backend**  
+  Node.js 18 + Express.js (TypeScript), JWT auth, Swagger/OpenAPI, Azure SDKs (Cosmos DB, Blob Storage, Redis, Cognitive Search), Jest  
+- **Auth**  
+  Azure AD B2C with MSAL React on the client and JWT‑validation middleware in Express  
+- **Data & Storage**  
+  Cosmos DB (SQL API), Blob Storage, Redis Cache, Azure Cognitive Search  
+- **AI/ML**  
+  Azure OpenAI Service, Azure Cognitive Services (Text Analytics)  
+- **DevOps**  
+  Docker → Azure Container Registry → AKS, Terraform (Infra‑as‑Code), GitHub Actions (CI/CD), Azure Front Door, Azure Monitor & Application Insights  
+
+---
+
+## 📆 Week 1 – Foundation & First “Thin Slice”
+
+| Day | Deliverable                                  | Tasks                                                                                                                                                   |
+|:---:|----------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 1   | **Repo & Infra Scaffold**                    | - Create a **monorepo** (/frontend, /backend)<br/>- Scaffold React & Express projects (TypeScript)<br/>- Add ESLint/Prettier, Webpack config<br/>- Init Terraform with placeholder resources<br/>- Create GitHub Actions pipeline stub |
+| 2   | **Azure Resources Provisioned**              | - Flesh out Terraform to deploy: Cosmos DB, Blob Storage, Redis, Cognitive Search, ACR, AKS cluster<br/>- Run `terraform apply` and verify resources exist |
+| 3   | **API “Hello” on AKS**                       | - Build Express “/health” endpoint<br/>- Dockerize backend and push to ACR<br/>- Deploy to AKS with a basic Ingress rule<br/>- Verify `GET /health → 200` |
+| 4   | **React “Hello” + Integrated Build**         | - Build React “Hello World” page<br/>- Dockerize front end, push to ACR<br/>- Deploy to AKS & expose via Ingress<br/>- Verify front/back share the same domain |
+| 5   | **Authentication Setup**                     | - Register apps in Azure AD B2C (SPA + API)<br/>- Integrate MSAL in React (login/signup)<br/>- Add JWT check middleware in Express<br/>- Protect a sample `/profile` route |
+| 6   | **User Profile CRUD**                        | - Design Cosmos data model for Profile<br/>- Implement Express CRUD endpoints<br/>- Build React Profile pages (view/edit)<br/>- Upload avatar to Blob Storage |
+| 7   | **Navigation & Dashboard Shell**             | - Build Material UI layout: sidebar (desktop) & bottom nav (mobile)<br/>- Add theme switcher<br/>- Create an empty “Dashboard” widget<br/>- E2E test: login → profile → dashboard |
+
+---
+
+## 📆 Week 2 – Fitness Tracking
+
+| Day | Deliverable                                  | Tasks                                                                                                                                                   |
+|:---:|----------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 8–9 | **Goals Feature**                            | - Cosmos model for FitnessGoal<br/>- Express endpoints for goal CRUD<br/>- React: goal list, create/edit forms, detail view<br/>- Recharts: progress chart    |
+| 10–11 | **Activities Feature**                     | - Cosmos model for Activity<br/>- Express endpoints for activity CRUD<br/>- React: log activity form, history list, filters<br/>- Metrics calculation logic    |
+| 12–13 | **Analytics & AI Insights**                | - Express endpoint for fitness analytics (trend calculations)<br/>- Call Azure OpenAI to generate “weekly fitness summary”<br/>- React: insights card on dashboard |
+| 14  | **End‑to‑End Integration & Testing**         | - Wire up goals + activities + insights in a single flow<br/>- Write integration tests (Supertest + React Testing Library)<br/>- Monitor endpoints in App Insights |
+
+---
+
+## 📆 Week 3 – Personal Development
+
+| Day | Deliverable                                  | Tasks                                                                                                                                                   |
+|:---:|----------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 15–16 | **Habit Tracker**                         | - Cosmos model for Habit<br/>- Express CRUD endpoints<br/>- React: habit creation, streak visualization, listing component                              |
+| 17–18 | **Journal & Sentiment**                    | - Cosmos model for JournalEntry<br/>- Express CRUD endpoints<br/>- Call Azure Text Analytics for sentiment<br/>- React: journal editor/list + mood chart  |
+| 19–20 | **Skills & Learning**                      | - Cosmos models for Skill + Milestone<br/>- Express CRUD endpoints<br/>- React: track skills, add milestones, resource links, progress dashboard         |
+| 21  | **Feature Integration & Tests**              | - Tie habits, journal, skills together (cross‑links where relevant)<br/>- End‑to‑end tests<br/>- Monitor new APIs, optimize queries, update docs       |
+
+---
+
+## 📆 Week 4 – Tasks, AI Assistant & Final Polish
+
+| Day | Deliverable                                  | Tasks                                                                                                                                                   |
+|:---:|----------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 22–23 | **Task Management**                       | - Cosmos model for Task (with recurrence rules)<br/>- Express CRUD endpoints<br/>- React: create/list/filter tasks, reminder toggle                     |
+| 24–25 | **AI Assistant**                          | - Express endpoints calling Azure OpenAI for task suggestions<br/>- React chat component for AI→user dialog<br/>- Persist AI conversation history      |
+| 26–27 | **Cross‑Feature Search & Notifications**  | - Index all data in Azure Cognitive Search<br/>- Express search endpoint<br/>- React: global search bar<br/>- Add real‑time notifications via SignalR     |
+| 28–29 | **Final Testing & Optimization**          | - Full test suite (unit+integration+E2E)<br/>- Performance tuning: lazy‑load, React Query cache, Cosmos indexing<br/>- Accessibility audit & fixes         |
+| 30  | **Production‑Ready Deployment**             | - Finalize Helm charts/K8s manifests<br/>- Blue‑green rollout via Azure Front Door<br/>- Set up backups, alerts, monitoring dashboards<br/>- Hand‑off README |
+
+---
+
+### 🚀 Why This Will Work
+- **Monorepo + Daily “Thin Slices”** ensure front & back stay in sync and deliver a working demo every week.  
+- **Terraform → GitHub Actions → AKS** gives you consistent, repeatable infrastructure and zero-manual steps.  
+- **Singleton SDK Clients** (Cosmos, Redis, Blob) and **JWT middleware** keep your API reliable under load.  
+- **MSAL + JWT** guarantees secure auth flows end‑to‑end.  
+- **API‑First with Swagger** lets frontend devs build against a contract, avoiding guesswork.  
+- **AI features scoped** to one clear use case per week, so you won’t overreach.  
+- **Extensive testing** (unit, integration, E2E) and **monitoring** catch issues early, not on Day 30.  
+
+Follow this plan day by day, verify each deliverable, and you’ll minimize surprise blockers—delivering a polished, fully integrated POC in 30 days.

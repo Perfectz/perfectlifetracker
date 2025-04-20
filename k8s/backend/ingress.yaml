@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: lifetracker-backend
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /health
+        pathType: Prefix
+        backend:
+          service:
+            name: lifetracker-backend
+            port:
+              number: 80
+      - path: /api(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: lifetracker-backend
+            port:
+              number: 80 

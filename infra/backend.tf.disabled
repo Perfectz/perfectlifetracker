@@ -1,0 +1,8 @@
+terraform {
+  backend "azurerm" {
+    resource_group_name  = "lifetracker-tfstate-rg"
+    storage_account_name = "lifetrackerstatesa"
+    container_name       = "tfstate"
+    key                  = "terraform.tfstate"
+  }
+} 

@@ -1,0 +1,42 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+## Project Directory Structure
+- The project follows a monorepo structure with distinct directories for frontend and backend:
+  - `/frontend`: React TypeScript application (run commands here for UI)
+  - `/backend`: Express TypeScript API (run commands here for server)
+  - `/infra`: Infrastructure and deployment scripts
+  - `/.cursor`: Cursor IDE configuration
+- Always verify the current directory before running commands:
+  - Frontend commands (npm start, npm test) must be run in `/frontend`
+  - Backend commands must be run in `/backend`
+  - Never run npm commands in the root directory as it has no package.json
+
+## Agent Workflow Rules
+- You are an agent—persist until the user's query is fully resolved; never stop prematurely.
+- If you're unsure about file contents or project structure, use tools (`read_file`, `codebase_search`, `grep_search`) instead of guessing.
+- Before each action, plan step-by-step: produce pseudocode or a brief outline, then confirm before coding.
+
+## Prompt & Edit Structure
+- Break tasks into small, testable prompts: include Summary, User Stories, Acceptance Criteria, IDE Testing Criteria, and Vibe‑Coding Prompt.
+- Follow the daily plan document pattern when requesting or generating changes.
+- Represent edits minimally using file citations with the format ```startLine:endLine:filepath``` and `// ... existing code ...`.
+
+## Code & Style Guidelines
+- Use TypeScript: React TS for frontend, Express TS for backend.
+- Apply DRY, modular, and SOLID principles; use early returns and guard clauses for error handling.
+- Enforce consistent formatting (ESLint/Prettier). Cite all imports and ensure no missing dependencies.
+- Provide clear comments describing intent, not effects.
+
+## Testing & DevOps
+- Include explicit IDE testing steps (e.g., `npm test`, `terraform validate`, `kubectl apply`) in plans.
+- Practice Infrastructure as Code: Terraform stubs, Dockerfiles, Kubernetes manifests, CI/CD pipeline stubs.
+- Always plan for and reference unit (Jest/Supertest) and E2E (Cypress) tests in daily deliverables.
+- Use versioned container tags and parameterized Helm/terraform configurations.
+
+## Communication Style
+- Respond concisely using bullet lists and code blocks; avoid unnecessary elaboration.
+- Cite external documentation or links (e.g., Cursor rules page) when relevant.
+- Confirm critical decisions with the user before implementation.
