@@ -218,8 +218,18 @@ describe('ProfileContent Component', () => {
     
     // Mock profileService.getProfile to return mock data
     (profileService.getProfile as jest.Mock).mockResolvedValue(mockProfile);
+    
+    // Mock uploadAvatar to return a proper response
+    (profileService.uploadAvatar as jest.Mock).mockResolvedValue({
+      success: true,
+      avatarUrl: 'https://example.com/avatar.jpg',
+      profile: {
+        ...mockProfile,
+        avatarUrl: 'https://example.com/avatar.jpg'
+      }
+    });
 
-    renderWithProviders(<ProfileContent />);
+    render(<AuthProvider><ProfileContent /></AuthProvider>);
     
     // Wait for profile data to load
     await waitFor(() => expect(screen.getByText('Test User')).toBeInTheDocument());

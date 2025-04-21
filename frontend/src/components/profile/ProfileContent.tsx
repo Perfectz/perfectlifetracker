@@ -185,19 +185,21 @@ export const ProfileContent: React.FC = () => {
       const result = await profileService.uploadAvatar(userId, file) as AvatarResponse;
       
       // Update form data with the returned avatar URL
-      setFormData(prev => ({
-        ...prev,
-        avatarUrl: result.avatarUrl
-      }));
-      
-      // If not in edit mode, also update the profile data
-      if (!isEditing) {
-        setProfileData(result.profile);
+      if (result && result.avatarUrl) {
+        setFormData(prev => ({
+          ...prev,
+          avatarUrl: result.avatarUrl
+        }));
+        
+        // If not in edit mode, also update the profile data
+        if (!isEditing && result.profile) {
+          setProfileData(result.profile);
+        }
+        
+        // Show success message
+        setUpdateSuccess(true);
+        setTimeout(() => setUpdateSuccess(false), 3000);
       }
-      
-      // Show success message
-      setUpdateSuccess(true);
-      setTimeout(() => setUpdateSuccess(false), 3000);
     } catch (err: any) {
       console.error('Avatar upload error:', err);
       setError(err.message || 'Failed to upload avatar');

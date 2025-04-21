@@ -98,7 +98,7 @@ describe('Authentication Flow', () => {
   });
 
   // UI login test as a separate test that can be skipped if flaky
-  it('should be able to login through UI interaction', { retries: 3 }, () => {
+  it('should be able to login through UI interaction', () => {
     // Visit homepage
     cy.visit('/');
     

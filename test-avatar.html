@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Avatar Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        canvas { border: 1px solid #ccc; margin-bottom: 15px; }
+        button { padding: 10px; background: #0066ff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0052cc; }
+    </style>
+</head>
+<body>
+    <h1>Test Avatar Generator</h1>
+    <canvas id="canvas" width="200" height="200"></canvas>
+    <div>
+        <button id="download">Download Avatar Image</button>
+    </div>
+
+    <script>
+        // Get the canvas element and its context
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Draw a simple avatar (circle with initials)
+        function drawAvatar() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw circle background
+            ctx.fillStyle = '#4285F4';
+            ctx.beginPath();
+            ctx.arc(100, 100, 90, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw text
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 80px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('TP', 100, 100);
+        }
+        
+        // Draw the avatar when page loads
+        drawAvatar();
+        
+        // Set up download button
+        document.getElementById('download').addEventListener('click', function() {
+            // Convert canvas to data URL
+            const dataURL = canvas.toDataURL('image/png');
+            
+            // Create download link
+            const link = document.createElement('a');
+            link.download = 'test-avatar.png';
+            link.href = dataURL;
+            link.click();
+        });
+    </script>
+</body>
+</html> 
