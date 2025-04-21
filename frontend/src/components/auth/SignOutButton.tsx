@@ -1,21 +1,20 @@
 import React from 'react';
-import { useAuth } from '../../authContext';
+import { useUser } from '../../hooks/useUser';
 
 /**
- * SignOutButton component renders a button that handles user sign-out
+ * SignOutButton component renders a button that handles user sign out
  */
 export const SignOutButton: React.FC = () => {
-  const { logout, isLoading, user } = useAuth();
+  const { logout, userName } = useUser();
 
   return (
-    <div className="auth-header">
-      <span className="welcome-user">Welcome, {user?.name || 'User'}</span>
+    <div className="sign-out-container">
+      <span className="user-name">Hello, {userName}</span>
       <button 
         className="sign-out-button" 
         onClick={logout}
-        disabled={isLoading}
       >
-        {isLoading ? 'Signing out...' : 'Sign Out'}
+        Sign Out
       </button>
     </div>
   );

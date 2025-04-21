@@ -6,6 +6,19 @@ import {
   PublicClientApplication 
 } from "@azure/msal-browser";
 
+// Default API URL if not provided in environment
+const DEFAULT_API_URL = 'http://localhost:3001/api';
+
+// Get API URL from environment or use default
+const getApiUrl = () => {
+  try {
+    return process.env.REACT_APP_API_URL || DEFAULT_API_URL;
+  } catch (error) {
+    console.warn('Environment variable access failed, using default API URL');
+    return DEFAULT_API_URL;
+  }
+};
+
 // MSAL configuration - Using demo values for development
 export const msalConfig: Configuration = {
   auth: {
@@ -66,22 +79,25 @@ export const signInRedirectParams: RedirectRequest = {
   prompt: "select_account"
 };
 
+// API URL that we'll use throughout the application
+const apiUrl = getApiUrl();
+
 // Protected resources with demo scope values
 export const protectedResources = {
   apiProfile: {
-    endpoint: "http://localhost:4000/api/profile",
+    endpoint: `${apiUrl}/profile`,
     scopes: ["api://demo/user.read"]
   },
   apiTasks: {
-    endpoint: "http://localhost:4000/api/tasks",
+    endpoint: `${apiUrl}/tasks`,
     scopes: ["api://demo/tasks.read", "api://demo/tasks.write"]
   }
 };
 
 // API configuration
 export const apiConfig = {
-  baseUrl: "http://localhost:4000",
-  scopes: ["api://demo/user.read"],
+  baseUrl: apiUrl,
+  scopes: protectedResources.apiProfile.scopes,
 };
 
 // Create and export the MSAL instance for use in other files

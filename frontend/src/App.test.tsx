@@ -22,7 +22,7 @@ jest.mock('./authContext', () => ({
 describe('App Component', () => {
   test('renders LifeTracker Pro heading', () => {
     render(<App />);
-    const headingElement = screen.getByRole('heading', { name: /LifeTracker Pro/i, level: 1 });
+    const headingElement = screen.getByRole('heading', { name: /Welcome to LifeTracker Pro/i, level: 2 });
     expect(headingElement).toBeInTheDocument();
   });
 

@@ -27,6 +27,13 @@ jobs:
       working-directory: ./frontend
       run: npm run lint
     
+    - name: Set up Node.js for Backend
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: './backend/package-lock.json'
+    
     - name: Backend - Install Dependencies
       working-directory: ./backend
       run: npm ci
@@ -55,6 +62,13 @@ jobs:
     - name: Frontend - Run Tests
       working-directory: ./frontend
       run: npm test
+    
+    - name: Set up Node.js for Backend
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: './backend/package-lock.json'
     
     - name: Backend - Install Dependencies
       working-directory: ./backend

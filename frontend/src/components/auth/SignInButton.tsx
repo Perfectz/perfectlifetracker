@@ -1,20 +1,31 @@
 import React from 'react';
+import { Button, CircularProgress } from '@mui/material';
+import { useUser } from '../../hooks/useUser';
 import { useAuth } from '../../authContext';
 
 /**
  * SignInButton component renders a button that handles user authentication
  */
 export const SignInButton: React.FC = () => {
-  const { login, isLoading } = useAuth();
+  const { login } = useUser();
+  const { isLoading } = useAuth();
 
   return (
-    <button 
-      className="sign-in-button" 
+    <Button 
+      variant="contained"
+      color="primary"
       onClick={login}
       disabled={isLoading}
+      aria-label="Sign in to your account"
+      className="sign-in-button"
+      sx={{ minWidth: '120px' }}
     >
-      {isLoading ? 'Signing in...' : 'Sign In'}
-    </button>
+      {isLoading ? (
+        <CircularProgress size={24} color="inherit" aria-label="Signing in..." />
+      ) : (
+        'Sign In'
+      )}
+    </Button>
   );
 };
 

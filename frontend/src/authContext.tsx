@@ -23,8 +23,8 @@ const mockUser: AccountInfo = {
   name: 'Demo User'
 };
 
-// Mock token for development
-const generateMockToken = (): string => {
+// Mock token for development (exported for use in apiService fallback)
+export const generateMockToken = (): string => {
   return `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkRlbW8gVXNlciIsImlhdCI6MTUxNjIzOTAyMn0.${Math.random().toString(36).substring(2)}`;
 };
 
@@ -38,6 +38,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   
+  // Helper function to update screen reader announcements
+  const updateScreenReaderAnnouncement = (message: string) => {
+    const statusElement = document.getElementById('auth-status');
+    if (statusElement) {
+      statusElement.textContent = message;
+    }
+  };
+  
   // Check for existing session
   useEffect(() => {
     const initializeAuth = async () => {
@@ -48,9 +56,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (savedAuth === 'authenticated') {
           setIsAuthenticated(true);
           setUser(mockUser);
+          updateScreenReaderAnnouncement('You are signed in');
+        } else {
+          updateScreenReaderAnnouncement('Please sign in to continue');
         }
       } catch (err) {
         console.error('Auth initialization error:', err);
+        updateScreenReaderAnnouncement('Authentication initialization error');
       } finally {
         setIsLoading(false);
       }
@@ -62,16 +74,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (): Promise<void> => {
     try {
       setIsLoading(true);
+      updateScreenReaderAnnouncement('Signing in...');
       
       // For development: simulate successful login without actual MSAL
       setTimeout(() => {
         setIsAuthenticated(true);
         setUser(mockUser);
         sessionStorage.setItem('mock_auth_state', 'authenticated');
+        updateScreenReaderAnnouncement('Sign in successful. Welcome to LifeTracker Pro.');
         setIsLoading(false);
       }, 1000);
     } catch (err) {
       setError('Login failed');
+      updateScreenReaderAnnouncement('Sign in failed. Please try again.');
       console.error(err);
       setIsLoading(false);
     }
@@ -80,16 +95,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = (): void => {
     try {
       setIsLoading(true);
+      updateScreenReaderAnnouncement('Signing out...');
       
       // For development: clear mock auth state
       setTimeout(() => {
         setIsAuthenticated(false);
         setUser(null);
         sessionStorage.removeItem('mock_auth_state');
+        updateScreenReaderAnnouncement('You have been signed out.');
         setIsLoading(false);
       }, 500);
     } catch (err) {
       setError('Logout failed');
+      updateScreenReaderAnnouncement('Sign out failed.');
       console.error(err);
       setIsLoading(false);
     }

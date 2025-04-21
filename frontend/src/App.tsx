@@ -1,58 +1,85 @@
 import React, { Suspense, lazy } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
+import { Toaster } from 'react-hot-toast';
 
 // Import lightweight components directly
-import SignInButton from './components/auth/SignInButton';
-import SignOutButton from './components/auth/SignOutButton';
-import { useAuth } from './authContext';
+import NavBar from './components/common/NavBar';
 import ErrorBoundary from './components/common/ErrorBoundary';
+import Spinner from './components/common/Spinner';
+import ProtectedRoute from './components/common/ProtectedRoute';
+import { useUser } from './hooks/useUser';
+import { ThemeProvider } from './themeContext';
+import ThemeToggle from './components/common/ThemeToggle';
+import { getAuthorizedRoutes, getPublicRoutes } from './routes';
+import WelcomeScreen from './components/auth/WelcomeScreen';
 
-// Lazy-load heavier components
+// Lazy-load heavier components with prefetch
 const ProfileContent = lazy(() => import('./components/profile/ProfileContent'));
+const DashboardWidget = lazy(() => import('./components/dashboard/DashboardWidget'));
 
-// Simple loading spinner component
-const Spinner = () => (
-  <div className="spinner">
-    <div className="spinner-circle"></div>
-    <p>Loading...</p>
-  </div>
-);
+// Component map for route rendering
+const componentMap: Record<string, React.ReactNode> = {
+  'DASHBOARD': <DashboardWidget />,
+  'PROFILE': <ProfileContent />,
+};
 
+// Main App component
 function App() {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) {
-    return <div className="loading">Loading authentication state...</div>;
-  }
+  const authorizedRoutes = getAuthorizedRoutes();
+  const publicRoutes = getPublicRoutes();
 
   return (
-    <div className="app">
-      <header className="app-header">
-        <h1>LifeTracker Pro</h1>
-        <div className="auth-buttons">
-          {!isAuthenticated ? (
-            <SignInButton />
-          ) : (
-            <SignOutButton />
-          )}
-        </div>
-      </header>
-
-      <main className="app-content">
+    <ThemeProvider>
+      <Router>
         <ErrorBoundary>
-          {!isAuthenticated ? (
-            <div className="welcome-container">
-              <h2>Welcome to LifeTracker Pro</h2>
-              <p>Please sign in to access your profile and track your progress.</p>
-            </div>
-          ) : (
-            <Suspense fallback={<Spinner />}>
-              <ProfileContent />
-            </Suspense>
-          )}
+          <div className="app">
+            <ProtectedRoute>
+              <NavBar />
+              <div className="theme-toggle-container">
+                <ThemeToggle />
+              </div>
+            </ProtectedRoute>
+            
+            <main className="app-content">
+              <Suspense fallback={<Spinner message="Loading page..." />}>
+                <Routes>
+                  {/* Public routes */}
+                  {publicRoutes.map(route => (
+                    <Route 
+                      key={route.key}
+                      path={route.path} 
+                      element={<WelcomeScreen />} 
+                    />
+                  ))}
+                  
+                  {/* Protected routes */}
+                  {authorizedRoutes.map(route => (
+                    <Route 
+                      key={route.key}
+                      path={route.path} 
+                      element={
+                        <ProtectedRoute>
+                          <div className="page-transition">
+                            {componentMap[route.key]}
+                          </div>
+                        </ProtectedRoute>
+                      } 
+                    />
+                  ))}
+                  
+                  {/* Catch-all route */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </Suspense>
+            </main>
+            
+            {/* Toast notifications */}
+            <Toaster position="bottom-right" toastOptions={{ duration: 4000 }} />
+          </div>
         </ErrorBoundary>
-      </main>
-    </div>
+      </Router>
+    </ThemeProvider>
   );
 }
 

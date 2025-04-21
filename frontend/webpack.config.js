@@ -2,6 +2,7 @@ const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const webpack = require('webpack');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+const Dotenv = require('dotenv-webpack');
 
 module.exports = {
   entry: './src/index.tsx',
@@ -33,11 +34,14 @@ module.exports = {
   plugins: [
     new HtmlWebpackPlugin({
       template: './src/index.html',
-      filename: 'index.html'
+      filename: 'index.html',
+      favicon: './src/assets/favicon.png'
     }),
+    new Dotenv(),
     new webpack.DefinePlugin({
-      'process.env.REACT_APP_API_BASE_URL': JSON.stringify(process.env.REACT_APP_API_BASE_URL || '"http://localhost:4000"'),
-      'process.env.REACT_APP_AZURE_AD_B2C_API_SCOPE': JSON.stringify(process.env.REACT_APP_AZURE_AD_B2C_API_SCOPE || '"https://YOUR_TENANT.onmicrosoft.com/api/user.read"')
+      'process.env.REACT_APP_API_URL': JSON.stringify(process.env.REACT_APP_API_URL || 'http://localhost:3001/api'),
+      'process.env.REACT_APP_AZURE_AD_B2C_API_SCOPE': JSON.stringify(process.env.REACT_APP_AZURE_AD_B2C_API_SCOPE || 'https://YOUR_TENANT.onmicrosoft.com/api/user.read'),
+      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development')
     }),
     ...(process.env.ANALYZE ? [new BundleAnalyzerPlugin({ openAnalyzer: false })] : [])
   ],

@@ -73,26 +73,40 @@ This document outlines the comprehensive testing strategy implemented for LifeTr
 
 ### Frontend Test Scripts
 
-1. **Jest Unit Tests**
+1. **Development Server & Checks**
    ```bash
    cd frontend
-   npm test
+   npm install
+   npm run prestart    # kills port 3000 if in use
+   npm start           # starts webpack-dev-server
+   npm run lint        # runs ESLint
+   npm test            # runs Jest tests
    ```
-   Runs all Jest tests with coverage reporting.
 
-2. **Build Validation**
+2. **Production Build Validation**
    ```bash
    cd frontend
-   node test-build.js
+   npm run build       # production bundle
+   npm run analyze     # optional: launch bundle analyzer
    ```
-   Builds the frontend and validates:
-   - Build outputs in the `dist/` directory
-   - Bundle files are correctly generated
-   - App component includes "Hello World" content
-   - Server security headers are correctly implemented
-   - Health endpoint returns 200 OK response
 
-3. **Docker Image Tests**
+### Backend Test Scripts
+
+1. **Development Server & Checks**
+   ```bash
+   cd backend
+   npm install
+   npm run predev      # kills port 4000 if in use
+   npm run lint        # runs ESLint
+   npm run build       # compiles TypeScript
+   npm test            # runs Jest tests (allows no tests)
+   npm run dev         # starts dev server with ts-node-dev
+   node test-api-contract.js  # contract test for /health endpoint
+   ```
+
+3. **Docker & Manifest Tests**
+
+1. **Docker Image Tests**
    ```bash
    cd frontend
    docker build -t frontend-test .

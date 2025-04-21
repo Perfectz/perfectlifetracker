@@ -37,6 +37,7 @@ LifeTracker Pro is a full‑stack health and wellness platform, comprised of a R
 | React Query for data caching    | Automatic background refresh and mutation handling      | Redux Toolkit Query; custom hooks  |
 | Non-root containers             | Enhanced security posture by dropping privileges        | Default root-user containers       |
 | Security headers                | Protection against common web vulnerabilities           | No headers (default behavior)      |
+| Centralized route configuration | Single source of truth for all routes with typed interface | Individual route definitions in components |
 
 ## Infrastructure & Deployment
 
@@ -90,8 +91,9 @@ We've implemented a comprehensive testing strategy with multiple layers:
    - Backend: Supertest for API endpoints
 
 3. **E2E Testing**:
-   - Cypress for critical user journeys
+   - Cypress for critical user journeys including navigation flow and route validation
    - Contract testing for API endpoints
+   - Dedicated tests for route configuration and navigation state management
 
 4. **Security Testing**:
    - Docker image scanning with Trivy
@@ -111,3 +113,12 @@ We've implemented a comprehensive testing strategy with multiple layers:
 - Implement automated security scanning for Docker images in CI pipeline.
 - Add contract testing between frontend and backend.
 - Enhance monitoring with custom dashboards for security events.  
+- Expand test coverage for route configuration and navigation flow.
+
+## Recent Architecture Updates
+
+### [2023-05-15] – Centralized Route Configuration
+- **Decision:** Implemented a centralized route configuration in `routes.tsx` with a typed interface to standardize route definitions throughout the application.
+- **Rationale:** This approach provides a single source of truth for route definitions, simplifies adding new routes, and ensures consistent route handling across components (NavBar, App routing, etc.).
+- **Alternatives:** Individual route definitions in components (more flexible but prone to inconsistencies), or using a routing library with built-in centralized routing (adds dependency but provides more features).
+- **Testing:** Added dedicated Cypress tests to verify route configuration, ensuring navigation items are properly displayed, active states are correctly applied, and invalid routes are redirected appropriately.  
