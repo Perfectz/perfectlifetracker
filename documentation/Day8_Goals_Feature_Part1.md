@@ -25,13 +25,99 @@
 
 ## IDE Testing Criteria
 1. Run backend unit tests:
-   - `npm test` → all goal endpoint tests pass.
+   ```bash
+   cd backend
+   npm test
+   ```
+   - All goal endpoint tests pass.
+   
 2. Manual API testing (using REST client in IDE):
-   - POST to `/goals` → returns 201 and valid JSON.
-   - GET `/goals` → returns list including created goal.
-   - PUT and DELETE `/goals/:id` behave as expected.
+   ```http
+   ### Create a new goal
+   POST http://localhost:3001/api/goals
+   Content-Type: application/json
+   Authorization: Bearer {{token}}
+   
+   {
+     "title": "Run 5K",
+     "targetDate": "2023-12-31T00:00:00.000Z",
+     "notes": "Train 3 times per week"
+   }
+   
+   ### Get all goals
+   GET http://localhost:3001/api/goals
+   Authorization: Bearer {{token}}
+   ```
+   - Verify response payloads match expected schemas.
+   
 3. Verify TypeScript compilation:
-   - `tsc --noEmit` → no errors in model or controller files.
+   ```bash
+   cd backend
+   npx tsc --noEmit
+   ```
+   - No errors in model or controller files.
+
+## Implementation Plan
+
+### 1. Data Model & Storage Setup
+
+1. Define the `FitnessGoal` TypeScript interface:
+   ```typescript
+   interface FitnessGoal {
+     id: string;               // Unique identifier
+     userId: string;           // Owner of the goal (for partitioning)
+     title: string;            // Goal title/description
+     targetDate: Date;         // Target completion date
+     createdAt: Date;          // Creation timestamp
+     updatedAt: Date;          // Last update timestamp
+     notes?: string;           // Optional notes/details
+     achieved: boolean;        // Whether goal is complete
+     progress: number;         // Progress percentage (0-100)
+   }
+   ```
+
+2. Create DTOs for create and update operations:
+   ```typescript
+   interface CreateFitnessGoalDto {
+     title: string;
+     targetDate: Date | string;
+     notes?: string;
+   }
+   
+   interface UpdateFitnessGoalDto {
+     title?: string;
+     targetDate?: Date | string;
+     notes?: string;
+     achieved?: boolean;
+     progress?: number;
+   }
+   ```
+
+3. Configure Cosmos DB container for goals storage with appropriate indexing policy.
+
+### 2. API Endpoints Implementation
+
+1. Create goals controller with the following methods:
+   - `createGoal`: Handle POST requests to create new goals
+   - `getGoals`: Handle GET requests to retrieve all goals for the user
+   - `getGoalById`: Handle GET requests to retrieve a specific goal
+   - `updateGoal`: Handle PUT requests to update an existing goal
+   - `deleteGoal`: Handle DELETE requests to remove a goal
+
+2. Implement middleware for:
+   - Validating request bodies using a validation library
+   - Extracting user ID from JWT token
+   - Error handling for database operations
+
+3. Register routes in the main Express application.
+
+### 3. Unit Testing
+
+1. Create test fixtures with sample goal data.
+2. Write tests for each endpoint:
+   - Test successful operations with valid data
+   - Test error cases (invalid input, not found, etc.)
+   - Test authentication requirements
 
 ## Vibe‑Coding Prompts
 1. **Planning Prompt:**
@@ -43,4 +129,53 @@
 4. **Get, Update, Delete Endpoints:**
    "List sub‑tasks to add GET `/goals/:id`, PUT, and DELETE handlers; after planning, write the code."
 5. **Unit Tests:**
-   "Outline steps to write Jest & Supertest tests for each CRUD endpoint; confirm before generating test suites." 
+   "Outline steps to write Jest & Supertest tests for each CRUD endpoint; confirm before generating test suites."
+
+## Current Status
+
+### Tasks to Complete
+
+1. **Data Model and TypeScript Interfaces**:
+   - [ ] Define `FitnessGoal` interface with all required fields
+   - [ ] Create DTOs for create and update operations
+   - [ ] Set up validation schemas for request bodies
+
+2. **Cosmos DB Configuration**:
+   - [ ] Configure Cosmos DB container for goals with `/userId` partition key
+   - [ ] Set up appropriate indexing policy for queries
+   - [ ] Add database initialization to application startup
+
+3. **API Implementation**:
+   - [ ] Implement POST `/goals` endpoint for creating goals
+   - [ ] Implement GET `/goals` endpoint for listing user's goals
+   - [ ] Implement GET `/goals/:id` endpoint for retrieving a specific goal
+   - [ ] Implement PUT `/goals/:id` endpoint for updating goals
+   - [ ] Implement DELETE `/goals/:id` endpoint for removing goals
+
+4. **Testing**:
+   - [ ] Create test fixtures with sample goal data
+   - [ ] Write unit tests for all endpoints
+   - [ ] Verify error handling and edge cases
+   - [ ] Create manual testing script for API validation
+
+### Integration Considerations
+
+1. **Frontend Integration**:
+   - Consider how frontend will integrate with these APIs in Day 9
+   - Plan for proper error handling and loading states in UI
+   - Design data refresh strategies after mutations
+
+2. **Authentication**:
+   - Ensure JWT validation is properly applied to all goal endpoints
+   - Extract user ID consistently from auth token
+
+3. **Performance**:
+   - Consider pagination for GET `/goals` if users may have many goals
+   - Add appropriate indexes for common query patterns
+
+## Next Steps After Completion
+
+1. Implement frontend components for goals management (Day 9)
+2. Add charts and visualizations for goal progress
+3. Consider implementing notifications for approaching target dates
+4. Add batch operations for managing multiple goals 
