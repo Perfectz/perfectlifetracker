@@ -12,7 +12,8 @@ module.exports = {
     publicPath: '/'
   },
   resolve: {
-    extensions: ['.tsx', '.ts', '.js', '.jsx']
+    extensions: ['.tsx', '.ts', '.js', '.jsx', '.mjs'],
+    mainFields: ['browser', 'module', 'main']
   },
   module: {
     rules: [
@@ -37,7 +38,10 @@ module.exports = {
       filename: 'index.html',
       favicon: './src/assets/favicon.png'
     }),
-    new Dotenv(),
+    new Dotenv({
+      systemvars: true,
+      silent: true
+    }),
     new webpack.DefinePlugin({
       'process.env.REACT_APP_API_URL': JSON.stringify(process.env.REACT_APP_API_URL || 'http://localhost:3001/api'),
       'process.env.REACT_APP_AZURE_AD_B2C_API_SCOPE': JSON.stringify(process.env.REACT_APP_AZURE_AD_B2C_API_SCOPE || 'https://YOUR_TENANT.onmicrosoft.com/api/user.read'),
