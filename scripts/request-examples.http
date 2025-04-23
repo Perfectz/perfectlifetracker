@@ -1,0 +1,53 @@
+# LifeTracker Pro API Examples
+# This file can be used with the REST Client extension in VS Code
+# or with tools like Insomnia, Postman, or curl
+
+### Health check
+GET http://localhost:3001/api/health
+
+### Get all goals
+GET http://localhost:3001/api/goals
+Content-Type: application/json
+
+### Get goal by ID
+GET http://localhost:3001/api/goals/goal-1
+Content-Type: application/json
+
+### Create new goal - CORRECT FORMAT
+POST http://localhost:3001/api/goals
+Content-Type: application/json
+
+{
+  "title": "Run 5K",
+  "targetDate": "2023-12-31T00:00:00.000Z",
+  "notes": "Train 3 times per week",
+  "achieved": false,
+  "progress": 20
+}
+
+### INCORRECT FORMAT - Don't do this (escape issues)
+# This is incorrect because the JSON is escaped - the API expects proper JSON objects
+POST http://localhost:3001/api/goals
+Content-Type: application/json
+
+'{\'title\':\'Run 5K\',\'targetDate\':\'2023-12-31\'}'
+
+### INCORRECT FORMAT - Don't do this (string format)
+# This is incorrect because it's already a string, not a JSON object
+POST http://localhost:3001/api/goals
+Content-Type: application/json
+
+"{\"title\":\"Run 5K\",\"targetDate\":\"2023-12-31\"}"
+
+### Update goal
+PUT http://localhost:3001/api/goals/goal-1
+Content-Type: application/json
+
+{
+  "title": "Run 10K",
+  "progress": 45
+}
+
+### Delete goal
+DELETE http://localhost:3001/api/goals/goal-1
+Content-Type: application/json 

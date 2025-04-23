@@ -121,4 +121,15 @@ We've implemented a comprehensive testing strategy with multiple layers:
 - **Decision:** Implemented a centralized route configuration in `routes.tsx` with a typed interface to standardize route definitions throughout the application.
 - **Rationale:** This approach provides a single source of truth for route definitions, simplifies adding new routes, and ensures consistent route handling across components (NavBar, App routing, etc.).
 - **Alternatives:** Individual route definitions in components (more flexible but prone to inconsistencies), or using a routing library with built-in centralized routing (adds dependency but provides more features).
-- **Testing:** Added dedicated Cypress tests to verify route configuration, ensuring navigation items are properly displayed, active states are correctly applied, and invalid routes are redirected appropriately.  
+- **Testing:** Added dedicated Cypress tests to verify route configuration, ensuring navigation items are properly displayed, active states are correctly applied, and invalid routes are redirected appropriately.
+
+### [2023-05-23] – Fitness Goals Feature Implementation
+- **Decision:** Implemented a comprehensive Goals feature with React Query for state management, Material UI for components, and a modular architecture for testability.
+- **Rationale:** This approach provides a consistent pattern for CRUD operations with proper loading/error handling, optimistic updates, and typed interfaces between frontend and backend.
+- **Alternatives:** Using Redux + thunks for state management (more boilerplate but more centralized), or a custom hook solution without React Query (less code but would require manual caching logic).
+- **Implementation Details:**
+  - Organized components into feature folders with clear separation of concerns
+  - Used React Query for data fetching with optimistic updates for better UX
+  - Implemented fallback to mock data when backend services are unavailable
+  - Added comprehensive error handling with user-friendly messages
+  - Created reusable pagination component with configurable settings  

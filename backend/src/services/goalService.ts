@@ -4,6 +4,107 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getGoalsContainer } from './cosmosClient';
 import { FitnessGoal, FitnessGoalCreateDTO, FitnessGoalUpdateDTO } from '../models/FitnessGoal';
+import { ApiError } from '../utils/ApiError';
+
+// In-memory store for development when Cosmos DB is unavailable
+const inMemoryGoals: FitnessGoal[] = [];
+
+/**
+ * Get container with fallback to in-memory store
+ * @returns The container or in-memory store functions
+ */
+function getContainer() {
+  try {
+    const container = getGoalsContainer();
+    // Test if container is valid
+    if (!container || !container.items) {
+      console.warn('⚠️ Cosmos DB container unavailable, using in-memory store');
+      return createInMemoryStore();
+    }
+    return container;
+  } catch (error) {
+    console.warn('⚠️ Error accessing Cosmos DB, using in-memory store:', error);
+    return createInMemoryStore();
+  }
+}
+
+/**
+ * Create an in-memory store with similar API to Cosmos container
+ */
+function createInMemoryStore() {
+  return {
+    items: {
+      create: async (goal: FitnessGoal) => {
+        inMemoryGoals.push(goal);
+        return { resource: goal };
+      },
+      query: (querySpec: any) => {
+        // Simple query parser
+        if (querySpec.query.includes('COUNT(1)')) {
+          // Count query
+          const userId = querySpec.parameters.find((p: any) => p.name === '@userId')?.value;
+          const count = inMemoryGoals.filter(g => g.userId === userId).length;
+          return {
+            fetchAll: async () => ({ resources: [count] })
+          };
+        } else if (querySpec.query.includes('c.userId = @userId')) {
+          const userId = querySpec.parameters.find((p: any) => p.name === '@userId')?.value;
+          const limit = querySpec.parameters.find((p: any) => p.name === '@limit')?.value || 50;
+          const offset = querySpec.parameters.find((p: any) => p.name === '@offset')?.value || 0;
+          
+          let filtered = inMemoryGoals.filter(g => g.userId === userId);
+          
+          // Handle ORDER BY
+          if (querySpec.query.includes('ORDER BY c.createdAt DESC')) {
+            filtered = filtered.sort((a, b) => {
+              const dateA = new Date(a.createdAt);
+              const dateB = new Date(b.createdAt);
+              return dateB.getTime() - dateA.getTime();
+            });
+          }
+          
+          // Apply pagination
+          filtered = filtered.slice(offset, offset + limit);
+          
+          return {
+            fetchAll: async () => ({ resources: filtered })
+          };
+        } else if (querySpec.query.includes('c.id = @id')) {
+          const id = querySpec.parameters.find((p: any) => p.name === '@id')?.value;
+          const userId = querySpec.parameters.find((p: any) => p.name === '@userId')?.value;
+          const filtered = inMemoryGoals.filter(g => g.id === id && g.userId === userId);
+          return {
+            fetchAll: async () => ({ resources: filtered })
+          };
+        }
+        
+        // Default - return all items
+        return {
+          fetchAll: async () => ({ resources: inMemoryGoals })
+        };
+      },
+      upsert: async (goal: FitnessGoal) => {
+        const index = inMemoryGoals.findIndex(g => g.id === goal.id);
+        if (index >= 0) {
+          inMemoryGoals[index] = goal;
+        } else {
+          inMemoryGoals.push(goal);
+        }
+        return { resource: goal };
+      }
+    },
+    item: (id: string, userId: string) => ({
+      delete: async () => {
+        const index = inMemoryGoals.findIndex(g => g.id === id && g.userId === userId);
+        if (index >= 0) {
+          inMemoryGoals.splice(index, 1);
+          return { resource: { id } };
+        }
+        throw new Error('Item not found');
+      }
+    })
+  };
+}
 
 /**
  * Create a new fitness goal
@@ -11,8 +112,9 @@ import { FitnessGoal, FitnessGoalCreateDTO, FitnessGoalUpdateDTO } from '../mode
  * @returns The created goal
  */
 export async function createGoal(goalData: FitnessGoalCreateDTO): Promise<FitnessGoal> {
-  const container = getGoalsContainer();
+  const container = getContainer();
   
+  const now = new Date();
   const goal: FitnessGoal = {
     id: uuidv4(), // Generate a unique ID
     userId: goalData.userId,
@@ -21,27 +123,45 @@ export async function createGoal(goalData: FitnessGoalCreateDTO): Promise<Fitnes
     notes: goalData.notes,
     achieved: goalData.achieved || false,
     progress: goalData.progress || 0,
-    createdAt: new Date()
+    createdAt: now,
+    updatedAt: now
   };
   
   const { resource } = await container.items.create(goal);
   // Handle potential undefined return value
   if (!resource) {
-    throw new Error('Failed to create goal');
+    throw ApiError.internal('Failed to create goal');
   }
   return resource as unknown as FitnessGoal;
 }
 
 /**
- * Get all goals for a specific user
- * @param userId User ID
- * @returns Array of goals
+ * Interface for paginated result
  */
-export async function getGoalsByUserId(userId: string): Promise<FitnessGoal[]> {
-  const container = getGoalsContainer();
+export interface PaginatedResult<T> {
+  items: T[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+/**
+ * Get all goals for a specific user with pagination
+ * @param userId User ID
+ * @param limit Maximum number of goals to return (default: 50)
+ * @param offset Number of goals to skip (default: 0)
+ * @returns Paginated goals result
+ */
+export async function getGoalsByUserId(
+  userId: string, 
+  limit: number = 50, 
+  offset: number = 0
+): Promise<PaginatedResult<FitnessGoal>> {
+  const container = getContainer();
   
-  const querySpec = {
-    query: 'SELECT * FROM c WHERE c.userId = @userId ORDER BY c.createdAt DESC',
+  // Query to get the total count
+  const countQuerySpec = {
+    query: 'SELECT VALUE COUNT(1) FROM c WHERE c.userId = @userId',
     parameters: [
       {
         name: '@userId',
@@ -50,8 +170,39 @@ export async function getGoalsByUserId(userId: string): Promise<FitnessGoal[]> {
     ]
   };
   
-  const { resources } = await container.items.query(querySpec).fetchAll();
-  return resources as FitnessGoal[];
+  // Query to get the paginated goals
+  const querySpec = {
+    query: 'SELECT * FROM c WHERE c.userId = @userId ORDER BY c.createdAt DESC OFFSET @offset LIMIT @limit',
+    parameters: [
+      {
+        name: '@userId',
+        value: userId
+      },
+      {
+        name: '@offset',
+        value: offset
+      },
+      {
+        name: '@limit',
+        value: limit
+      }
+    ]
+  };
+  
+  // Execute both queries in parallel
+  const [countResponse, goalsResponse] = await Promise.all([
+    container.items.query(countQuerySpec).fetchAll(),
+    container.items.query(querySpec).fetchAll()
+  ]);
+  
+  const total = countResponse.resources[0] || 0;
+  
+  return {
+    items: goalsResponse.resources as FitnessGoal[],
+    total,
+    limit,
+    offset
+  };
 }
 
 /**
@@ -61,7 +212,7 @@ export async function getGoalsByUserId(userId: string): Promise<FitnessGoal[]> {
  * @returns The goal or null if not found
  */
 export async function getGoalById(id: string, userId: string): Promise<FitnessGoal | null> {
-  const container = getGoalsContainer();
+  const container = getContainer();
   
   const querySpec = {
     query: 'SELECT * FROM c WHERE c.id = @id AND c.userId = @userId',
@@ -89,7 +240,7 @@ export async function getGoalById(id: string, userId: string): Promise<FitnessGo
  * @returns The updated goal
  */
 export async function updateGoal(id: string, userId: string, updates: FitnessGoalUpdateDTO): Promise<FitnessGoal | null> {
-  const container = getGoalsContainer();
+  const container = getContainer();
   
   // First get the existing goal
   const existingGoal = await getGoalById(id, userId);
@@ -115,7 +266,7 @@ export async function updateGoal(id: string, userId: string, updates: FitnessGoa
   const { resource } = await container.items.upsert(updatedGoal);
   // Handle potential undefined return value
   if (!resource) {
-    throw new Error('Failed to update goal');
+    throw ApiError.internal('Failed to update goal');
   }
   return resource as unknown as FitnessGoal;
 }
@@ -127,7 +278,7 @@ export async function updateGoal(id: string, userId: string, updates: FitnessGoa
  * @returns True if successful, false if goal not found
  */
 export async function deleteGoal(id: string, userId: string): Promise<boolean> {
-  const container = getGoalsContainer();
+  const container = getContainer();
   
   // Check if goal exists and belongs to user
   const goal = await getGoalById(id, userId);
@@ -151,7 +302,7 @@ export async function deleteGoal(id: string, userId: string): Promise<boolean> {
  * @returns Array of goals
  */
 export async function getAllGoals(limit = 100): Promise<FitnessGoal[]> {
-  const container = getGoalsContainer();
+  const container = getContainer();
   
   const querySpec = {
     query: 'SELECT * FROM c ORDER BY c.createdAt DESC OFFSET 0 LIMIT @limit',

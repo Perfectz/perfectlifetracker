@@ -136,27 +136,43 @@
 ### Tasks to Complete
 
 1. **Data Model and TypeScript Interfaces**:
-   - [ ] Define `FitnessGoal` interface with all required fields
-   - [ ] Create DTOs for create and update operations
-   - [ ] Set up validation schemas for request bodies
+   - [x] Define `FitnessGoal` interface with all required fields
+   - [x] Create DTOs for create and update operations
+   - [x] Set up validation schemas for request bodies
 
 2. **Cosmos DB Configuration**:
-   - [ ] Configure Cosmos DB container for goals with `/userId` partition key
-   - [ ] Set up appropriate indexing policy for queries
-   - [ ] Add database initialization to application startup
+   - [x] Configure Cosmos DB container for goals with `/userId` partition key
+   - [x] Set up appropriate indexing policy for queries
+   - [x] Add database initialization to application startup
 
 3. **API Implementation**:
-   - [ ] Implement POST `/goals` endpoint for creating goals
-   - [ ] Implement GET `/goals` endpoint for listing user's goals
-   - [ ] Implement GET `/goals/:id` endpoint for retrieving a specific goal
-   - [ ] Implement PUT `/goals/:id` endpoint for updating goals
-   - [ ] Implement DELETE `/goals/:id` endpoint for removing goals
+   - [x] Implement POST `/goals` endpoint for creating goals
+   - [x] Implement GET `/goals` endpoint for listing user's goals
+   - [x] Implement GET `/goals/:id` endpoint for retrieving a specific goal
+   - [x] Implement PUT `/goals/:id` endpoint for updating goals
+   - [x] Implement DELETE `/goals/:id` endpoint for removing goals
 
 4. **Testing**:
-   - [ ] Create test fixtures with sample goal data
-   - [ ] Write unit tests for all endpoints
-   - [ ] Verify error handling and edge cases
-   - [ ] Create manual testing script for API validation
+   - [x] Create test fixtures with sample goal data
+   - [x] Write unit tests for all endpoints
+   - [x] Verify error handling and edge cases
+   - [x] Create manual testing script for API validation
+
+### Optimizations Added
+
+1. **Data Model Improvements**:
+   - Made `updatedAt` a required field in the `FitnessGoal` interface
+   - Converted type aliases to explicit interface definitions for better documentation
+   - Initialized `updatedAt` automatically when creating a new goal
+
+2. **Performance Enhancements**:
+   - Added explicit indexing for `createdAt` field to optimize sorting operations
+   - Made RU throughput configurable via environment variable (`COSMOS_GOALS_RU`)
+
+3. **Code Quality Improvements**:
+   - Extracted common userId extraction logic into middleware
+   - Leveraged Express validator's `.toInt()` for automatic query parameter conversion
+   - Improved type safety throughout API endpoints
 
 ### Integration Considerations
 
