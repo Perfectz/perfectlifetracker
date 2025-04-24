@@ -10,17 +10,22 @@ import multer, { FileFilterCallback, MulterError } from 'multer';
 import { initializeCosmosDb } from './services/cosmosClient';
 import { initializeBlobStorage, uploadAvatar, deleteAvatar } from './services/blobStorageService';
 import * as profileService from './services/profileService';
-import * as goalService from './services/goalService';
+import goalsRouter from './routes/goals.router';
+import activitiesRouter from './routes/activities.router';
+import { ApiError } from './utils/ApiError';
 
 // Load environment variables
 dotenv.config();
 
+// Environment configuration
+const isDevelopment = process.env.NODE_ENV !== 'production';
+const PORT = process.env.PORT || 3001;
+const HOST = process.env.HOST || 'localhost';
+const COSMOS_INSECURE_DEV = process.env.COSMOS_INSECURE_DEV === 'true';
+const MOCK_DATA_ON_FAILURE = process.env.MOCK_DATA_ON_FAILURE === 'true';
+
 // Create Express server
 const app = express();
-const port = process.env.PORT || 3001;
-
-// Environment check
-const isDevelopment = process.env.NODE_ENV !== 'production';
 
 // Configure multer for file uploads
 const storage = multer.memoryStorage(); // Store files in memory
@@ -45,35 +50,33 @@ app.use(morgan('dev'));
 app.use(express.json());
 
 // JWT validation middleware
-// For development, use a static secret; for production, use jwks-rsa
-let jwtCheck;
+let jwtCheck: (req: Request, res: Response, next: NextFunction) => void;
 
 if (isDevelopment) {
-  // Use a static secret for development
-  console.log('Using development JWT configuration with static secret');
-  jwtCheck = jwt({
-    secret: process.env.JWT_SECRET || 'dev-secret-not-for-production',
-    algorithms: ['HS256']
-  });
+  console.log('Bypassing JWT validation in development (no auth required)');
+  jwtCheck = (req: Request, res: Response, next: NextFunction) => next();
 } else {
-  // Use proper JWKS for production
+  console.log('Using production JWT configuration');
   jwtCheck = jwt({
     secret: jwksRsa.expressJwtSecret({
-      jwksUri: process.env.JWKS_URI || 'https://YOUR_TENANT.b2clogin.com/YOUR_TENANT.onmicrosoft.com/discovery/v2.0/keys',
+      jwksUri: process.env.JWKS_URI || 'https://default-jwks-uri.com',
       cache: true,
       rateLimit: true,
       jwksRequestsPerMinute: 5,
     }),
-    audience: process.env.AZURE_AD_B2C_API_IDENTIFIER || 'api://YOUR_API_ID',
-    issuer: process.env.AZURE_AD_B2C_ISSUER || 'https://YOUR_TENANT.b2clogin.com/YOUR_TENANT.onmicrosoft.com/v2.0/',
+    audience: process.env.AZURE_AD_B2C_API_IDENTIFIER,
+    issuer: process.env.AZURE_AD_B2C_ISSUER,
     algorithms: ['RS256'],
   });
 }
 
-// Initialize Cosmos DB
-initializeCosmosDb().catch(err => {
+// Initialize Cosmos DB with environment-based config
+initializeCosmosDb({ 
+  allowInsecureConnection: isDevelopment && COSMOS_INSECURE_DEV,
+  mockOnFailure: isDevelopment && MOCK_DATA_ON_FAILURE 
+}).catch(err => {
   console.error('Failed to initialize Cosmos DB:', err);
-  // Continue app startup, will use in-memory fallback in dev mode
+  // Continue app startup, will use in-memory fallback if configured
 });
 
 // Initialize Blob Storage
@@ -101,7 +104,7 @@ interface AuthRequest extends Request {
 app.post('/api/profile', jwtCheck, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const authReq = req as AuthRequest;
-    const userId = authReq.auth.sub ?? authReq.auth.oid!;
+    const userId = authReq.auth?.sub ?? authReq.auth?.oid ?? 'unknown-user';
     const profileData = { userId, ...req.body };
     const newProfile = await profileService.createProfile(profileData);
     res.status(201).json(newProfile);
@@ -128,7 +131,7 @@ app.get('/api/profile/:id', jwtCheck, async (req: Request, res: Response, next: 
 app.get('/api/profile', jwtCheck, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const authReq = req as AuthRequest;
-    const userId = authReq.auth.sub ?? authReq.auth.oid!;
+    const userId = authReq.auth?.sub ?? authReq.auth?.oid ?? 'unknown-user';
     const profile = await profileService.getProfileById(userId);
     
     if (!profile) {
@@ -147,7 +150,7 @@ app.put('/api/profile/:id', jwtCheck, async (req: Request, res: Response, next: 
   try {
     const authReq = req as AuthRequest;
     const requestedId = req.params.id;
-    const authenticatedId = authReq.auth.sub ?? authReq.auth.oid!;
+    const authenticatedId = authReq.auth?.sub ?? authReq.auth?.oid ?? 'unknown-user';
     
     if (requestedId !== authenticatedId) {
       res.status(403).json({ error: 'Forbidden', message: 'You can only update your own profile' });
@@ -171,7 +174,7 @@ app.delete('/api/profile/:id', jwtCheck, async (req: Request, res: Response, nex
   try {
     const authReq = req as AuthRequest;
     const requestedId = req.params.id;
-    const authenticatedId = authReq.auth.sub ?? authReq.auth.oid!;
+    const authenticatedId = authReq.auth?.sub ?? authReq.auth?.oid ?? 'unknown-user';
     
     if (requestedId !== authenticatedId) {
       res.status(403).json({ error: 'Forbidden', message: 'You can only delete your own profile' });
@@ -195,7 +198,7 @@ app.post('/api/profile/:id/avatar', jwtCheck, upload.single('avatar'), async (re
   try {
     const authReq = req as AuthRequest;
     const requestedId = req.params.id;
-    const authenticatedId = authReq.auth.sub ?? authReq.auth.oid!;
+    const authenticatedId = authReq.auth?.sub ?? authReq.auth?.oid ?? 'unknown-user';
     
     if (requestedId !== authenticatedId) {
       res.status(403).json({
@@ -249,7 +252,7 @@ app.delete('/api/profile/:id/avatar', jwtCheck, async (req: Request, res: Respon
   try {
     const authReq = req as AuthRequest;
     const requestedId = req.params.id;
-    const authenticatedId = authReq.auth.sub ?? authReq.auth.oid!;
+    const authenticatedId = authReq.auth?.sub ?? authReq.auth?.oid ?? 'unknown-user';
     
     if (requestedId !== authenticatedId) {
       res.status(403).json({
@@ -311,100 +314,11 @@ app.delete('/api/profile/:id/avatar', jwtCheck, async (req: Request, res: Respon
   }
 });
 
-// Goals routes
-// Create a new goal
-app.post('/api/goals', jwtCheck, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const authReq = req as AuthRequest;
-    const userId = authReq.auth.sub ?? authReq.auth.oid!;
-    const goalData = { 
-      userId, 
-      ...req.body,
-      targetDate: req.body.targetDate ? new Date(req.body.targetDate) : new Date()
-    };
-    
-    const newGoal = await goalService.createGoal(goalData);
-    res.status(201).json(newGoal);
-  } catch (error) {
-    next(error);
-  }
-});
+// Use the goals router
+app.use('/api/goals', jwtCheck, goalsRouter);
 
-// Get all goals for current user
-app.get('/api/goals', jwtCheck, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const authReq = req as AuthRequest;
-    const userId = authReq.auth.sub ?? authReq.auth.oid!;
-    
-    const goals = await goalService.getGoalsByUserId(userId);
-    res.status(200).json(goals);
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Get a specific goal by ID
-app.get('/api/goals/:id', jwtCheck, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const authReq = req as AuthRequest;
-    const userId = authReq.auth.sub ?? authReq.auth.oid!;
-    const goalId = req.params.id;
-    
-    const goal = await goalService.getGoalById(goalId, userId);
-    if (!goal) {
-      res.status(404).json({ error: 'NotFound', message: 'Goal not found' });
-      return;
-    }
-    
-    res.status(200).json(goal);
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Update a goal
-app.put('/api/goals/:id', jwtCheck, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const authReq = req as AuthRequest;
-    const userId = authReq.auth.sub ?? authReq.auth.oid!;
-    const goalId = req.params.id;
-    
-    // Process dates if provided
-    const updates = { ...req.body };
-    if (updates.targetDate) {
-      updates.targetDate = new Date(updates.targetDate);
-    }
-    
-    const updatedGoal = await goalService.updateGoal(goalId, userId, updates);
-    if (!updatedGoal) {
-      res.status(404).json({ error: 'NotFound', message: 'Goal not found' });
-      return;
-    }
-    
-    res.status(200).json(updatedGoal);
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Delete a goal
-app.delete('/api/goals/:id', jwtCheck, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const authReq = req as AuthRequest;
-    const userId = authReq.auth.sub ?? authReq.auth.oid!;
-    const goalId = req.params.id;
-    
-    const success = await goalService.deleteGoal(goalId, userId);
-    if (!success) {
-      res.status(404).json({ error: 'NotFound', message: 'Goal not found' });
-      return;
-    }
-    
-    res.status(204).send();
-  } catch (error) {
-    next(error);
-  }
-});
+// Use the activities router
+app.use('/api/activities', jwtCheck, activitiesRouter);
 
 // Error handler
 app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
@@ -427,17 +341,49 @@ app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
     return;
   }
   
-  // Send a structured error response
+  // Handle ApiError instances
+  if (err instanceof ApiError) {
+    const apiError = err;
+    res.status(apiError.status).json({
+      error: apiError.name,
+      message: apiError.message,
+      ...(apiError.data && { details: apiError.data })
+    });
+    return;
+  }
+  
+  // Send a structured error response for other errors
   const error = err as Error;
-  res.status((error as any).status || 500).json({
+  res.status(500).json({
     error: error.name || 'InternalServerError',
     message: error.message || 'An unexpected error occurred'
   });
 });
 
-// Only start the server if this module is the entry point
-if (require.main === module) {
-  app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
+// Start server with proper error handling
+const server = app.listen(PORT, () => {
+  console.log(`Server running at http://${HOST}:${PORT}`);
+  console.log(`Environment: ${isDevelopment ? 'development' : 'production'}`);
+  if (isDevelopment) {
+    console.log(`Mock data on failure: ${MOCK_DATA_ON_FAILURE}`);
+    console.log(`Insecure Cosmos connection: ${COSMOS_INSECURE_DEV}`);
+  }
+}).on('error', (error: NodeJS.ErrnoException) => {
+  if (error.code === 'EADDRINUSE') {
+    console.error(`Error: Port ${PORT} is already in use.`);
+    console.error('Please use a different port or kill the process using this port.');
+    process.exit(1);
+  } else {
+    console.error('Server error:', error);
+    process.exit(1);
+  }
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
   });
-} 
+}); 
