@@ -344,11 +344,20 @@ app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
   // Handle ApiError instances
   if (err instanceof ApiError) {
     const apiError = err;
-    res.status(apiError.status).json({
+    const response: {
+      error: string;
+      message: string;
+      details?: unknown;
+    } = {
       error: apiError.name,
-      message: apiError.message,
-      ...(apiError.data && { details: apiError.data })
-    });
+      message: apiError.message
+    };
+    
+    if (apiError.data) {
+      response.details = apiError.data;
+    }
+    
+    res.status(apiError.status).json(response);
     return;
   }
   

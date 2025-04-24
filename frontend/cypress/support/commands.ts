@@ -23,7 +23,7 @@
 //
 //
 // -- This will overwrite an existing command --
-// Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
+// Cypress.Commands.add('visit', (originalFn, url, options) => { ... })
 //
 // declare global {
 //   namespace Cypress {
@@ -35,6 +35,28 @@
 //     }
 //   }
 // }
+
+// Improve resilience to network issues with longer timeouts
+Cypress.Commands.add('visitWithRetry', (url: string, options = {}) => {
+  // Set default timeout to 2 minutes
+  const defaultOptions = { 
+    timeout: 120000,
+    retryOnStatusCodeFailure: true
+  };
+  
+  const mergedOptions = { ...defaultOptions, ...options };
+  
+  // Log the visit for debugging
+  Cypress.log({
+    name: 'visitWithRetry',
+    message: `Visiting ${url} with extended timeout`,
+  });
+  
+  // First attempt
+  return cy.visit(url, mergedOptions).then(() => {
+    Cypress.log({ name: 'visitWithRetry', message: 'Page loaded successfully' });
+  });
+});
 
 /**
  * Custom command to programmatically login without UI interaction
@@ -52,18 +74,18 @@ Cypress.Commands.add('programmaticLogin', () => {
  * This simulates the actual user experience including waiting for redirect
  */
 Cypress.Commands.add('uiLogin', () => {
-  // Visit homepage
-  cy.visit('/');
+  // Visit homepage with extended timeout
+  cy.visit('/', { timeout: 120000 });
   
   // Check if already authenticated
   cy.window().then((win) => {
     const isAuthenticated = win.sessionStorage.getItem('mock_auth_state') === 'authenticated';
     if (!isAuthenticated) {
       // Click login button if not authenticated
-      cy.get('.sign-in-button').click();
+      cy.get('.sign-in-button', { timeout: 30000 }).click();
       
       // Wait for redirect to dashboard to ensure login completed
-      cy.url().should('include', '/dashboard', { timeout: 10000 });
+      cy.url().should('include', '/dashboard', { timeout: 30000 });
     }
   });
 });
@@ -71,6 +93,7 @@ Cypress.Commands.add('uiLogin', () => {
 // Add TypeScript definitions
 declare namespace Cypress {
   interface Chainable {
+    visitWithRetry(url: string, options?: Partial<Cypress.VisitOptions>): Chainable<AUTWindow>;
     programmaticLogin(): void;
     uiLogin(): void;
   }

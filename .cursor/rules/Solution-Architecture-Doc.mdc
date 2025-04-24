@@ -3,8 +3,20 @@ description:
 globs:
 alwaysApply: true
 ---
+## Solution Architecture Document Rule
 
-# Your rule content
+- Ensure `documentation/Solution_Architecture.md` exists; if missing, create it with an introductory header and table of contents.
+- After any architecture-affecting change (new component/service, library upgrade, infrastructure update), prompt to append a new entry that includes:
+  1. **Date & Title** of the change
+  2. **Decision:** what was decided
+  3. **Rationale:** why this approach was chosen
+  4. **Alternatives:** other options considered with trade‑offs
+- During PR reviews for changes spanning multiple domains (frontend, backend, infra), remind to update the architecture document.
+- Use the following stub when prompting:
 
-- You can @ files here
-- You can use markdown but dont have to
+```markdown
+## [YYYY-MM-DD] – <Change Title>
+- **Decision:** <Description of the decision>
+- **Rationale:** <Reasoning behind the choice>
+- **Alternatives:** <List other options and trade‑offs>
+```

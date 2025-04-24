@@ -48,7 +48,7 @@ export const ProfileContent: React.FC = () => {
   });
   const [formErrors, setFormErrors] = useState<Partial<ProfileFormData>>({});
   const [updateSuccess, setUpdateSuccess] = useState<boolean>(false);
-  const [_isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -105,27 +105,6 @@ export const ProfileContent: React.FC = () => {
       // Just update form data if no errors to clear
       setFormData(newFormData);
     }
-  };
-
-  const _validateForm = (): boolean => {
-    const errors: Partial<ProfileFormData> = {};
-    let isValid = true;
-
-    if (!formData.name.trim()) {
-      errors.name = 'Name is required';
-      isValid = false;
-    }
-
-    if (!formData.email.trim()) {
-      errors.email = 'Email is required';
-      isValid = false;
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = 'Please enter a valid email address';
-      isValid = false;
-    }
-
-    setFormErrors(errors);
-    return isValid;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

@@ -1,101 +1,100 @@
 // backend/src/routes/goals.router.ts
-// Router for fitness goal API endpoints
+// Router for fitness goals API endpoints
 
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Response, NextFunction } from 'express';
 import { body, param, query, validationResult } from 'express-validator';
-import * as goalService from '../services/goalService';
-import { ApiError } from '../utils/ApiError';
+import { getGoalsByUserId, getGoalById, createGoal, updateGoal, deleteGoal } from '../services/goalService';
+import { FitnessGoal, GoalStatus, GoalType } from '../models/FitnessGoal';
+import { authorize } from '../middleware/auth';
+import { extractUserId } from '../middleware/extractUserId';
 
-// Custom request type including auth property set by JWT middleware
-interface AuthRequest extends Request {
-  auth: {
+// Router for fitness goals API endpoints
+const router = express.Router();
+
+// Define AuthRequest interface to include userId from middleware
+interface AuthRequest extends express.Request {
+  userId?: string; // Added by extractUserId middleware
+  auth?: {
     sub?: string;
     oid?: string;
     [key: string]: unknown;
   };
-  userId: string; // Added for our extractUserId middleware
 }
 
-const router = express.Router();
-
-// Validation middleware
-const validateRequest = (req: Request, res: Response, next: NextFunction) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ 
-      error: 'ValidationError', 
-      message: 'Invalid request data',
-      details: errors.array() 
-    });
-  }
-  next();
-};
-
-// Extract userId from JWT token with development fallback
-const extractUserId = (req: Request, res: Response, next: NextFunction) => {
-  const authReq = req as AuthRequest;
-  
-  // Development fallback - if auth is missing or incomplete, use a default dev user
-  if (!authReq.auth || (!authReq.auth.sub && !authReq.auth.oid)) {
-    console.warn('⚠️ Authentication missing. Using dev-user-123 for development.');
-    authReq.userId = 'dev-user-123';
-  } else {
-    // Normal auth flow
-    if (authReq.auth.sub) {
-      authReq.userId = authReq.auth.sub;
-    } else {
-      authReq.userId = authReq.auth.oid as string;
-    }
-  }
-  
-  next();
-};
-
-// Apply userId extraction to all routes
+// Apply auth middleware to all routes
+router.use(authorize);
 router.use(extractUserId);
 
-// Create a new goal
-router.post('/', [
-  body('title').notEmpty().withMessage('Title is required').isString(),
-  body('targetDate').optional().isISO8601().withMessage('Target date must be a valid date'),
-  body('notes').optional().isString(),
-  body('achieved').optional().isBoolean(),
-  body('progress').optional().isFloat({ min: 0, max: 100 })
-    .withMessage('Progress must be a number between 0 and 100'),
-  validateRequest
-], async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { userId } = req as AuthRequest;
-    const goalData = { 
-      userId, 
-      ...req.body,
-      targetDate: req.body.targetDate ? new Date(req.body.targetDate) : new Date()
-    };
-    
-    const newGoal = await goalService.createGoal(goalData);
-    res.status(201).json(newGoal);
-  } catch (error) {
-    next(error);
-  }
-});
+// Create a new fitness goal
+router.post(
+  '/',
+  [
+    body('title').notEmpty().withMessage('Title is required'),
+    body('description').optional(),
+    body('type').optional().isIn(Object.values(GoalType)).withMessage('Invalid goal type'),
+    body('targetDate').optional().isISO8601().withMessage('Target date must be a valid date'),
+    body('progress').optional().isInt({ min: 0, max: 100 }).withMessage('Progress must be between 0 and 100'),
+    body('status').optional().isIn(Object.values(GoalStatus)).withMessage('Invalid goal status')
+  ],
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
 
-// Get all goals for current user with pagination
+      const userId = req.userId;
+      if (!userId) {
+        return res.status(401).json({ message: 'User ID not found in request' });
+      }
+
+      const newGoal = {
+        userId,
+        title: req.body.title,
+        description: req.body.description || '',
+        type: req.body.type,
+        targetDate: req.body.targetDate ? new Date(req.body.targetDate) : new Date(),
+        progress: req.body.progress || 0,
+        achieved: req.body.achieved || false,
+        notes: req.body.notes || ''
+      };
+
+      const goal = await createGoal(newGoal);
+      res.status(201).json(goal);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// Get all goals for current user with pagination and filtering
 router.get('/', [
-  query('limit').optional().isInt({ min: 1, max: 100 }).toInt()
-    .withMessage('Limit must be between 1 and 100'),
-  query('offset').optional().isInt({ min: 0 }).toInt()
-    .withMessage('Offset must be a non-negative integer'),
-  validateRequest
-], async (req: Request, res: Response, next: NextFunction) => {
+  query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
+  query('offset').optional().isInt({ min: 0 }).toInt(),
+  query('type').optional().isIn(Object.values(GoalType)),
+  query('status').optional().isIn(Object.values(GoalStatus))
+], async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { userId } = req as AuthRequest;
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ message: 'User ID not found in request' });
+    }
+
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+    const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
     
-    // Use validated and transformed values directly
-    const limit = req.query.limit ? Number(req.query.limit) : 50;
-    const offset = req.query.offset ? Number(req.query.offset) : 0;
-    
-    const result = await goalService.getGoalsByUserId(userId, limit, offset);
-    res.status(200).json(result);
+    // Build filters object for optional query parameters
+    const filters: Record<string, string> = {};
+    if (req.query.type) filters.type = req.query.type as string;
+    if (req.query.status) filters.status = req.query.status as string;
+
+    const goals = await getGoalsByUserId(userId, limit, offset, filters);
+    res.json(goals);
   } catch (error) {
     next(error);
   }
@@ -103,19 +102,32 @@ router.get('/', [
 
 // Get a specific goal by ID
 router.get('/:id', [
-  param('id').isString().notEmpty().withMessage('Goal ID is required'),
-  validateRequest
-], async (req: Request, res: Response, next: NextFunction) => {
+  param('id').notEmpty().withMessage('Goal ID is required')
+], async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { userId } = req as AuthRequest;
-    const goalId = req.params.id;
-    
-    const goal = await goalService.getGoalById(goalId, userId);
-    if (!goal) {
-      throw ApiError.notFound('Goal not found');
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
-    
-    res.status(200).json(goal);
+
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ message: 'User ID not found in request' });
+    }
+
+    const goalId = req.params.id;
+    const goal = await getGoalById(goalId, userId);
+
+    if (!goal) {
+      return res.status(404).json({ message: 'Goal not found' });
+    }
+
+    // Verify the goal belongs to the current user
+    if (goal.userId !== userId) {
+      return res.status(403).json({ message: 'You are not authorized to access this goal' });
+    }
+
+    res.json(goal);
   } catch (error) {
     next(error);
   }
@@ -123,17 +135,25 @@ router.get('/:id', [
 
 // Update a goal
 router.put('/:id', [
-  param('id').isString().notEmpty().withMessage('Goal ID is required'),
-  body('title').optional().isString(),
+  param('id').notEmpty().withMessage('Goal ID is required'),
+  body('title').optional().notEmpty().withMessage('Title cannot be empty'),
+  body('description').optional(),
+  body('type').optional().isIn(Object.values(GoalType)).withMessage('Invalid goal type'),
   body('targetDate').optional().isISO8601().withMessage('Target date must be a valid date'),
-  body('notes').optional().isString(),
-  body('achieved').optional().isBoolean(),
-  body('progress').optional().isFloat({ min: 0, max: 100 })
-    .withMessage('Progress must be a number between 0 and 100'),
-  validateRequest
-], async (req: Request, res: Response, next: NextFunction) => {
+  body('progress').optional().isInt({ min: 0, max: 100 }).withMessage('Progress must be between 0 and 100'),
+  body('status').optional().isIn(Object.values(GoalStatus)).withMessage('Invalid goal status')
+], async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { userId } = req as AuthRequest;
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ message: 'User ID not found in request' });
+    }
+
     const goalId = req.params.id;
     
     // Process dates if provided
@@ -142,12 +162,12 @@ router.put('/:id', [
       updates.targetDate = new Date(updates.targetDate);
     }
     
-    const updatedGoal = await goalService.updateGoal(goalId, userId, updates);
+    const updatedGoal = await updateGoal(goalId, userId, updates);
     if (!updatedGoal) {
-      throw ApiError.notFound('Goal not found');
+      return res.status(404).json({ message: 'Goal not found' });
     }
-    
-    res.status(200).json(updatedGoal);
+
+    res.json(updatedGoal);
   } catch (error) {
     next(error);
   }
@@ -155,18 +175,26 @@ router.put('/:id', [
 
 // Delete a goal
 router.delete('/:id', [
-  param('id').isString().notEmpty().withMessage('Goal ID is required'),
-  validateRequest
-], async (req: Request, res: Response, next: NextFunction) => {
+  param('id').notEmpty().withMessage('Goal ID is required')
+], async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { userId } = req as AuthRequest;
-    const goalId = req.params.id;
-    
-    const success = await goalService.deleteGoal(goalId, userId);
-    if (!success) {
-      throw ApiError.notFound('Goal not found');
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
-    
+
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ message: 'User ID not found in request' });
+    }
+
+    const goalId = req.params.id;
+    const success = await deleteGoal(goalId, userId);
+
+    if (!success) {
+      return res.status(404).json({ message: 'Goal not found' });
+    }
+
     res.status(204).send();
   } catch (error) {
     next(error);

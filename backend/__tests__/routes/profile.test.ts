@@ -4,8 +4,29 @@ import { expressjwt as jwt } from 'express-jwt';
 import * as profileService from '../../src/services/profileService';
 import { Profile } from '../../src/models/Profile';
 
+// Add Jest type declaration
+declare const jest: any;
+declare const describe: any;
+declare const beforeEach: any;
+declare const it: any;
+declare const expect: any;
+
 // Mock the profile service
 jest.mock('../../src/services/profileService');
+
+// Mock the CosmosDB container to avoid real client initialization
+jest.mock('../../src/services/cosmosClient', () => ({
+  getProfilesContainer: jest.fn(() => ({
+    items: {
+      create: jest.fn(),
+      query: jest.fn(),
+      upsert: jest.fn()
+    },
+    item: jest.fn(() => ({
+      delete: jest.fn()
+    }))
+  }))
+}));
 
 // Mock the express-jwt middleware
 jest.mock('express-jwt', () => ({

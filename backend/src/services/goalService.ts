@@ -10,6 +10,14 @@ import { ApiError } from '../utils/ApiError';
 const inMemoryGoals: FitnessGoal[] = [];
 
 /**
+ * Interface for query parameters
+ */
+interface QueryParameter {
+  name: string;
+  value: string | number | boolean;
+}
+
+/**
  * Get container with fallback to in-memory store
  * @returns The container or in-memory store functions
  */
@@ -42,15 +50,15 @@ function createInMemoryStore() {
         // Simple query parser
         if (querySpec.query.includes('COUNT(1)')) {
           // Count query
-          const userId = querySpec.parameters.find((p: any) => p.name === '@userId')?.value;
+          const userId = querySpec.parameters.find((p: QueryParameter) => p.name === '@userId')?.value;
           const count = inMemoryGoals.filter(g => g.userId === userId).length;
           return {
             fetchAll: async () => ({ resources: [count] })
           };
         } else if (querySpec.query.includes('c.userId = @userId')) {
-          const userId = querySpec.parameters.find((p: any) => p.name === '@userId')?.value;
-          const limit = querySpec.parameters.find((p: any) => p.name === '@limit')?.value || 50;
-          const offset = querySpec.parameters.find((p: any) => p.name === '@offset')?.value || 0;
+          const userId = querySpec.parameters.find((p: QueryParameter) => p.name === '@userId')?.value;
+          const limit = querySpec.parameters.find((p: QueryParameter) => p.name === '@limit')?.value || 50;
+          const offset = querySpec.parameters.find((p: QueryParameter) => p.name === '@offset')?.value || 0;
           
           let filtered = inMemoryGoals.filter(g => g.userId === userId);
           
@@ -64,14 +72,14 @@ function createInMemoryStore() {
           }
           
           // Apply pagination
-          filtered = filtered.slice(offset, offset + limit);
+          filtered = filtered.slice(offset as number, (offset as number) + (limit as number));
           
           return {
             fetchAll: async () => ({ resources: filtered })
           };
         } else if (querySpec.query.includes('c.id = @id')) {
-          const id = querySpec.parameters.find((p: any) => p.name === '@id')?.value;
-          const userId = querySpec.parameters.find((p: any) => p.name === '@userId')?.value;
+          const id = querySpec.parameters.find((p: QueryParameter) => p.name === '@id')?.value;
+          const userId = querySpec.parameters.find((p: QueryParameter) => p.name === '@userId')?.value;
           const filtered = inMemoryGoals.filter(g => g.id === id && g.userId === userId);
           return {
             fetchAll: async () => ({ resources: filtered })
@@ -150,34 +158,55 @@ export interface PaginatedResult<T> {
  * @param userId User ID
  * @param limit Maximum number of goals to return (default: 50)
  * @param offset Number of goals to skip (default: 0)
+ * @param filters Optional filters for goal type and status
  * @returns Paginated goals result
  */
 export async function getGoalsByUserId(
-  userId: string, 
-  limit: number = 50, 
-  offset: number = 0
+  userId: string,
+  limit = 50,
+  offset = 0,
+  filters: Record<string, string> = {}
 ): Promise<PaginatedResult<FitnessGoal>> {
   const container = getContainer();
   
+  // Build the WHERE clause with filters
+  let whereClause = 'c.userId = @userId';
+  const parameters = [
+    {
+      name: '@userId',
+      value: userId
+    }
+  ];
+  
+  // Add type filter if provided
+  if (filters.type) {
+    whereClause += ' AND c.type = @type';
+    parameters.push({
+      name: '@type',
+      value: filters.type
+    });
+  }
+  
+  // Add status filter if provided
+  if (filters.status) {
+    whereClause += ' AND c.status = @status';
+    parameters.push({
+      name: '@status',
+      value: filters.status
+    });
+  }
+  
   // Query to get the total count
   const countQuerySpec = {
-    query: 'SELECT VALUE COUNT(1) FROM c WHERE c.userId = @userId',
-    parameters: [
-      {
-        name: '@userId',
-        value: userId
-      }
-    ]
+    query: `SELECT VALUE COUNT(1) FROM c WHERE ${whereClause}`,
+    parameters
   };
   
   // Query to get the paginated goals
   const querySpec = {
-    query: 'SELECT * FROM c WHERE c.userId = @userId ORDER BY c.createdAt DESC OFFSET @offset LIMIT @limit',
+    query: `SELECT * FROM c WHERE ${whereClause} ORDER BY c.createdAt DESC OFFSET @offset LIMIT @limit`,
     parameters: [
-      {
-        name: '@userId',
-        value: userId
-      },
+      ...parameters,
       {
         name: '@offset',
         value: offset
@@ -316,4 +345,4 @@ export async function getAllGoals(limit = 100): Promise<FitnessGoal[]> {
   
   const { resources } = await container.items.query(querySpec).fetchAll();
   return resources as FitnessGoal[];
-} 
+}

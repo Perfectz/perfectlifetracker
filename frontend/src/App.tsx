@@ -1,28 +1,27 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 import { Toaster } from 'react-hot-toast';
-
-// Import lightweight components directly
-import NavBar from './components/common/NavBar';
-import ErrorBoundary from './components/common/ErrorBoundary';
-import Spinner from './components/common/Spinner';
-import ProtectedRoute from './components/common/ProtectedRoute';
-import { useUser } from './hooks/useUser';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from './themeContext';
-import ThemeToggle from './components/common/ThemeToggle';
 import { getAuthorizedRoutes, getPublicRoutes } from './routes';
 import WelcomeScreen from './components/auth/WelcomeScreen';
+import ErrorBoundary from './components/common/ErrorBoundary';
+import Spinner from './components/common/Spinner';
+import AppLayout from './components/layout/AppLayout';
+import ProtectedRoute from './components/common/ProtectedRoute';
+import { AuthProvider } from './authContext';
 
-// Lazy-load heavier components with prefetch
-const ProfileContent = lazy(() => import('./components/profile/ProfileContent'));
-const DashboardWidget = lazy(() => import('./components/dashboard/DashboardWidget'));
-
-// Component map for route rendering
-const componentMap: Record<string, React.ReactNode> = {
-  'DASHBOARD': <DashboardWidget />,
-  'PROFILE': <ProfileContent />,
-};
+// Create a query client instance once (not on each render)
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
 
 // Main App component
 function App() {
@@ -30,56 +29,59 @@ function App() {
   const publicRoutes = getPublicRoutes();
 
   return (
-    <ThemeProvider>
-      <Router>
-        <ErrorBoundary>
-          <div className="app">
-            <ProtectedRoute>
-              <NavBar />
-              <div className="theme-toggle-container">
-                <ThemeToggle />
-              </div>
-            </ProtectedRoute>
-            
-            <main className="app-content">
-              <Suspense fallback={<Spinner message="Loading page..." />}>
-                <Routes>
-                  {/* Public routes */}
-                  {publicRoutes.map(route => (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <AuthProvider>
+          <Router>
+            <ErrorBoundary>
+              <div className="app">
+                {/* Global toast notifications */}
+                <Toaster position="bottom-right" toastOptions={{ duration: 4000 }} />
+                
+                {/* All routes with Suspense for code splitting */}
+                <Suspense fallback={<Spinner message="Loading page..." />}>
+                  <Routes>
+                    {/* Public routes */}
+                    {publicRoutes.map(route => (
+                      <Route 
+                        key={route.key}
+                        path={route.path} 
+                        element={<WelcomeScreen />} 
+                      />
+                    ))}
+                    
+                    {/* Protected routes with shared layout */}
                     <Route 
-                      key={route.key}
-                      path={route.path} 
-                      element={<WelcomeScreen />} 
-                    />
-                  ))}
-                  
-                  {/* Protected routes */}
-                  {authorizedRoutes.map(route => (
-                    <Route 
-                      key={route.key}
-                      path={route.path} 
                       element={
                         <ProtectedRoute>
-                          <div className="page-transition">
-                            {componentMap[route.key]}
-                          </div>
+                          <AppLayout />
                         </ProtectedRoute>
-                      } 
-                    />
-                  ))}
-                  
-                  {/* Catch-all route */}
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-              </Suspense>
-            </main>
-            
-            {/* Toast notifications */}
-            <Toaster position="bottom-right" toastOptions={{ duration: 4000 }} />
-          </div>
-        </ErrorBoundary>
-      </Router>
-    </ThemeProvider>
+                      }
+                    >
+                      {/* Map all authorized routes */}
+                      {authorizedRoutes.map(route => {
+                        const RouteComponent = route.lazyComponent;
+                        
+                        return (
+                          <Route 
+                            key={route.key}
+                            path={route.key === 'GOALS' ? `${route.path}/*` : route.path}
+                            element={RouteComponent ? <RouteComponent /> : <Navigate to="/" replace />}
+                          />
+                        );
+                      })}
+                    </Route>
+                    
+                    {/* Catch-all route */}
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                  </Routes>
+                </Suspense>
+              </div>
+            </ErrorBoundary>
+          </Router>
+        </AuthProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 

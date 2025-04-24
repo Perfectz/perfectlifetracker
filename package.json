@@ -4,9 +4,13 @@
   "private": true,
   "description": "LifeTracker Pro - A comprehensive health and wellness tracking application",
   "scripts": {
+    "start:emulators": "concurrently -n \"STORAGE,COSMOS\" -c \"blue,yellow\" \"azurite --silent\" \"start \\\"\\\" \\\"C:\\Program Files\\Azure Cosmos DB Emulator\\CosmosDB.Emulator.exe\\\"\"",
     "start:backend": "cd backend && npm run dev",
     "start:frontend": "cd frontend && npm start",
-    "start": "echo \"Please use 'npm run start:frontend' or 'npm run start:backend'\" && exit 1",
+    "start:dev": "concurrently -n \"BACKEND,FRONTEND\" -c \"green,cyan\" \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:all": "concurrently -n \"EMULATORS,SERVICES\" -c \"magenta,white\" \"npm run start:emulators\" \"npm run start:dev\"",
+    "test:e2e": "start-server-and-test start:all http://localhost:3000 \"cd frontend && npx cypress run\"",
+    "stop:all": "npx kill-port 3000 3001 10000 8081",
     "build:backend": "cd backend && npm run build",
     "build:frontend": "cd frontend && npm run build",
     "build": "npm run build:backend && npm run build:frontend",
@@ -16,7 +20,6 @@
     "test:backend": "cd backend && npm test",
     "test:frontend": "cd frontend && npm test",
     "test": "npm run test:backend && npm run test:frontend",
-    "test:e2e": "cd frontend && npm run test:e2e",
     "lint:fix": "npm run lint:frontend -- --fix && npm run lint:backend -- --fix",
     "format": "cd frontend && npm run format && cd ../backend && npm run format",
     "cy:open": "cd frontend && npm run cy:open",
@@ -33,6 +36,8 @@
     "node": ">=18.0.0"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "kill-port": "^2.0.1",
+    "start-server-and-test": "^2.0.11"
   }
-} 
+}

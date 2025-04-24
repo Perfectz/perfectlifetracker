@@ -1,6 +1,6 @@
 # LifeTracker Pro
 
-A comprehensive life tracking application to help users monitor health, fitness, habits, and personal development goals.
+A comprehensive health and fitness tracking application built with React, TypeScript, and Azure services.
 
 ## Features
 
@@ -14,11 +14,10 @@ A comprehensive life tracking application to help users monitor health, fitness,
 
 ## Project Structure
 
-- `frontend/` - React TypeScript frontend application
-- `backend/` - Express TypeScript backend API
-- `infra/` - Terraform infrastructure as code
-- `k8s/` - Kubernetes deployment manifests
-- `documentation/` - Project documentation and daily plans
+- `/frontend`: React TypeScript application (run commands here for UI)
+- `/backend`: Express TypeScript API (run commands here for server)
+- `/infra`: Infrastructure and deployment scripts
+- `/scripts`: Development and utility scripts
 
 ## Technologies
 
@@ -37,52 +36,110 @@ A comprehensive life tracking application to help users monitor health, fitness,
 - JWT authentication with express-jwt
 - Azure integrations (Cosmos DB, Blob Storage)
 
-## Development
+## Development Setup
 
 ### Prerequisites
-- Node.js v16+
-- npm v8+
-- Git
 
-### Frontend
+- Node.js v18+ and npm
+- PowerShell 7+ (for Windows)
+- Azure Cosmos DB Emulator (installed automatically by startup script)
+- Azurite Storage Emulator (installed via npm)
 
-```bash
-cd frontend
-npm install
-npm run prestart  # kill port 3000 if used
-npm start          # starts dev server on 3000
-npm run lint       # run ESLint
-npm test           # run frontend tests
-npm run build      # production build
-npm run analyze    # optional bundle analysis
-npm run cypress    # open Cypress test runner
-npm run cypress:run # run Cypress tests headlessly
+### Quick Start
+
+To start the development environment with all services:
+
+```powershell
+# From the project root
+./scripts/start-dev.ps1
 ```
 
-This will start the development server at http://localhost:3000.
+This script will:
+1. Check for and install Azure Cosmos DB Emulator if needed
+2. Kill any processes using required ports
+3. Start Azure emulators (Cosmos DB and Azurite)
+4. Start the backend server
+5. Start the frontend application
 
-### Backend
+### Manual Setup
+
+If you prefer to start services individually:
+
+#### Backend
 
 ```bash
 cd backend
-npm install
-npm run predev      # kill port 4000 if used
-npm run lint        # run ESLint
-npm run build       # compile TypeScript
-npm test            # run backend tests (allows no tests)
-npm run dev        # start dev server with ts-node-dev
-node test-api-contract.js  # API contract test for /health endpoint
+npm run dev
 ```
 
-This will start the API server at http://localhost:3001.
-
-### Starting Both Services
-
-For convenience, a root-level command is available to start both frontend and backend:
+#### Frontend
 
 ```bash
-# From project root
+cd frontend
+npm start
+# or
 npm run dev
+```
+
+## Troubleshooting
+
+### Port Conflicts
+
+If you encounter "address already in use" errors:
+
+```bash
+# Kill processes on specific ports
+npm run kill-services
+```
+
+### Azure Emulators Not Running
+
+The application will fall back to mock data if emulators are not available. To manually start emulators:
+
+```powershell
+# Start Cosmos DB Emulator
+Start-Process "C:\Program Files\Azure Cosmos DB Emulator\CosmosDB.Emulator.exe" -ArgumentList "/NoFirewall", "/NoUI"
+
+# Start Azurite
+npx azurite --silent
+```
+
+### API JSON Parsing Errors
+
+When using curl or other tools to make API requests, ensure JSON is properly formatted:
+
+```bash
+# CORRECT
+curl -X POST -H "Content-Type: application/json" -d "{\"title\":\"Run 5K\",\"targetDate\":\"2023-12-31\"}" http://localhost:3001/api/goals
+
+# INCORRECT (escaped quotes)
+curl -X POST -H "Content-Type: application/json" -d '{\"title\":\"Run 5K\",\"targetDate\":\"2023-12-31\"}' http://localhost:3001/api/goals
+```
+
+See `scripts/request-examples.http` for more examples.
+
+### TypeScript Errors
+
+If you encounter TypeScript errors during build:
+
+1. Check interface definitions match implementations
+2. Run `npm run build` to see detailed error messages
+3. Fix type errors in the relevant files
+
+## Testing
+
+```bash
+# Run backend tests
+cd backend
+npm test
+
+# Run frontend tests
+cd frontend
+npm test
+
+# Run E2E tests
+cd frontend
+npm run test:e2e
 ```
 
 ## Authentication Flow
@@ -136,63 +193,6 @@ cd backend
 npm run build
 ```
 
-## Testing
-
-### Frontend Tests
-
-```bash
-cd frontend
-npm test               # Run Jest unit tests
-npm run cypress:run    # Run Cypress E2E tests
-```
-
-Available test suites:
-- Unit tests for React components
-- E2E tests for navigation, routes, and authentication flow
-
-### Cypress Testing
-
-Our E2E tests implement best practices for stable test runs:
-
-- Multiple selector strategies to prevent flakiness
-- Appropriate timeouts for asynchronous operations
-- Session state cleanup between tests
-- Fallback assertions when primary checks might fail
-- Direct session storage manipulation when needed
-
-Example of a resilient test in `cypress/e2e/login.spec.ts`:
-
-```typescript
-it('should log in and redirect to dashboard', () => {
-  // Programmatically set auth state
-  cy.window().then((win) => {
-    win.sessionStorage.setItem('mock_auth_state', 'authenticated');
-  });
-  cy.visit('/dashboard');
-  
-  // Verify with multiple selectors
-  cy.get('body').then(($body) => {
-    if ($body.find('.MuiDrawer-root').length > 0) {
-      cy.get('.MuiDrawer-root').should('exist');
-    } else {
-      cy.contains('Dashboard', { timeout: 8000 }).should('be.visible');
-    }
-  });
-});
-```
-
-### Backend Tests
-
-```bash
-cd backend
-npm test
-```
-
-Backend tests cover:
-- API routes and controllers
-- Service logic
-- Authentication middleware
-
 ## Notifications
 
 The application uses `react-hot-toast` for a seamless notification system:
@@ -237,4 +237,163 @@ The application follows WCAG 2.1 AA standards:
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Prerequisites
+
+Before running the application locally, ensure you have the following installed:
+
+- Node.js (v16+)
+- npm (v7+)
+- Azure Cosmos DB Emulator (for local database)
+- Azurite (for local blob storage)
+
+## Local Development with Azure Emulators
+
+This application depends on Azure services (Cosmos DB and Blob Storage) which must be emulated locally for full functionality:
+
+### Setting up Azure Emulators
+
+1. **Azure Cosmos DB Emulator**:
+   - Download and install from [Microsoft's website](https://docs.microsoft.com/en-us/azure/cosmos-db/local-emulator)
+   - Default installation path: `C:\Program Files\Azure Cosmos DB Emulator\CosmosDB.Emulator.exe`
+   - Default endpoint: `https://localhost:8081`
+
+2. **Azurite (Azure Storage Emulator)**:
+   - Install globally: `npm install -g azurite`
+   - Run manually: `azurite --silent`
+   - Default blob endpoint: `http://127.0.0.1:10000/devstoreaccount1`
+
+### Starting the Application
+
+For convenience, we've set up npm scripts to manage the local development environment:
+
+```bash
+# Start both Azure emulators (Cosmos DB and Azurite)
+npm run start:emulators
+
+# Start both backend and frontend services
+npm run start:dev
+
+# Start everything (emulators and services)
+npm run start:all
+
+# Run E2E tests with Cypress (starts all services first)
+npm run test:e2e
+
+# Stop all running services and emulators
+npm run stop:all
+```
+
+### Troubleshooting
+
+If you encounter connection errors to Cosmos DB or Blob Storage:
+
+1. Verify the emulators are running:
+   - Cosmos DB Emulator: Check at https://localhost:8081/_explorer/index.html
+   - Azurite: Check ports 10000, 10001, and 10002 are in use
+
+2. Check connection strings in `.env.local` files:
+   - Backend has default fallbacks for local development
+   - If changing ports, update connection strings accordingly
+
+3. Fallback mode:
+   - The application includes in-memory fallbacks for development
+   - Limited functionality will be available if emulators fail to connect
+
+## Development Setup
+
+### Prerequisites
+
+- Node.js (v18+)
+- npm (v8+)
+
+### Running the Application
+
+The application consists of both frontend and backend services.
+
+#### Option 1: Normal Setup (requires Azure services)
+
+1. Start Azure services (Cosmos DB and Blob Storage):
+   ```
+   .\start-dev-environment.ps1
+   ```
+
+2. Or manually run the services:
+   ```powershell
+   # Start Cosmos DB Emulator (if installed)
+   Start-Process -FilePath "C:\Program Files\Azure Cosmos DB Emulator\CosmosDB.Emulator.exe"
+   
+   # Start Azurite for Blob Storage
+   npx azurite --silent
+   ```
+
+3. Start backend and frontend:
+   ```
+   cd backend
+   npm run dev
+   
+   # In another terminal
+   cd frontend
+   npm start
+   ```
+
+#### Option 2: Development Mode (without Azure services)
+
+The application includes fallbacks for development without Azure services:
+
+1. Backend uses in-memory storage when Cosmos DB is unavailable
+2. Frontend uses mock data when API calls fail
+
+To run in this mode:
+
+```powershell
+# Start backend with in-memory fallback
+cd backend
+npm run dev
+
+# In another terminal
+cd frontend
+npm start
+```
+
+### Testing
+
+#### Backend Tests
+
+```
+cd backend
+npm test
+```
+
+#### Frontend Tests
+
+```
+cd frontend
+npm test
+```
+
+#### E2E Tests
+
+```
+cd frontend
+npm run cypress:open
+```
+
+## Troubleshooting
+
+### Authentication Issues
+
+For local development, the application includes authentication fallbacks. If you see errors related to missing JWT tokens or user IDs, ensure you're using the development mode.
+
+### Database Connection Issues
+
+If you encounter database connection issues:
+
+1. Ensure Cosmos DB emulator is running (or use the in-memory fallback)
+2. Check that Azurite is running for blob storage
+3. Verify that the ports are not blocked (8081 for Cosmos DB, 10000 for Azurite)
+
+### Clear In-Memory Data
+
+The in-memory fallback retains data only for the current backend session. To clear data, restart the backend server. 

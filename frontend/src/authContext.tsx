@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AccountInfo } from '@azure/msal-browser';
-import { msalInstance, loginRequest } from './authConfig';
 
 // Types
 interface AuthContextProps {
@@ -113,7 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const acquireToken = async (scopes: string[]): Promise<string | null> => {
+  const acquireToken = async (_scopes: string[]): Promise<string | null> => {
     if (!isAuthenticated) {
       return null;
     }
