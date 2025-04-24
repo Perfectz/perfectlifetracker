@@ -78,7 +78,7 @@ function createMockBlobClient(): ContainerClient {
 /**
  * Get the container client
  */
-export function getContainerClient() {
+export function getContainerClient(): ContainerClient {
   return containerClient;
 }
 
