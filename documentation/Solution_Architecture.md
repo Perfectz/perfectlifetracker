@@ -132,4 +132,36 @@ We've implemented a comprehensive testing strategy with multiple layers:
   - Used React Query for data fetching with optimistic updates for better UX
   - Implemented fallback to mock data when backend services are unavailable
   - Added comprehensive error handling with user-friendly messages
-  - Created reusable pagination component with configurable settings  
+  - Created reusable pagination component with configurable settings
+
+### [2025-04-23] – App Layout & Routing Refactoring
+- **Decision:** Extracted a centralized `AppLayout` component, improved route structure with lazy loading, and enhanced backend service reliability.
+- **Rationale:** This approach reduces code duplication, improves maintainability, and provides better error handling for development environment issues.
+- **Alternatives:** 
+  - Keeping route-specific layouts (more flexibility but more duplication)
+  - Using third-party routing libraries (adds dependencies)
+  - Hard-coding fallback behavior (simpler but less configurable)
+- **Implementation Details:**
+  - Created centralized `AppLayout` component to eliminate duplicate protected route wrappers
+  - Enhanced route definitions with lazy-loaded components for better code splitting
+  - Added graceful handling of port conflicts and SSL validation issues
+  - Improved environment-based configuration with feature flags (MOCK_DATA_ON_FAILURE, COSMOS_INSECURE_DEV)
+  - Updated scripts in package.json for better developer experience
+
+### [2023-05-23] – Fitness Goals Feature Implementation
+// ... existing code ...  
+
+### [2023-06-10] – Activities Feature Implementation
+- **Decision:** Implemented a complete Activities tracking feature with a robust data model, CRUD API, and comprehensive test coverage.
+- **Rationale:** This approach enables users to log, track, and filter their fitness activities while maintaining data consistency and security.
+- **Alternatives:** 
+  - Using a generic document structure (simpler but less type-safe)
+  - Storing activities within the user profile (simpler initial implementation but less scalable)
+  - Using a relational database (more structured but less flexible for evolving data models)
+- **Implementation Details:**
+  - Created TypeScript interfaces for `Activity`, `ActivityCreateDTO`, and `ActivityUpdateDTO`
+  - Designed a flexible filtering system with support for activity type and date ranges
+  - Built a dedicated Cosmos DB container with `/userId` partition key for efficient user-specific queries
+  - Implemented comprehensive input validation with express-validator
+  - Added thorough test coverage with Jest and Supertest, including edge cases
+  - Integrated with the authentication system to ensure data security and user isolation  
