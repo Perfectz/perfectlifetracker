@@ -1,7 +1,7 @@
 import { msalInstance, protectedResources } from '../authConfig';
 import { apiConfig } from '../authConfig';
 import { generateMockToken } from '../authContext';
-import { mockProfile, mockTasks, mockAvatarResponse, simulateDelay } from './mockData';
+import { mockProfile, mockTasks, mockAvatarResponse, simulateDelay, mockAnalyticsData, mockFitnessSummary } from './mockData';
 
 // Whether to use mock data when API calls fail (for development without backend)
 const USE_MOCK_ON_FAILURE = true;
@@ -144,6 +144,16 @@ export const callApi = async <T>(
 async function getMockResponse<T>(endpoint: string, method: string, body?: any): Promise<T> {
   // Simulate API delay
   await simulateDelay();
+  
+  // Analytics endpoints
+  if (endpoint.includes('/api/analytics')) {
+    return mockAnalyticsData as unknown as T;
+  }
+  
+  // OpenAI fitness summary endpoint
+  if (endpoint.includes('/api/openai/fitness-summary')) {
+    return mockFitnessSummary as unknown as T;
+  }
   
   // Profile endpoints
   if (endpoint.includes('/profile')) {

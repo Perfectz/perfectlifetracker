@@ -55,5 +55,23 @@ export const mockAvatarResponse = {
   profile: mockProfile
 };
 
+// Mock analytics data
+export const mockAnalyticsData = {
+  totalDuration: 450,
+  totalCalories: 2200,
+  averageDurationPerDay: 45,
+  averageCaloriesPerDay: 220,
+  activityCountByType: { 'Running': 4, 'Cycling': 2 },
+  caloriesByType: { 'Running': 1200, 'Cycling': 1000 },
+  durationByType: { 'Running': 240, 'Cycling': 210 },
+  activeDays: 10,
+  activitiesCount: 6
+};
+
+// Mock fitness summary data
+export const mockFitnessSummary = {
+  summary: 'You have been doing great with your workouts. Keep up the good work! Your running and cycling activities show a consistent pattern of exercise.'
+};
+
 // Helper to simulate API latency
 export const simulateDelay = (ms = 300) => new Promise(resolve => setTimeout(resolve, ms)); 

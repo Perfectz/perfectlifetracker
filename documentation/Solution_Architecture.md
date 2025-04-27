@@ -165,3 +165,18 @@ We've implemented a comprehensive testing strategy with multiple layers:
   - Implemented comprehensive input validation with express-validator
   - Added thorough test coverage with Jest and Supertest, including edge cases
   - Integrated with the authentication system to ensure data security and user isolation  
+
+### [2025-04-27] – Analytics & Dashboard Resilience Improvements
+- **Decision:** Enhanced error handling in analytics hooks and components, added comprehensive mock data support, and improved URL parameter handling.
+- **Rationale:** These changes ensure the application remains functional even when backend services are unavailable, providing graceful degradation instead of runtime errors.
+- **Alternatives:** 
+  - More complex error boundaries at component level (higher maintenance overhead)
+  - Less granular error handling at the hook level (simpler but less user-friendly)
+  - Service worker for offline caching (more complex implementation)
+- **Implementation Details:**
+  - Fixed URL construction in `useAnalytics` and `useFitnessSummary` hooks
+  - Added property-level null checks in `InsightsCard` component to prevent "Cannot read property of undefined" errors
+  - Created comprehensive mock data for analytics and fitness summary services
+  - Enhanced API service to detect and handle failed requests with appropriate mock data
+  - Improved the consistency of the code structure across different custom hooks
+  - Added detailed documentation of implementation status and bug fixes  
