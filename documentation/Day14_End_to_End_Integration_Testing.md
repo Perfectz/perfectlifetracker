@@ -3,7 +3,10 @@
 ## Summary of Tasks
 - Wire together Goals, Activities, Profile, and Analytics flows to validate full-stack integration.
 - Write end-to-end tests using Supertest for backend routes and Cypress for UI flows.
+- Seed test data and clean up between scenarios for repeatability.
+- Generate and publish test coverage reports (unit and E2E).
 - Configure monitoring in Application Insights for key endpoints.
+- Set up alerting rules for key metrics and error thresholds.
 - Update GitHub Actions to run integration and E2E tests on PRs.
 - Ensure documentation reflects end-to-end setup and test commands.
 
@@ -18,20 +21,26 @@
   - Authenticated POST → GET → DELETE on `/profile`, `/goals`, and `/activities`.
   - GET `/analytics/fitness` returns aggregated data.
   - POST `/openai/fitness-summary` returns summary text.
+  - Integration tests include negative/error cases (e.g., unauthorized requests, invalid payloads).
+  - Test coverage ≥ 80% for both unit and integration tests.
 - Cypress E2E tests in `/cypress/integration/e2e.spec.ts` automate:
   - Login → Create Profile → Add Goal → Log Activity → View Dashboard insights.
   - Assertions on page navigation, data display, and no uncaught errors.
 - GitHub Actions workflow updated:
   - Runs `npm test` (unit) and `npm run integration` (supertest).
   - Runs `npx cypress run` for E2E.
+  - Fails build if coverage threshold is not met.
+  - Publishes test coverage reports and E2E artifacts as build artifacts.
 - Application Insights telemetry configured in Express middleware for request tracking.
 - README updated with commands: `npm run integration`, `npm run e2e`, and monitoring setup.
 
 ## IDE Testing Criteria
 1. Run unit and integration tests locally:
    - `npm test && npm run integration` → all tests pass.
+   - Run `npm run coverage` → coverage report ≥ 80%.
 2. Run Cypress locally:
    - `npx cypress open` → tests execute and pass.
+   - Run `npx cypress run --record` → results saved and visible on the Dashboard.
 3. Validate monitoring:
    - Trigger a sample request; verify telemetry appears in Application Insights.
 4. Commit and open PR:
@@ -47,4 +56,6 @@
 4. **CI Workflow Update:**
    "Break down adding integration and E2E jobs in GitHub Actions; show plan, then update `.github/workflows/ci.yml`."
 5. **Monitoring Setup:**
-   "Outline steps to add Application Insights middleware in Express and verify telemetry; after confirmation, implement the code and config." 
+   "Outline steps to add Application Insights middleware in Express and verify telemetry; after confirmation, implement the code and config."
+6. **Negative/Error Test Scenarios:**
+   "Describe tasks to add negative/error test scenarios and enforce coverage thresholds in the test suite." 

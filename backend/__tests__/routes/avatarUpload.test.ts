@@ -171,7 +171,7 @@ describe('Avatar Upload API', () => {
       
       app.post(
         '/api/profile/user123/avatar',
-        (req, res) => {
+        (req: express.Request, res: express.Response) => {
           // Simulate multer's behavior when no file is provided
           return res.status(400).json({
             error: 'BadRequest',

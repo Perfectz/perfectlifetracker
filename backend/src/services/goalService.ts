@@ -17,6 +17,11 @@ interface QueryParameter {
   value: string | number | boolean;
 }
 
+interface QuerySpec {
+  query: string;
+  parameters: QueryParameter[];
+}
+
 /**
  * Get container with fallback to in-memory store
  * @returns The container or in-memory store functions
@@ -30,7 +35,7 @@ function getContainer() {
       return createInMemoryStore();
     }
     return container;
-  } catch (error) {
+  } catch (error: unknown) {
     console.warn('⚠️ Error accessing Cosmos DB, using in-memory store:', error);
     return createInMemoryStore();
   }
@@ -46,7 +51,7 @@ function createInMemoryStore() {
         inMemoryGoals.push(goal);
         return { resource: goal };
       },
-      query: (querySpec: any) => {
+      query: (querySpec: QuerySpec) => {
         // Simple query parser
         if (querySpec.query.includes('COUNT(1)')) {
           // Count query

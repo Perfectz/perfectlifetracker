@@ -16,15 +16,45 @@ const cosmosConfig = {
   databaseId: process.env.COSMOS_DATABASE_ID || 'lifetracker',
   profilesContainerId: process.env.COSMOS_PROFILES_CONTAINER_ID || 'profiles',
   goalsContainerId: process.env.COSMOS_GOALS_CONTAINER_ID || 'goals',
-  activitiesContainerId: process.env.COSMOS_ACTIVITIES_CONTAINER_ID || 'activities'
+  activitiesContainerId: process.env.COSMOS_ACTIVITIES_CONTAINER_ID || 'activities',
+  habitsContainerId: process.env.COSMOS_HABITS_CONTAINER_ID || 'habits',
+  journalsContainerId: process.env.COSMOS_JOURNALS_CONTAINER_ID || 'journals'
 };
 
+// Safely format endpoint URL
+function formatEndpointUrl(endpoint: string): string {
+  // If endpoint is empty or undefined, use a safe default
+  if (!endpoint) {
+    return 'https://localhost:8081';
+  }
+  
+  try {
+    // Ensure it's a valid URL by attempting to parse it
+    new URL(endpoint);
+    return endpoint;
+  } catch (error) {
+    // If parsing fails, try to fix common issues
+    if (!endpoint.startsWith('http')) {
+      return `https://${endpoint}`;
+    }
+    // Remove trailing path segments that might cause issues
+    const baseUrl = endpoint.replace(/\/+$/, '');
+    return `${baseUrl}/`;
+  }
+}
+
 // Initialize with empty client that will be set during initializeCosmosDb
-let client: CosmosClient = new CosmosClient({ endpoint: '', key: '' });
+const safeEndpoint = formatEndpointUrl(cosmosConfig.endpoint);
+let client: CosmosClient = new CosmosClient({ 
+  endpoint: safeEndpoint, 
+  key: cosmosConfig.key 
+});
 let database: Database;
 let profilesContainer: Container;
 let goalsContainer: Container;
 let activitiesContainer: Container;
+let habitsContainer: Container;
+let journalsContainer: Container;
 
 // Configuration options for initialization
 interface CosmosDbInitOptions {
@@ -40,9 +70,12 @@ export async function initializeCosmosDb(options: CosmosDbInitOptions = {}): Pro
   profilesContainer: Container;
   goalsContainer: Container;
   activitiesContainer: Container;
+  habitsContainer: Container;
+  journalsContainer: Container;
 }> {
   try {
     console.log('Initializing Cosmos DB client...');
+    console.log(`Using Cosmos DB endpoint: ${safeEndpoint}`);
 
     // Configure HTTPS agent if insecure connections are allowed
     const httpsAgent = options.allowInsecureConnection 
@@ -55,7 +88,7 @@ export async function initializeCosmosDb(options: CosmosDbInitOptions = {}): Pro
 
     // Create the client with configured agent
     client = new CosmosClient({
-      endpoint: cosmosConfig.endpoint,
+      endpoint: safeEndpoint,
       key: cosmosConfig.key,
       agent: httpsAgent
     });
@@ -113,11 +146,50 @@ export async function initializeCosmosDb(options: CosmosDbInitOptions = {}): Pro
     activitiesContainer = activitiesCont;
     console.log(`Container '${cosmosConfig.activitiesContainerId}' ready`);
     
+    // Create or get the habits container
+    const { container: habitsCont } = await database.containers.createIfNotExists({
+      id: cosmosConfig.habitsContainerId,
+      partitionKey: {
+        paths: ['/userId']
+      },
+      indexingPolicy: {
+        includedPaths: [
+          { path: '/*' },
+          { path: '/createdAt/?' }, // Explicitly index createdAt for efficient sorting
+          { path: '/name/?' },      // Explicitly index name for searching
+          { path: '/frequency/?' }  // Explicitly index frequency for filtering
+        ]
+      },
+      throughput: parseInt(process.env.COSMOS_HABITS_RU || '400') // Make RU configurable
+    });
+    habitsContainer = habitsCont;
+    console.log(`Container '${cosmosConfig.habitsContainerId}' ready`);
+    
+    // Create or get the journals container
+    const { container: journalsCont } = await database.containers.createIfNotExists({
+      id: cosmosConfig.journalsContainerId,
+      partitionKey: {
+        paths: ['/userId']
+      },
+      indexingPolicy: {
+        includedPaths: [
+          { path: '/*' },
+          { path: '/date/?' },      // Explicitly index date for efficient filtering and sorting
+          { path: '/sentimentScore/?' }  // Explicitly index sentimentScore for filtering
+        ]
+      },
+      throughput: parseInt(process.env.COSMOS_JOURNALS_RU || '400') // Make RU configurable
+    });
+    journalsContainer = journalsCont;
+    console.log(`Container '${cosmosConfig.journalsContainerId}' ready`);
+    
     return {
       database,
       profilesContainer,
       goalsContainer,
-      activitiesContainer
+      activitiesContainer,
+      habitsContainer,
+      journalsContainer
     };
   } catch (error) {
     console.error('Error initializing Cosmos DB:', error);
@@ -140,11 +212,15 @@ function createInMemoryDbClient(): {
   profilesContainer: Container;
   goalsContainer: Container;
   activitiesContainer: Container;
+  habitsContainer: Container;
+  journalsContainer: Container;
 } {
   // Simple in-memory stores for development
   const inMemoryProfiles: any[] = [];
   const inMemoryGoals: any[] = [];
   const inMemoryActivities: any[] = [];
+  const inMemoryHabits: any[] = [];
+  const inMemoryJournals: any[] = [];
   
   /**
    * Helper function to create a mock container with generic implementation
@@ -171,145 +247,141 @@ function createInMemoryDbClient(): {
           return { resource: item };
         },
         query: (querySpec: SqlQuerySpec) => {
-          // Common query patterns to support
-          if (querySpec.query.includes('COUNT(1)')) {
-            // Count query - supports userId, type, date filters
-            let filtered = [...dataStore];
-            
-            // Apply filters from parameters
-            if (querySpec.parameters) {
-              // Handle userId filter first (most common)
-              const userId = querySpec.parameters.find((p: any) => p.name === '@userId')?.value;
-              if (userId) {
-                filtered = filtered.filter((a: any) => a[pkField] === userId);
-              }
-              
-              // Handle type filter (for activities)
-              const type = querySpec.parameters.find((p: any) => p.name === '@type')?.value;
-              if (type) {
-                filtered = filtered.filter((a: any) => a.type === type);
-              }
-              
-              // Handle date filters (for activities)
-              const startDate = querySpec.parameters.find((p: any) => p.name === '@startDate')?.value;
-              if (startDate) {
-                const startDateObj = new Date(startDate as string);
-                filtered = filtered.filter((a: any) => new Date(a.date) >= startDateObj);
-              }
-              
-              const endDate = querySpec.parameters.find((p: any) => p.name === '@endDate')?.value;
-              if (endDate) {
-                const endDateObj = new Date(endDate as string);
-                filtered = filtered.filter((a: any) => new Date(a.date) <= endDateObj);
-              }
-            }
-            
-            return {
-              fetchAll: async () => ({ resources: [filtered.length] })
-            };
-          } else if (querySpec.query.includes(`c.${pkField}`)) {
-            // Filter by partition key - with optional pagination and other filters
-            let filtered = [...dataStore];
-            
-            // Apply filters
-            if (querySpec.parameters) {
-              // Handle partition key filter
-              const pkValue = querySpec.parameters.find((p: any) => p.name === `@${pkField}`)?.value;
-              if (pkValue) {
-                filtered = filtered.filter((item: any) => item[pkField] === pkValue);
-              }
-              
-              // Handle ID filter if present
-              const id = querySpec.parameters.find((p: any) => p.name === '@id')?.value;
-              if (id) {
-                filtered = filtered.filter((item: any) => item.id === id);
-              }
-              
-              // Handle type filter (for activities)
-              const type = querySpec.parameters.find((p: any) => p.name === '@type')?.value;
-              if (type) {
-                filtered = filtered.filter((a: any) => a.type === type);
-              }
-              
-              // Handle date filters (for activities)
-              const startDate = querySpec.parameters.find((p: any) => p.name === '@startDate')?.value;
-              if (startDate) {
-                const startDateObj = new Date(startDate as string);
-                filtered = filtered.filter((a: any) => a.date && new Date(a.date) >= startDateObj);
-              }
-              
-              const endDate = querySpec.parameters.find((p: any) => p.name === '@endDate')?.value;
-              if (endDate) {
-                const endDateObj = new Date(endDate as string);
-                filtered = filtered.filter((a: any) => a.date && new Date(a.date) <= endDateObj);
-              }
-            }
-            
-            // Apply sorting if specified
-            if (querySpec.query.includes('ORDER BY c.createdAt DESC')) {
-              filtered = filtered.sort((a, b) => {
-                const dateA = new Date(a.createdAt);
-                const dateB = new Date(b.createdAt);
-                return dateB.getTime() - dateA.getTime();
-              });
-            } else if (querySpec.query.includes('ORDER BY c.date DESC')) {
-              filtered = filtered.sort((a, b) => {
-                const dateA = new Date(a.date);
-                const dateB = new Date(b.date);
-                return dateB.getTime() - dateA.getTime();
-              });
-            }
-            
-            // Apply pagination if needed
-            if (querySpec.parameters) {
-              const limit = Number(querySpec.parameters.find((p: any) => p.name === '@limit')?.value || 50);
-              const offset = Number(querySpec.parameters.find((p: any) => p.name === '@offset')?.value || 0);
-              filtered = filtered.slice(offset, offset + limit);
-            }
-            
-            return {
-              fetchAll: async () => ({ resources: filtered })
-            };
-          } else if (querySpec.query.includes('c.id') && querySpec.parameters) {
-            // Simple ID filter
-            const id = querySpec.parameters[0].value as string;
-            const filtered = dataStore.filter((item: any) => item.id === id);
-            return {
-              fetchAll: async () => ({ resources: filtered })
-            };
-          }
-          
-          // Default - return all items
           return {
-            fetchAll: async () => ({ resources: dataStore })
+            fetchAll: async () => {
+              // Very simple mock implementation of SQL query
+              // This doesn't actually parse the SQL but just does basic filtering
+              let results = [...dataStore];
+              
+              // Perform simple pattern matching on the query
+              const query = querySpec.query.toLowerCase();
+              
+              // Basic WHERE clause filtering
+              if (querySpec.parameters) {
+                for (const param of querySpec.parameters) {
+                  const paramName = param.name.replace('@', '');
+                  const paramValue = param.value;
+                  
+                  if (typeof paramValue === 'string' || typeof paramValue === 'number' || paramValue instanceof Date) {
+                    const stringValue = paramValue instanceof Date 
+                      ? paramValue.toISOString() 
+                      : String(paramValue);
+                    
+                    results = results.filter(item => {
+                      // Skip offset/limit parameters
+                      if (paramName === 'offset' || paramName === 'limit') {
+                        return true;
+                      }
+                      
+                      // Simple equality check
+                      if (item[paramName] !== undefined) {
+                        const itemValue = item[paramName] instanceof Date
+                          ? item[paramName].toISOString()
+                          : String(item[paramName]);
+                        
+                        return itemValue === stringValue;
+                      }
+                      return false;
+                    });
+                  }
+                }
+              }
+              
+              // Count query handling
+              if (query.includes('select value count(1)')) {
+                return { resources: [results.length] };
+              }
+              
+              // Handle ORDER BY
+              if (query.includes('order by')) {
+                const orderMatch = query.match(/order by c\.(\w+) (asc|desc)/i);
+                if (orderMatch) {
+                  const [, field, direction] = orderMatch;
+                  results.sort((a, b) => {
+                    const valueA = a[field];
+                    const valueB = b[field];
+                    const comparison = valueA < valueB ? -1 : valueA > valueB ? 1 : 0;
+                    return direction.toLowerCase() === 'asc' ? comparison : -comparison;
+                  });
+                }
+              }
+              
+              // Handle OFFSET and LIMIT for pagination
+              if (querySpec.parameters) {
+                const offsetParam = querySpec.parameters.find(p => p.name === '@offset');
+                const limitParam = querySpec.parameters.find(p => p.name === '@limit');
+                
+                const offset = offsetParam ? Number(offsetParam.value) : 0;
+                const limit = limitParam ? Number(limitParam.value) : results.length;
+                
+                results = results.slice(offset, offset + limit);
+              }
+              
+              return { resources: results };
+            }
           };
         }
       },
-      item: (id: string, partitionKeyValue: string) => ({
-        delete: async () => {
-          const index = dataStore.findIndex(item => 
-            item.id === id && item[pkField] === partitionKeyValue);
-          if (index >= 0) {
+      item: (id: string, partitionKeyValue: string) => {
+        return {
+          read: async () => {
+            const item = dataStore.find(i => 
+              i.id === id && 
+              i[pkField] === partitionKeyValue
+            );
+            
+            if (!item) {
+              throw { code: 404 };
+            }
+            
+            return { resource: item };
+          },
+          delete: async () => {
+            const index = dataStore.findIndex(i => 
+              i.id === id && 
+              i[pkField] === partitionKeyValue
+            );
+            
+            if (index === -1) {
+              throw { code: 404 };
+            }
+            
             dataStore.splice(index, 1);
-            return { resource: { id } };
+            return { resource: null };
+          },
+          replace: async (newItem: any) => {
+            const index = dataStore.findIndex(i => 
+              i.id === id && 
+              i[pkField] === partitionKeyValue
+            );
+            
+            if (index === -1) {
+              throw { code: 404 };
+            }
+            
+            dataStore[index] = newItem;
+            return { resource: newItem };
           }
-          throw new Error('Item not found');
-        }
-      })
+        };
+      }
     };
   };
   
-  // Create mock containers with reusable implementation
+  // Create mock containers
   const mockProfilesContainer = createMockContainer(inMemoryProfiles, '/id');
   const mockGoalsContainer = createMockContainer(inMemoryGoals, '/userId');
   const mockActivitiesContainer = createMockContainer(inMemoryActivities, '/userId');
+  const mockHabitsContainer = createMockContainer(inMemoryHabits, '/userId');
+  const mockJournalsContainer = createMockContainer(inMemoryJournals, '/userId');
   
   // Return mock implementation
   return {
     database: {} as Database,
     profilesContainer: mockProfilesContainer as unknown as Container,
     goalsContainer: mockGoalsContainer as unknown as Container,
-    activitiesContainer: mockActivitiesContainer as unknown as Container
+    activitiesContainer: mockActivitiesContainer as unknown as Container,
+    habitsContainer: mockHabitsContainer as unknown as Container,
+    journalsContainer: mockJournalsContainer as unknown as Container
   };
 }
 
@@ -341,6 +413,28 @@ export function getActivitiesContainer(): Container {
     throw new Error('Cosmos DB not initialized. Call initializeCosmosDb first.');
   }
   return activitiesContainer;
+}
+
+/**
+ * Get the habits container
+ * @returns The habits container
+ */
+export function getHabitsContainer(): Container {
+  if (!habitsContainer) {
+    throw new Error('Habits container not initialized. Call initializeCosmosDb first.');
+  }
+  return habitsContainer;
+}
+
+/**
+ * Get the journals container for operations
+ * @returns The journals container
+ */
+export function getJournalsContainer(): Container {
+  if (!journalsContainer) {
+    throw new Error('Cosmos DB client not initialized. Call initializeCosmosDb first.');
+  }
+  return journalsContainer;
 }
 
 // Export the Cosmos client for direct use

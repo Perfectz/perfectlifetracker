@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { 
   Card, 
   CardContent, 
@@ -14,6 +14,7 @@ import {
   TrendingUp as TrendingUpIcon,
   Favorite as FavoriteIcon
 } from '@mui/icons-material';
+import InsightsCard from './InsightsCard';
 
 // Define widget type for better type checking
 interface DashboardWidgetItem {
@@ -27,6 +28,14 @@ interface DashboardWidgetItem {
 }
 
 const DashboardWidget: React.FC = () => {
+  // Calculate date range (last 30 days) for insights
+  const dateRange = useMemo(() => {
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - 30);
+    return { startDate, endDate };
+  }, []);
+
   // Placeholder data for the dashboard widgets
   const widgets: DashboardWidgetItem[] = [
     {
@@ -65,14 +74,26 @@ const DashboardWidget: React.FC = () => {
 
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
+      <Typography variant="h4" component="h1" gutterBottom>
         Dashboard
       </Typography>
       <Typography variant="subtitle1" color="textSecondary" paragraph>
         Welcome to your health and fitness dashboard. Here&apos;s your progress at a glance.
       </Typography>
       
-      <Grid container spacing={3} sx={{ mt: 2 }}>
+      {/* Analytics Insights Card */}
+      <Box sx={{ mb: 4 }}>
+        <InsightsCard 
+          startDate={dateRange.startDate} 
+          endDate={dateRange.endDate} 
+        />
+      </Box>
+      
+      {/* Widget Grid */}
+      <Typography variant="h5" component="h2" gutterBottom sx={{ mt: 3 }}>
+        Quick Stats
+      </Typography>
+      <Grid container spacing={3} sx={{ mt: 1 }}>
         {widgets.map((widget, index) => (
           <Grid item xs={12} sm={6} md={3} key={index}>
             <Paper 
@@ -94,7 +115,7 @@ const DashboardWidget: React.FC = () => {
                 <CardContent>
                   <Box display="flex" alignItems="center" mb={2}>
                     {widget.icon}
-                    <Typography variant="h6" sx={{ ml: 1 }}>
+                    <Typography variant="h6" component="h3" sx={{ ml: 1 }}>
                       {widget.title}
                     </Typography>
                   </Box>
@@ -115,6 +136,7 @@ const DashboardWidget: React.FC = () => {
                       aria-valuenow={widget.progress}
                       aria-valuemin={0}
                       aria-valuemax={100}
+                      aria-label={`${widget.title} progress: ${widget.progress}%`}
                     />
                   </Box>
                 </CardContent>
@@ -125,7 +147,7 @@ const DashboardWidget: React.FC = () => {
       </Grid>
       
       <Typography variant="body2" color="textSecondary" sx={{ mt: 4, textAlign: 'center' }}>
-        This is a placeholder dashboard. Real data tracking features will be added soon.
+        Note: Some widgets display placeholder data until more activities are logged.
       </Typography>
     </Box>
   );

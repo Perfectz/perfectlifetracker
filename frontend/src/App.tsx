@@ -1,7 +1,8 @@
 import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
-import { Toaster } from 'react-hot-toast';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from './themeContext';
 import { getAuthorizedRoutes, getPublicRoutes } from './routes';
@@ -36,7 +37,16 @@ function App() {
             <ErrorBoundary>
               <div className="app">
                 {/* Global toast notifications */}
-                <Toaster position="bottom-right" toastOptions={{ duration: 4000 }} />
+                <ToastContainer 
+                  position="bottom-right"
+                  autoClose={4000}
+                  hideProgressBar={false}
+                  newestOnTop
+                  closeOnClick
+                  pauseOnFocusLoss
+                  draggable
+                  pauseOnHover
+                />
                 
                 {/* All routes with Suspense for code splitting */}
                 <Suspense fallback={<Spinner message="Loading page..." />}>

@@ -431,7 +431,7 @@ describe('Goals API Routes', () => {
       testApp.use(express.json());
       
       // Setup route handlers directly
-      testApp.get('/api/goals', async (req, res) => {
+      testApp.get('/api/goals', async (req: express.Request, res: express.Response) => {
         res.status(200).json({ message: 'This should not be accessible' });
       });
       

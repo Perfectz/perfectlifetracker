@@ -16,6 +16,49 @@
 // Import commands.js using ES2015 syntax:
 import './commands'
 
+// Alternatively you can use CommonJS syntax:
+// require('./commands')
+
+// Declare custom commands to Cypress namespace
+declare global {
+  namespace Cypress {
+    interface Chainable {
+      /**
+       * Custom command to programmatically log in a user in the mock auth system
+       */
+      programmaticLogin(): Chainable<void>
+
+      /**
+       * Custom command to save session storage data for use between tests
+       */
+      saveSessionStorage(): Chainable<void>
+
+      /**
+       * Custom command to restore session storage data from previous tests
+       */
+      restoreSessionStorage(): Chainable<void>
+
+      /**
+       * Custom command to set session storage data for a specific key
+       */
+      setSessionStorage(key: string, value: string): Chainable<void>
+
+      /**
+       * Custom command to get session storage data for all keys or a specific key
+       */
+      getSessionStorage(key?: string): Chainable<any>
+
+      /**
+       * Custom command to clear all session storage data
+       */
+      clearAllSessionStorage(): Chainable<void>
+    }
+  }
+}
+
+// Load React Query patching
+import './reactQuerySetup';
+
 // Handle uncaught exceptions to prevent test failures
 Cypress.on('uncaught:exception', (err, runnable) => {
   // returning false here prevents Cypress from failing the test

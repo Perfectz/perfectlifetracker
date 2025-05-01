@@ -67,6 +67,8 @@ Cypress.Commands.add('programmaticLogin', () => {
     // Set mock auth state directly
     win.sessionStorage.setItem('mock_auth_state', 'authenticated');
   });
+  // Force a reload to ensure the app recognizes the auth state change
+  cy.reload();
 });
 
 /**
@@ -98,3 +100,96 @@ declare namespace Cypress {
     uiLogin(): void;
   }
 }
+
+// Add commands to save and restore session storage
+// This is useful for maintaining auth state between tests
+Cypress.Commands.add('saveSessionStorage', () => {
+  cy.window().then((win) => {
+    Object.keys(win.sessionStorage).forEach(key => {
+      cy.setSessionStorage(key, win.sessionStorage.getItem(key));
+    });
+  });
+});
+
+Cypress.Commands.add('restoreSessionStorage', () => {
+  cy.getSessionStorage().then(sessionData => {
+    if (sessionData) {
+      Object.keys(sessionData).forEach(key => {
+        cy.window().then(win => {
+          win.sessionStorage.setItem(key, sessionData[key]);
+        });
+      });
+    }
+  });
+});
+
+// Commands to manage session data across tests
+let SESSION_STORAGE_MEMORY = {};
+
+Cypress.Commands.add('setSessionStorage', (key, value) => {
+  SESSION_STORAGE_MEMORY[key] = value;
+});
+
+Cypress.Commands.add('getSessionStorage', (key?) => {
+  if (key) {
+    return cy.wrap(SESSION_STORAGE_MEMORY[key]);
+  }
+  return cy.wrap(SESSION_STORAGE_MEMORY);
+});
+
+Cypress.Commands.add('clearAllSessionStorage', () => {
+  SESSION_STORAGE_MEMORY = {};
+  cy.window().then(win => {
+    win.sessionStorage.clear();
+  });
+});
+
+// Custom command to select by data attribute
+Cypress.Commands.add('dataCy', (value) => {
+  return cy.get(`[data-cy=${value}]`);
+});
+
+// Custom login helper
+Cypress.Commands.add('login', () => {
+  cy.window().then((win) => {
+    win.sessionStorage.setItem('mock_auth_state', 'authenticated');
+    win.sessionStorage.setItem('user_id', 'user-1');
+    win.sessionStorage.setItem('user_name', 'Test User');
+    win.sessionStorage.setItem('user_email', 'test@example.com');
+  });
+});
+
+// Mock API responses
+Cypress.Commands.add('mockApiRoutes', () => {
+  // Mock common API responses
+  cy.intercept('GET', '/api/habits*', {
+    statusCode: 200,
+    body: {
+      items: [
+        {
+          id: 'habit-1',
+          userId: 'user-1',
+          name: 'Morning Meditation',
+          frequency: 'daily',
+          streak: 7,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: 'habit-2',
+          userId: 'user-1',
+          name: 'Exercise',
+          frequency: 'weekly',
+          streak: 3,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      ],
+      total: 2,
+      limit: 10,
+      offset: 0
+    }
+  }).as('getHabits');
+  
+  // Add more API mocks as needed
+});

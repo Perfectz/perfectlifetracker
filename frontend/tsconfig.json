@@ -17,7 +17,8 @@
     "jsx": "react-jsx",
     "outDir": "./dist",
     "sourceMap": true,
-    "types": ["jest", "node", "@testing-library/jest-dom"]
+    "types": ["jest", "node", "@testing-library/jest-dom"],
+    "noImplicitAny": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "src/**/*.test.ts", "src/**/*.test.tsx", "src/setupTests.ts", "src/__mocks__"]

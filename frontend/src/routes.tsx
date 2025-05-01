@@ -3,13 +3,17 @@ import {
   Home as HomeIcon, 
   Dashboard as DashboardIcon, 
   Person as PersonIcon,
-  FitnessCenter as FitnessCenterIcon
+  FitnessCenter as FitnessCenterIcon,
+  DirectionsRun as ActivityIcon,
+  Loop as HabitsIcon
 } from '@mui/icons-material';
 
 // Lazy load route components for code-splitting
 const DashboardWidget = lazy(() => import('./components/dashboard/DashboardWidget'));
 const ProfileContent = lazy(() => import('./components/profile/ProfileContent'));
 const GoalRoutes = lazy(() => import('./components/goals/GoalRoutes'));
+const ActivityRoutes = lazy(() => import('./components/activities/ActivityRoutes'));
+const HabitsPage = lazy(() => import('./components/habits/HabitsPage'));
 
 export interface RouteConfig {
   path: string;
@@ -65,6 +69,26 @@ const routes: RouteConfig[] = [
     requireAuth: true,
     showInNav: true,
     lazyComponent: GoalRoutes
+  },
+  {
+    path: '/activities/*',
+    key: 'ACTIVITIES',
+    text: 'Activities',
+    icon: <ActivityIcon />,
+    ariaLabel: 'Track your activities',
+    requireAuth: true,
+    showInNav: true,
+    lazyComponent: ActivityRoutes
+  },
+  {
+    path: '/habits',
+    key: 'HABITS',
+    text: 'Habit Tracker',
+    icon: <HabitsIcon />,
+    ariaLabel: 'Track your habits',
+    requireAuth: true,
+    showInNav: true,
+    lazyComponent: HabitsPage
   }
 ];
 

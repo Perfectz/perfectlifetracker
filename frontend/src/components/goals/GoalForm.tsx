@@ -13,31 +13,14 @@ import {
   Switch, 
   Slider, 
   CircularProgress, 
-  Alert,
-  InputLabel,
-  Select,
-  MenuItem
+  Alert
 } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import './goals.css'; // Import custom CSS for components including DatePicker
-import { CreateGoalRequest, UpdateGoalRequest, FitnessGoal } from '../../services/goalService';
+import { CreateGoalRequest, UpdateGoalRequest } from '../../services/goalService';
 import { useGoal, useCreateGoal, useUpdateGoal } from '../../hooks/useGoals';
-
-// Add custom class for the datepicker
-const customDatePickerClass = "custom-datepicker";
-
-// Define the styles in the component to ensure they're applied
-const datePickerStyles = `
-  .${customDatePickerClass} {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 16px;
-  }
-`;
 
 interface GoalFormProps {
   mode: 'create' | 'edit';

@@ -28,7 +28,7 @@ const GoalsPagination: React.FC<GoalsPaginationProps> = ({
   showItemsPerPageSelector = true,
   showSummary = true
 }) => {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [, setSearchParams] = useSearchParams();
   const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
   
   // Available options for items per page

@@ -1,7 +1,7 @@
 // frontend/src/components/goals/GoalList.tsx
 // Component for displaying a list of fitness goals
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Typography, 
   Paper, 
@@ -26,7 +26,7 @@ import { format } from 'date-fns';
 import { Delete, Edit } from '@mui/icons-material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useGoals, useDeleteGoal } from '../../hooks/useGoals';
-import { FitnessGoal, PaginationParams } from '../../services/goalService';
+import { FitnessGoal } from '../../services/goalService';
 import GoalsPagination from './GoalsPagination';
 
 // Default pagination values
@@ -35,7 +35,7 @@ const DEFAULT_PAGE = 1;
 
 const GoalList: React.FC = () => {
   const [filter, setFilter] = useState<'all' | 'active' | 'achieved'>('all');
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   
   // Get pagination parameters from URL or use defaults

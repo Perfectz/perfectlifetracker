@@ -1,10 +1,11 @@
 // backend/src/routes/goals.router.ts
 // Router for fitness goals API endpoints
 
-import express, { Response, NextFunction } from 'express';
+import express from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { body, param, query, validationResult } from 'express-validator';
 import { getGoalsByUserId, getGoalById, createGoal, updateGoal, deleteGoal } from '../services/goalService';
-import { FitnessGoal, GoalStatus, GoalType } from '../models/FitnessGoal';
+import { GoalStatus, GoalType } from '../models/FitnessGoal';
 import { authorize } from '../middleware/auth';
 import { extractUserId } from '../middleware/extractUserId';
 
@@ -12,13 +13,17 @@ import { extractUserId } from '../middleware/extractUserId';
 const router = express.Router();
 
 // Define AuthRequest interface to include userId from middleware
-interface AuthRequest extends express.Request {
+interface AuthRequest extends Request {
   userId?: string; // Added by extractUserId middleware
   auth?: {
     sub?: string;
     oid?: string;
     [key: string]: unknown;
   };
+  // Explicitly include these properties to satisfy TypeScript
+  body: any;
+  query: any;
+  params: any;
 }
 
 // Apply auth middleware to all routes

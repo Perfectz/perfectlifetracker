@@ -3,8 +3,9 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
-import goalService, { 
+import { toast } from 'react-toastify';
+import * as goalService from '../services/goalService';
+import { 
   FitnessGoal, 
   CreateGoalRequest,
   UpdateGoalRequest,
@@ -28,8 +29,15 @@ export const goalKeys = {
 export function useGoals(params?: PaginationParams) {
   return useQuery({
     queryKey: goalKeys.list(params),
-    queryFn: () => goalService.getGoals(params),
-    placeholderData: keepPreviousData => keepPreviousData,
+    queryFn: () => {
+      // Extract page and limit from params to match the service interface
+      const page = params?.offset !== undefined && params?.limit 
+        ? Math.floor(params.offset / params.limit) + 1 
+        : undefined;
+      const limit = params?.limit;
+      return goalService.getGoals(page, limit);
+    },
+    placeholderData: previousData => previousData,
     select: (data: PaginatedResponse<FitnessGoal>) => data,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });

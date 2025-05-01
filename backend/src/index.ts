@@ -1,4 +1,5 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express from 'express';
+import type { Express, Request, Response, NextFunction } from 'express-serve-static-core';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -12,6 +13,10 @@ import { initializeBlobStorage, uploadAvatar, deleteAvatar } from './services/bl
 import * as profileService from './services/profileService';
 import goalsRouter from './routes/goals.router';
 import activitiesRouter from './routes/activities.router';
+import analyticsRouter from './routes/analytics.router';
+import openaiRouter from './routes/openai.router';
+import habitsRouter from './routes/habits.router';
+import journalsRouter from './routes/journals.router';
 import { ApiError } from './utils/ApiError';
 
 // Load environment variables
@@ -23,6 +28,7 @@ const PORT = process.env.PORT || 3001;
 const HOST = process.env.HOST || 'localhost';
 const COSMOS_INSECURE_DEV = process.env.COSMOS_INSECURE_DEV === 'true';
 const MOCK_DATA_ON_FAILURE = process.env.MOCK_DATA_ON_FAILURE === 'true';
+const ENABLE_OPENAI = process.env.FEATURE_OPENAI === 'true' || false;
 
 // Create Express server
 const app = express();
@@ -319,6 +325,23 @@ app.use('/api/goals', jwtCheck, goalsRouter);
 
 // Use the activities router
 app.use('/api/activities', jwtCheck, activitiesRouter);
+
+// Use the analytics router
+app.use('/api/analytics', jwtCheck, analyticsRouter);
+
+// Use the habits router
+app.use('/api/habits', jwtCheck, habitsRouter);
+
+// Use the journals router
+app.use('/api/journals', jwtCheck, journalsRouter);
+
+// Use the OpenAI router only if the feature is enabled
+if (ENABLE_OPENAI) {
+  console.log('OpenAI integration enabled');
+  app.use('/api/openai', jwtCheck, openaiRouter);
+} else {
+  console.log('OpenAI integration disabled');
+}
 
 // Error handler
 app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {

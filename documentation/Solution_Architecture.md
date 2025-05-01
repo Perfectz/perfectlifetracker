@@ -180,3 +180,50 @@ We've implemented a comprehensive testing strategy with multiple layers:
   - Enhanced API service to detect and handle failed requests with appropriate mock data
   - Improved the consistency of the code structure across different custom hooks
   - Added detailed documentation of implementation status and bug fixes  
+
+### [2025-04-28] – Live Azure Cosmos DB Integration
+- **Decision:** Use an Azure Cosmos DB SQL (Core) API account for production environments, provisioned and managed via Terraform, and configure backend services to connect using environment variables.
+- **Rationale:** Provides a fully managed, globally distributed document database with automatic scaling, integrated security, and seamless Azure SDK support, ensuring persistent and resilient data storage in production.
+- **Alternatives:**
+  - PostgreSQL on Azure Database for PostgreSQL (relational), which offers ACID guarantees but lacks JSON-first flexibility and autoscaling for high-throughput workloads.
+  - MongoDB Atlas (NoSQL), which is document-oriented but introduces external network egress and separate billing outside Azure.
+  - Self-hosted Cosmos DB emulator in production (not supported, only for local dev/testing).
+  - In-memory store/cache for ephemeral data (not persistent or reliable for production use).
+
+### [2023-06-16] – Habit Tracker UI & Streak Visualization
+- **Decision:** Implemented a modular React UI for the Habit Tracker feature with streaks visualization using Recharts.
+- **Rationale:** 
+  - Used React Query for data fetching and cache management to optimize network requests and provide a responsive UX.
+  - Implemented Zod validation for form inputs to ensure data integrity before submission to the API.
+  - Lazy-loaded Recharts components to improve initial load performance.
+  - Utilized custom hooks to abstract API interaction logic, making components more testable and focused on UI concerns.
+- **Alternatives:** 
+  - Considered using D3.js directly for more customized charts, but chose Recharts for faster development and simpler API while still providing sufficient customization.
+  - Considered integrating habit tracking within each activity type but decided to implement as a standalone feature for better user experience and clearer separation of concerns.
+  - Evaluated using SWR instead of React Query, but the latter provided better devtools and a more comprehensive API for our caching and mutation needs.
+
+## [2023-04-30] – Habits Feature Optimization
+
+- **Decision:** Refactored the Habits feature components and services with several optimizations:
+  1. Created centralized Zod validation schemas in a dedicated `schemas/` directory
+  2. Implemented standardized API client and error handling
+  3. Added custom Cypress commands for consistent E2E testing
+  4. Refactored React Query hooks with proper type safety
+  5. Added data-testid attributes for more reliable component testing
+
+- **Rationale:** 
+  - The previous implementation had several issues that made testing unstable
+  - Form validation schemas were duplicated across components
+  - Error handling was inconsistent across API calls
+  - Tests were too tightly coupled to implementation details
+
+- **Alternatives:**
+  - Continue with component-localized schemas: Rejected due to increased maintenance burden and potential for validation inconsistency
+  - Use class-based services instead of hooks: Rejected as hooks aligned better with React paradigms and component lifecycle
+  - Mock-free integration tests: Rejected due to test brittleness and need for a running backend
+
+- **Technical Details:**
+  - Created `schemas/habits.schema.ts` for centralized validation
+  - Implemented `services/apiClient.ts` for standardized network handling
+  - Added `data-testid` attributes for more resilient component testing
+  - Added Cypress type declarations and custom commands

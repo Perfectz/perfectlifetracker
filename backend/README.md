@@ -1,63 +1,87 @@
 # LifeTracker Pro Backend
 
-Express TypeScript API for the LifeTracker Pro application.
+Express TypeScript backend for LifeTracker Pro application.
 
-## Environment Setup
+## Setup and Installation
 
-The backend requires the following Azure services for full functionality:
+1. Clone the repository
+2. Install dependencies:
+   ```
+   npm install
+   ```
+3. Create a `.env` file in the backend directory with the following variables:
+   ```
+   # General settings
+   NODE_ENV=development
+   PORT=4000
+   
+   # OpenAI API settings
+   OPENAI_API_KEY=your_api_key_here
+   OPENAI_MODEL=gpt-4-mini
+   OPENAI_API_URL=https://api.openai.com/v1
+   
+   # Feature flags
+   FEATURE_OPENAI=true
+   FEATURE_ANALYTICS=true
+   
+   # Development settings
+   COSMOS_INSECURE_DEV=true
+   MOCK_DATA_ON_FAILURE=true
+   ```
+4. Start the development server:
+   ```
+   npm run dev
+   ```
 
-- Azure Cosmos DB (or local emulator)
-- Azure Blob Storage (or local emulator)
+## Adding Your OpenAI API Key
 
-### Local Development Environment
+To enable the AI-powered fitness summary feature, you need to:
 
-Create a `.env.local` file in the backend root with the following configuration:
+1. Get an API key from OpenAI: https://platform.openai.com/api-keys
+2. Add your OpenAI API key to the `.env` file:
+   ```
+   OPENAI_API_KEY=your_api_key_here
+   ```
+3. Set the feature flag to enable the OpenAI integration:
+   ```
+   FEATURE_OPENAI=true
+   ```
 
-```env
-# Azure Cosmos DB Emulator settings
-COSMOS_ENDPOINT=https://localhost:8081
-COSMOS_KEY=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==
-COSMOS_DATABASE_ID=lifetracker
-COSMOS_PROFILES_CONTAINER_ID=profiles
-COSMOS_GOALS_CONTAINER_ID=goals
+**IMPORTANT: Never commit your API key to version control. The `.env` file is included in `.gitignore` for your protection.**
 
-# Azure Storage Emulator (Azurite) settings
-AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;
-AZURE_STORAGE_ACCOUNT=devstoreaccount1
-AZURE_STORAGE_CONTAINER=avatars
+## Available Scripts
 
-# Server settings
-PORT=3001
-NODE_ENV=development
-```
-
-### Fallback Behavior
-
-For development convenience, the backend will use in-memory fallbacks when Azure services are unavailable:
-
-- In-memory database for Cosmos DB
-- In-memory storage for Blob Storage
-
-**Note**: These fallbacks provide limited functionality and are intended for development only.
-
-## Development
-
-```bash
-# Install dependencies
-npm install
-
-# Start development server
-npm start
-
-# Run tests
-npm test
-```
-
-## Production
-
-For production deployment, update the environment variables with actual Azure service credentials.
+- `npm run dev`: Start the development server with hot reload
+- `npm run build`: Build the project for production
+- `npm start`: Run the production build
+- `npm test`: Run tests
+- `npm run lint`: Lint the codebase
+- `npm run lint:fix`: Fix linting issues automatically
 
 ## API Endpoints
 
-- `/api/profile` - User profile management
-- `/api/goals` - Fitness goal management 
+### Fitness Analytics API
+
+- `GET /api/analytics/fitness`: Get fitness statistics for a date range
+  - Query params: `startDate`, `endDate` (ISO dates)
+  - Returns: Total duration, calories, averages, and activity breakdowns
+
+- `GET /api/analytics/weekly-trends`: Compare current week vs previous week
+  - Returns: Current and previous week metrics with percentage changes
+
+### OpenAI API
+
+- `POST /api/openai/fitness-summary`: Generate AI-powered fitness summary
+  - Body params: `startDate`, `endDate` (ISO dates)
+  - Returns: `{ summary: string }` containing AI-generated fitness advice
+
+## Feature Flags
+
+The application uses feature flags to control certain functionality:
+
+- `FEATURE_OPENAI`: Enables/disables the OpenAI integration
+- `FEATURE_ANALYTICS`: Enables/disables the analytics endpoints
+
+You can control these features via:
+1. Environment variables: `FEATURE_OPENAI=true|false`
+2. Updating the `featureFlags.ts` file 

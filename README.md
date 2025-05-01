@@ -1,6 +1,126 @@
 # LifeTracker Pro
 
-A comprehensive health and fitness tracking application built with React, TypeScript, and Azure services.
+A comprehensive health and wellness tracking application.
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v18+)
+- npm
+- Azure Cosmos DB Emulator (for local development)
+- Azurite (for local Azure Storage emulation)
+
+### Environment Setup
+
+1. Clone the repository
+2. Install dependencies:
+   ```
+   npm install
+   cd frontend && npm install
+   cd ../backend && npm install
+   ```
+
+3. Configure environment variables:
+   - Backend: Create a `.env` file in the `/backend` directory with:
+     ```
+     # Cosmos DB configuration
+     COSMOS_ENDPOINT=https://localhost:8081/
+     COSMOS_KEY=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==
+     COSMOS_DATABASE_ID=lifetracker
+
+     # Development settings
+     NODE_ENV=development
+     MOCK_DATA_ON_FAILURE=true
+     COSMOS_INSECURE_DEV=true
+     PORT=4000
+     HOST=localhost
+
+     # Feature flags
+     FEATURE_OPENAI=true
+     
+     # OpenAI (if using AI features)
+     OPENAI_API_KEY=your-key-here
+     ```
+
+### Running the Application
+
+From the project root:
+
+- Start everything (emulators + frontend + backend): 
+  ```
+  npm start
+  ```
+
+- Start frontend and backend only:
+  ```
+  npm run dev
+  ```
+
+- Start backend with mock data (no need for real Cosmos DB):
+  ```
+  npm run dev:mock
+  ```
+
+- Start just the backend:
+  ```
+  npm run dev:backend
+  ```
+
+- Start just the frontend:
+  ```
+  npm run dev:frontend
+  ```
+
+### Testing
+
+- Run all tests:
+  ```
+  npm test
+  ```
+
+- Run backend tests:
+  ```
+  npm run test:backend
+  ```
+
+- Run frontend tests:
+  ```
+  npm run test:frontend
+  ```
+
+- Run E2E tests:
+  ```
+  npm run test:e2e
+  ```
+
+### Development Workflow
+
+1. Ensure emulators are running (Cosmos DB, Azurite)
+2. Start the backend with `npm run dev:backend`
+3. Start the frontend with `npm run dev:frontend`
+4. Access the application at http://localhost:3000
+
+## Project Structure
+
+- `/frontend` - React TypeScript application
+- `/backend` - Express TypeScript API
+- `/infra` - Infrastructure and deployment scripts
+- `/documentation` - Project documentation and specifications
+
+## Features
+
+- Activity tracking with multiple metrics
+- Goal setting and monitoring
+- Personalized fitness insights
+- Progress visualization and reporting
+
+## Troubleshooting
+
+- If you encounter Cosmos DB connection issues, try:
+  1. Verify the Cosmos DB emulator is running
+  2. Use `npm run dev:mock` which will use in-memory data
+  3. Check that your .env file has the correct COSMOS_ENDPOINT
 
 ## Features
 
@@ -128,19 +248,74 @@ If you encounter TypeScript errors during build:
 
 ## Testing
 
+### Unit Testing
 ```bash
-# Run backend tests
+# Backend unit tests
 cd backend
 npm test
 
-# Run frontend tests
+# Frontend unit tests
 cd frontend
 npm test
-
-# Run E2E tests
-cd frontend
-npm run test:e2e
 ```
+
+### Integration Testing
+```bash
+# Backend integration tests
+cd backend
+npm run integration
+
+# Full coverage report with threshold enforcement
+cd backend
+npm run coverage
+```
+
+### End-to-End Testing
+```bash
+# Run Cypress E2E tests in interactive mode
+cd frontend
+npx cypress open
+
+# Run Cypress E2E tests in headless mode
+cd frontend
+npx cypress run
+
+# Run with recording to Cypress Dashboard
+cd frontend
+npx cypress run --record
+```
+
+## Monitoring
+
+The application uses Azure Application Insights for monitoring and telemetry.
+
+### Local Setup
+1. Create an Application Insights resource in Azure Portal
+2. Add the connection string to your .env file:
+```
+APPLICATIONINSIGHTS_CONNECTION_STRING=InstrumentationKey=your-key-here
+```
+
+### Key Metrics
+- Request duration and success rates
+- Dependency calls (Cosmos DB, external APIs)
+- Custom events for business logic
+- Exception tracking
+
+### Alert Rules
+Alert rules are configured in Azure for:
+- High error rates (>5% errors in 5 minutes)
+- Long response times (>1s average in 5 minutes)
+- Backend availability (<99% in 5 minutes)
+
+## CI/CD Pipeline
+
+The GitHub Actions workflow includes:
+- Linting and unit tests
+- Integration tests with coverage requirements
+- End-to-end tests with Cypress
+- Coverage report artifacts
+- Failure notifications
 
 ## Authentication Flow
 

@@ -247,9 +247,12 @@ export async function deleteActivity(id: string, userId: string): Promise<boolea
   try {
     await container.item(id, userId).delete();
     return true;
-  } catch (error) {
+  } catch (error: unknown) {
     // If the error is a 404, the activity doesn't exist
-    if ((error as any)?.code === 404 || (error as Error)?.message?.includes('not found')) {
+    if (
+      ((error as { code?: number }).code === 404) ||
+      (error instanceof Error && error.message.includes('not found'))
+    ) {
       return false;
     }
     // Otherwise, rethrow the error

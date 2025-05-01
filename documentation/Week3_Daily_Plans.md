@@ -1,3 +1,14 @@
+<!-- Week3_Daily_Plans.md -->
+
+> **Note:** This file is kept for reference. For detailed daily plans, please refer to the following standalone files:
+> - [Day 15: Habit Tracker – Data Model & API](./Day15_Habit_Tracker_Data_Model_API.md)
+> - [Day 16: Habit Tracker – UI & Streak Visualization](./Day16_Habit_Tracker_UI_Streak_Visualization.md)
+> - [Day 17: Journal & Sentiment – Data Model & API](./Day17_Journal_Sentiment_Data_Model_API.md)
+> - [Day 18: Journal & Sentiment – UI & Mood Chart](./Day18_Journal_Sentiment_UI_Mood_Chart.md)
+> - [Day 19: Skills & Learning – Data Model & API](./Day19_Skills_Learning_Data_Model_API.md)
+> - [Day 20: Skills & Learning – UI & Progress Dashboard](./Day20_Skills_Learning_UI_Progress_Dashboard.md)
+> - [Day 21: Feature Integration & Tests](./Day21_Feature_Integration_Tests.md)
+
 # Week 3: Personal Development – Daily Plans
 
 ## Day 15: Habit Tracker – Data Model & API
