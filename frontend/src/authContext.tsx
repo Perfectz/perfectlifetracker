@@ -47,11 +47,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   // Check for existing session
   useEffect(() => {
+    // In development, bypass sessionStorage and auto-authenticate
+    if (process.env.NODE_ENV !== 'production') {
+      setIsAuthenticated(true);
+      setUser(mockUser);
+      updateScreenReaderAnnouncement('You are signed in (development mode)');
+      setIsLoading(false);
+      return;
+    }
+
+    // Existing sessionStorage initialization for production
     const initializeAuth = async () => {
       try {
-        // For development: check if we have a saved auth state in session storage
         const savedAuth = sessionStorage.getItem('mock_auth_state');
-        
         if (savedAuth === 'authenticated') {
           setIsAuthenticated(true);
           setUser(mockUser);

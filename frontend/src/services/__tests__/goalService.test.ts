@@ -179,13 +179,23 @@ describe('goalService', () => {
         updatedAt: '2025-01-02'
       };
       
-      (apiClient.put as jest.Mock).mockResolvedValue({
-        data: updatedGoal,
-        status: 200
+      // Ensure this mock is correctly configured
+      (apiClient.put as jest.Mock).mockImplementation((url, data) => {
+        // Validate what we expect to be passed to put
+        expect(url).toBe(`/goals/${goalId}`);
+        expect(data).toEqual(updatedData);
+        
+        // Return a properly structured response
+        return Promise.resolve({
+          data: updatedGoal,
+          status: 200
+        });
       });
       
       const result = await updateGoal(goalId, updatedData);
       
+      // Verify the function was called correctly
+      expect(apiClient.put).toHaveBeenCalledTimes(1);
       expect(apiClient.put).toHaveBeenCalledWith(`/goals/${goalId}`, updatedData);
       expect(result).toEqual(updatedGoal);
     });
@@ -195,12 +205,21 @@ describe('goalService', () => {
     it('should delete a goal', async () => {
       const goalId = 'goal-1';
       
-      (apiClient.delete as jest.Mock).mockResolvedValue({
-        status: 204
+      // Ensure this mock is correctly configured with implementation
+      (apiClient.delete as jest.Mock).mockImplementation((url) => {
+        // Validate what we expect to be passed to delete
+        expect(url).toBe(`/goals/${goalId}`);
+        
+        // Return a properly structured response
+        return Promise.resolve({
+          status: 204
+        });
       });
       
       await deleteGoal(goalId);
       
+      // Verify the function was called correctly
+      expect(apiClient.delete).toHaveBeenCalledTimes(1);
       expect(apiClient.delete).toHaveBeenCalledWith(`/goals/${goalId}`);
     });
   });

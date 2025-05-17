@@ -177,6 +177,20 @@ export async function initializeCosmosDb(options: CosmosDbInitOptions = {}): Pro
           { path: '/date/?' },      // Explicitly index date for efficient filtering and sorting
           { path: '/sentimentScore/?' }  // Explicitly index sentimentScore for filtering
         ]
+        // NOTE: Composite indexes for ORDER BY queries with multiple fields should be configured via:
+        // 1. Azure Portal: Container settings > Indexing Policy
+        // 2. ARM Templates: As part of infrastructure deployment
+        // 3. Terraform: Using the Azure Cosmos DB provider
+        // 
+        // Required composite index for journal entries:
+        // {
+        //   "compositeIndexes": [
+        //     [
+        //       { "path": "/date", "order": "descending" },
+        //       { "path": "/id", "order": "descending" }
+        //     ]
+        //   ]
+        // }
       },
       throughput: parseInt(process.env.COSMOS_JOURNALS_RU || '400') // Make RU configurable
     });

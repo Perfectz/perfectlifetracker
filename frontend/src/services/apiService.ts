@@ -2,6 +2,7 @@ import { msalInstance, protectedResources } from '../authConfig';
 import { apiConfig } from '../authConfig';
 import { generateMockToken } from '../authContext';
 import { mockProfile, mockTasks, mockAvatarResponse, simulateDelay, mockAnalyticsData, mockFitnessSummary } from './mockData';
+import axios, { AxiosRequestConfig } from 'axios';
 
 // Whether to use mock data when API calls fail (for development without backend)
 const USE_MOCK_ON_FAILURE = true;
@@ -67,12 +68,9 @@ export const callApi = async <T>(
   
   // Add authentication token if needed
   if (requiresAuth) {
-    try {
-      const token = await getToken(scopes);
+    const token = await getToken(scopes);
+    if (token) {
       requestHeaders.Authorization = `Bearer ${token}`;
-    } catch (error) {
-      console.error('Failed to add authorization header', error);
-      // Continue without auth - the server will return 401 if needed
     }
   }
 
@@ -297,4 +295,44 @@ export const taskService = {
     method: 'DELETE',
     scopes: protectedResources.apiTasks.scopes,
   }),
-}; 
+};
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+
+// Create Axios instance
+const apiClient = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+// Add request interceptor to attach auth token using getToken
+apiClient.interceptors.request.use(
+  async (config) => {
+    // Always attempt to attach token
+    const token = await getToken(protectedResources.apiProfile.scopes);
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Add response interceptor for error handling
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Handle auth errors
+    if (error.response && error.response.status === 401) {
+      console.error('Authentication error:', error.response.data);
+      // Optionally redirect to login page or show auth error
+    }
+    
+    return Promise.reject(error);
+  }
+);
+
+export default apiClient; 

@@ -12,6 +12,8 @@ import Spinner from './components/common/Spinner';
 import AppLayout from './components/layout/AppLayout';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import { AuthProvider } from './authContext';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
 // Create a query client instance once (not on each render)
 const queryClient = new QueryClient({
@@ -33,62 +35,65 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AuthProvider>
-          <Router>
-            <ErrorBoundary>
-              <div className="app">
-                {/* Global toast notifications */}
-                <ToastContainer 
-                  position="bottom-right"
-                  autoClose={4000}
-                  hideProgressBar={false}
-                  newestOnTop
-                  closeOnClick
-                  pauseOnFocusLoss
-                  draggable
-                  pauseOnHover
-                />
-                
-                {/* All routes with Suspense for code splitting */}
-                <Suspense fallback={<Spinner message="Loading page..." />}>
-                  <Routes>
-                    {/* Public routes */}
-                    {publicRoutes.map(route => (
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <Router>
+              <ErrorBoundary>
+                <div className="app">
+                  {/* Global toast notifications */}
+                  <ToastContainer 
+                    position="bottom-right"
+                    autoClose={4000}
+                    hideProgressBar={false}
+                    newestOnTop
+                    closeOnClick
+                    pauseOnFocusLoss
+                    draggable
+                    pauseOnHover
+                  />
+                  
+                  {/* All routes with Suspense for code splitting */}
+                  <Suspense fallback={<Spinner message="Loading page..." />}>
+                    <Routes>
+                      {/* Public routes */}
+                      {publicRoutes.map(route => (
+                        <Route 
+                          key={route.key}
+                          path={route.path} 
+                          element={<WelcomeScreen />} 
+                        />
+                      ))}
+                      
+                      {/* Protected routes with shared layout */}
                       <Route 
-                        key={route.key}
-                        path={route.path} 
-                        element={<WelcomeScreen />} 
-                      />
-                    ))}
-                    
-                    {/* Protected routes with shared layout */}
-                    <Route 
-                      element={
-                        <ProtectedRoute>
-                          <AppLayout />
-                        </ProtectedRoute>
-                      }
-                    >
-                      {/* Map all authorized routes */}
-                      {authorizedRoutes.map(route => {
-                        const RouteComponent = route.lazyComponent;
-                        
-                        return (
-                          <Route 
-                            key={route.key}
-                            path={route.key === 'GOALS' ? `${route.path}/*` : route.path}
-                            element={RouteComponent ? <RouteComponent /> : <Navigate to="/" replace />}
-                          />
-                        );
-                      })}
-                    </Route>
-                    
-                    {/* Catch-all route */}
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                  </Routes>
-                </Suspense>
-              </div>
-            </ErrorBoundary>
-          </Router>
+                        element={
+                          <ProtectedRoute>
+                            <AppLayout />
+                          </ProtectedRoute>
+                        }
+                      >
+                        {/* Map all authorized routes */}
+                        {authorizedRoutes.map(route => {
+                          // Check for both component and lazyComponent
+                          const RouteComponent = route.component || route.lazyComponent;
+                          
+                          return (
+                            <Route 
+                              key={route.key}
+                              path={route.key === 'GOALS' ? `${route.path}/*` : route.path}
+                              element={RouteComponent ? <RouteComponent /> : <Navigate to="/" replace />}
+                            />
+                          );
+                        })}
+                      </Route>
+                      
+                      {/* Catch-all route */}
+                      <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                  </Suspense>
+                </div>
+              </ErrorBoundary>
+            </Router>
+          </LocalizationProvider>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>

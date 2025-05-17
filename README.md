@@ -72,6 +72,11 @@ From the project root:
   npm run dev:frontend
   ```
 
+- Start in mock mode (for testing journal features without Azure emulators):
+  ```
+  .\scripts\start-mock-env.ps1
+  ```
+
 ### Testing
 
 - Run all tests:
@@ -114,6 +119,19 @@ From the project root:
 - Goal setting and monitoring
 - Personalized fitness insights
 - Progress visualization and reporting
+- **Authentication** - Secure login with Azure AD B2C (with fallback to mock auth for development)
+- **User Profiles** - Personal information management
+- **Fitness Tracking** - Set and monitor workout and health goals
+- **Habit Building** - Track daily habits and streaks
+- **Journaling** - Comprehensive journaling with rich text, file attachments, and advanced insights
+  - Markdown support for rich content formatting
+  - File attachment capabilities for images and documents
+  - Full-text search using Azure Cognitive Search
+  - Sentiment analysis and trend visualization (coming soon)
+  - Topic extraction and pattern recognition (coming soon)
+- **Personal Development** - Journal entries, skill tracking, and learning management
+- **Accessibility** - ARIA-compliant components and screen reader support
+- **Notifications** - Toast notifications for important events and feedback
 
 ## Troubleshooting
 
@@ -121,16 +139,6 @@ From the project root:
   1. Verify the Cosmos DB emulator is running
   2. Use `npm run dev:mock` which will use in-memory data
   3. Check that your .env file has the correct COSMOS_ENDPOINT
-
-## Features
-
-- **Authentication** - Secure login with Azure AD B2C (with fallback to mock auth for development)
-- **User Profiles** - Personal information management
-- **Fitness Tracking** - Set and monitor workout and health goals
-- **Habit Building** - Track daily habits and streaks
-- **Personal Development** - Journal entries, skill tracking, and learning management
-- **Accessibility** - ARIA-compliant components and screen reader support
-- **Notifications** - Toast notifications for important events and feedback
 
 ## Project Structure
 
@@ -344,6 +352,21 @@ JWT_SECRET=your-dev-secret
 JWKS_URI=https://your-tenant.b2clogin.com/your-tenant.onmicrosoft.com/discovery/v2.0/keys
 AZURE_AD_B2C_API_IDENTIFIER=api://your-api-id
 AZURE_AD_B2C_ISSUER=https://your-tenant.b2clogin.com/your-tenant.onmicrosoft.com/v2.0/
+
+# Azure Blob Storage for file attachments
+AZURE_STORAGE_CONNECTION_STRING=your-connection-string-here
+AZURE_STORAGE_ACCOUNT_NAME=your-account-name
+AZURE_STORAGE_ACCOUNT_KEY=your-account-key
+
+# Azure Cognitive Search for journal search
+AZURE_SEARCH_ENDPOINT=your-search-endpoint
+AZURE_SEARCH_API_KEY=your-search-api-key
+AZURE_SEARCH_INDEX_NAME=journals-index
+
+# Feature flags
+FEATURE_SEARCH=true
+FEATURE_SENTIMENT_TRENDS=false
+FEATURE_TOPIC_EXTRACTION=false
 ```
 
 ## Building and Deployment

@@ -7,11 +7,27 @@ import * as journalService from '../journalService';
 import { JournalEntry, JournalEntryCreateDTO } from '../../models/JournalEntry';
 import * as cosmosClient from '../cosmosClient';
 import * as textAnalyticsService from '../textAnalyticsService';
+import * as searchService from '../searchService';
 
 // Mock dependencies
 jest.mock('../cosmosClient');
 jest.mock('../textAnalyticsService');
+jest.mock('../searchService');
 jest.mock('uuid');
+
+// Mock searchService.FEATURE_SEARCH access
+jest.mock('../searchService', () => {
+  const original = jest.requireActual('../searchService');
+  return {
+    ...original,
+    // Override FEATURE_SEARCH to be false for tests
+    FEATURE_SEARCH: false,
+    // Mock the functions
+    indexJournalEntry: jest.fn(),
+    deleteJournalEntryFromIndex: jest.fn(),
+    initializeSearchService: jest.fn(),
+  };
+});
 
 describe('Journal Service', () => {
   // Mock data
@@ -48,8 +64,10 @@ describe('Journal Service', () => {
     id: mockJournalId,
     userId: mockUserId,
     content: 'Today was a great day!',
+    contentFormat: 'plain',
     date: mockDate,
     sentimentScore: 0.8,
+    attachments: [],
     createdAt: mockDate,
     updatedAt: mockDate,
     tags: ['daily']
@@ -75,6 +93,10 @@ describe('Journal Service', () => {
 
     // Mock sentiment analysis
     (textAnalyticsService.analyzeSentiment as jest.Mock).mockResolvedValue(0.8);
+
+    // Mock search service - make it a no-op for these tests
+    (searchService.indexJournalEntry as jest.Mock).mockResolvedValue(undefined);
+    (searchService.deleteJournalEntryFromIndex as jest.Mock).mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -102,7 +124,9 @@ describe('Journal Service', () => {
         id: mockJournalId,
         userId: mockUserId,
         content: journalData.content,
+        contentFormat: 'plain',
         sentimentScore: 0.8,
+        attachments: [],
         tags: ['daily']
       }));
       expect(result).toEqual(sampleJournal);
@@ -125,17 +149,20 @@ describe('Journal Service', () => {
 
   describe('getJournalEntriesByUserId', () => {
     it('should get journal entries for a user', async () => {
-      // Mock query response
+      // Set up mock query responses
       const mockQueryIterator = {
-        fetchAll: jest.fn().mockResolvedValue({ resources: [sampleJournal] })
+        fetchAll: jest.fn()
       };
-      mockQuery.mockReturnValue(mockQueryIterator);
+      mockQuery.mockImplementation(() => mockQueryIterator);
       
-      // For count query
+      // First call for entries
+      mockQueryIterator.fetchAll.mockResolvedValueOnce({ resources: [sampleJournal] });
+      
+      // Second call for count - return a numeric value, not an object with count
       mockQueryIterator.fetchAll.mockResolvedValueOnce({ resources: [1] });
       
-      // Execute
-      const result = await journalService.getJournalEntriesByUserId(mockUserId);
+      // Execute with numeric offset to trigger count query
+      const result = await journalService.getJournalEntriesByUserId(mockUserId, {}, 50, 0);
       
       // Assert
       expect(mockQuery).toHaveBeenCalledTimes(2);
@@ -148,12 +175,15 @@ describe('Journal Service', () => {
     it('should filter entries by date range', async () => {
       // Mock query response
       const mockQueryIterator = {
-        fetchAll: jest.fn().mockResolvedValue({ resources: [sampleJournal] })
+        fetchAll: jest.fn()
       };
       mockQuery.mockReturnValue(mockQueryIterator);
       
-      // For count query
-      mockQueryIterator.fetchAll.mockResolvedValueOnce({ resources: [1] });
+      // First call for entries
+      mockQueryIterator.fetchAll.mockResolvedValueOnce({ resources: [sampleJournal] });
+      
+      // Second call for count
+      mockQueryIterator.fetchAll.mockResolvedValueOnce({ resources: [{ count: 1 }] });
       
       // Filter options
       const startDate = new Date('2022-12-01');

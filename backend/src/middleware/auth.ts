@@ -6,6 +6,16 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'test-secret-key';
 
+// Interface to define auth property added by JWT middleware
+interface AuthRequest extends Request {
+  auth?: {
+    sub?: string;
+    oid?: string;
+    [key: string]: unknown;
+  };
+  userId?: string;
+}
+
 /**
  * Middleware to authenticate requests using JWT
  */
@@ -42,6 +52,27 @@ export const authMiddleware = (
   } catch (error) {
     return res.status(401).json({ error: 'Invalid token' });
   }
+};
+
+/**
+ * Function to extract userId from JWT token claims
+ * Used by routers that need to access the userId
+ */
+export const extractUserId = (req: Request, res: Response, next: NextFunction) => {
+  const authReq = req as AuthRequest;
+  
+  // Get userId from the JWT token claims (sub or oid)
+  const userId = authReq.auth?.sub || authReq.auth?.oid || '';
+  
+  if (!userId) {
+    return res.status(401).json({ 
+      error: 'AuthError', 
+      message: 'User ID not found in token' 
+    });
+  }
+  
+  authReq.userId = userId;
+  next();
 };
 
 /**

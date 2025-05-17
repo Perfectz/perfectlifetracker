@@ -10,6 +10,7 @@ import compression from 'compression';
 import multer, { FileFilterCallback, MulterError } from 'multer';
 import { initializeCosmosDb } from './services/cosmosClient';
 import { initializeBlobStorage, uploadAvatar, deleteAvatar } from './services/blobStorageService';
+import { initializeSearchService } from './services/searchService';
 import * as profileService from './services/profileService';
 import goalsRouter from './routes/goals.router';
 import activitiesRouter from './routes/activities.router';
@@ -60,7 +61,11 @@ let jwtCheck: (req: Request, res: Response, next: NextFunction) => void;
 
 if (isDevelopment) {
   console.log('Bypassing JWT validation in development (no auth required)');
-  jwtCheck = (req: Request, res: Response, next: NextFunction) => next();
+  jwtCheck = (req: Request, res: Response, next: NextFunction) => {
+    // Assign mock auth claims for dev
+    (req as any).auth = { sub: process.env.DEV_USER_ID || 'dev-user-123', oid: process.env.DEV_USER_ID || 'dev-user-123' };
+    next();
+  };
 } else {
   console.log('Using production JWT configuration');
   jwtCheck = jwt({
@@ -89,6 +94,12 @@ initializeCosmosDb({
 initializeBlobStorage().catch(err => {
   console.error('Failed to initialize Blob Storage:', err);
   // Continue app startup, will use mock client in dev mode
+});
+
+// Initialize Search Service
+initializeSearchService().catch(err => {
+  console.error('Failed to initialize Search Service:', err);
+  // Continue app startup, search service is optional
 });
 
 // Base route for health checks
@@ -226,9 +237,10 @@ app.post('/api/profile/:id/avatar', jwtCheck, upload.single('avatar'), async (re
     // Get the file from the request
     const imageData = req.file.buffer;
     const contentType = req.file.mimetype;
+    const fileName = req.file.originalname;
 
     // Upload the file to blob storage
-    const avatarUrl = await uploadAvatar(requestedId, imageData, contentType);
+    const avatarUrl = await uploadAvatar(requestedId, imageData, fileName, contentType);
 
     // Update the profile with the new avatar URL
     const updatedProfile = await profileService.updateProfile(requestedId, { 

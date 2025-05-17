@@ -3,12 +3,14 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const webpack = require('webpack');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 const Dotenv = require('dotenv-webpack');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 module.exports = {
   entry: './src/index.tsx',
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: 'bundle.[contenthash].js',
+    filename: '[name].[contenthash].js',
+    chunkFilename: '[name].[contenthash].chunk.js',
     publicPath: '/'
   },
   resolve: {
@@ -31,7 +33,12 @@ module.exports = {
       },
       {
         test: /\.css$/,
-        use: ['style-loader', 'css-loader']
+        use: [
+          process.env.NODE_ENV === 'production' 
+            ? MiniCssExtractPlugin.loader 
+            : 'style-loader',
+          'css-loader'
+        ]
       },
       {
         test: /\.(png|svg|jpg|jpeg|gif|ico)$/i,
@@ -54,6 +61,9 @@ module.exports = {
       'process.env.REACT_APP_AZURE_AD_B2C_API_SCOPE': JSON.stringify(process.env.REACT_APP_AZURE_AD_B2C_API_SCOPE || 'https://YOUR_TENANT.onmicrosoft.com/api/user.read'),
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development')
     }),
+    new MiniCssExtractPlugin({
+      filename: process.env.NODE_ENV === 'production' ? '[name].[contenthash].css' : '[name].css',
+    }),
     ...(process.env.ANALYZE ? [new BundleAnalyzerPlugin({ openAnalyzer: false })] : [])
   ],
   devServer: {
@@ -66,13 +76,24 @@ module.exports = {
     }
   },
   optimization: {
+    minimize: process.env.NODE_ENV === 'production',
+    usedExports: true,
+    sideEffects: true,
     splitChunks: {
       chunks: 'all',
+      maxInitialRequests: Infinity,
+      minSize: 20000,
       cacheGroups: {
         vendor: {
           test: /[\\/]node_modules[\\/]/,
-          name: 'vendors',
-          chunks: 'all'
+          name(module) {
+            // Get the name. E.g. node_modules/packageName/not/this/part.js
+            // or node_modules/packageName
+            const packageName = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)[1];
+            
+            // npm package names are URL-safe, but some servers don't like @ symbols
+            return `npm.${packageName.replace('@', '')}`;
+          }
         },
         msal: {
           test: /[\\/]node_modules[\\/]@azure[\\/]msal/,
@@ -81,6 +102,7 @@ module.exports = {
           priority: 10
         }
       }
-    }
+    },
+    runtimeChunk: 'single'
   }
 }; 

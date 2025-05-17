@@ -4,9 +4,11 @@
   "description": "Express TypeScript backend for LifeTracker Pro",
   "main": "dist/index.js",
   "scripts": {
+    "predev": "npx kill-port 3001",
     "start": "ts-node src/index.ts",
     "start:test": "NODE_ENV=test ts-node src/index.ts",
     "dev": "nodemon --exec ts-node src/index.ts",
+    "dev:mock": "cross-env MOCK_DATA=true nodemon --exec ts-node src/index.ts",
     "build": "tsc",
     "test": "jest --testPathIgnorePatterns=integration",
     "integration": "jest tests/integration",

@@ -5,7 +5,8 @@ import {
   Person as PersonIcon,
   FitnessCenter as FitnessCenterIcon,
   DirectionsRun as ActivityIcon,
-  Loop as HabitsIcon
+  Loop as HabitsIcon,
+  Book as JournalIcon
 } from '@mui/icons-material';
 
 // Lazy load route components for code-splitting
@@ -14,6 +15,7 @@ const ProfileContent = lazy(() => import('./components/profile/ProfileContent'))
 const GoalRoutes = lazy(() => import('./components/goals/GoalRoutes'));
 const ActivityRoutes = lazy(() => import('./components/activities/ActivityRoutes'));
 const HabitsPage = lazy(() => import('./components/habits/HabitsPage'));
+import JournalPage from './components/journals/JournalPage';
 
 export interface RouteConfig {
   path: string;
@@ -24,7 +26,7 @@ export interface RouteConfig {
   ariaLabel?: string;
   requireAuth: boolean;
   showInNav: boolean;
-  component?: ReactNode;
+  component?: React.ComponentType<any>;
   lazyComponent?: React.LazyExoticComponent<React.ComponentType<any>>;
   children?: RouteConfig[];
 }
@@ -89,6 +91,16 @@ const routes: RouteConfig[] = [
     requireAuth: true,
     showInNav: true,
     lazyComponent: HabitsPage
+  },
+  {
+    path: '/journals/*',
+    key: 'JOURNALS',
+    text: 'Journal',
+    icon: <JournalIcon />,  
+    ariaLabel: 'Navigate to journal page',
+    requireAuth: true,
+    showInNav: true,
+    component: JournalPage
   }
 ];
 

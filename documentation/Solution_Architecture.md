@@ -1,229 +1,87 @@
-# Solution Architecture – LifeTracker Pro
+# Solution Architecture Document
+
+## Table of Contents
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Key Components](#key-components)
+- [Data Flow](#data-flow)
+- [Third-Party Services](#third-party-services)
+- [Environmental Configuration](#environmental-configuration)
+- [Architectural Decisions](#architectural-decisions)
 
 ## Overview
-LifeTracker Pro is a full‑stack health and wellness platform, comprised of a React 18 + TypeScript frontend, an Express TS backend, and Azure‑based infrastructure. The system follows an **API‑first** design, with microservices patterns introduced as needed. Infrastructure is managed via Terraform, containerized via Docker, and deployed to Azure Kubernetes Service (AKS).
+The LifeTracker application is a personal productivity and wellness tracking platform with features for journal entries, goal setting, habit tracking, and activity logging. The application uses a modern React frontend with a Node.js/Express backend.
 
-## High‑Level Diagram
-```
-[ React SPA ]  <-->  [ API Gateway / Ingress ]  <-->  [ Express TS API Services ]
-                                          |                  |
-                                          v                  v
-                                   [ Azure AD B2C ]     [ Azure SDKs ]
-                                                              |
-                                                              v
-                             [ Cosmos DB ]  [ Blob Storage ]  [ Redis ]  [ Cognitive Search ]
-```
+## Architecture
+The application follows a monorepo structure with clearly separated frontend and backend codebases:
 
-## Core Components
+- `/frontend`: React TypeScript application
+- `/backend`: Express TypeScript API
+- `/infra`: Infrastructure and deployment scripts
+- `/.cursor`: Cursor IDE configuration
 
-- **Monorepo** (`/frontend`, `/backend`, `/infra`, `/k8s`): shared config, consistency in tooling.  
-- **Frontend**: React 18 & TypeScript, Material UI, MSAL React for auth, React Query + Redux Toolkit for state, Axios for HTTP, Recharts for analytics.  
-- **Backend**: Node 18 + Express TS, JWT middleware, Swagger/OpenAPI, Azure SDK clients (Cosmos, Blob, Redis, Search).  
-- **Auth**: Azure AD B2C with MSAL; Express verifies JWTs via JWKS.  
-- **Infra‑as‑Code**: Terraform defines Azure RG, Cosmos DB, Storage, Redis Cache, Search, ACR, AKS; `backend.tf`, `variables.tf`, `outputs.tf`.  
-- **Containerization**: Dockerfiles for both services; push to Azure Container Registry; multi‑stage for React → NGINX (non-root user, pinned versions).  
-- **Orchestration**: Helm charts + Kubernetes manifests (`k8s/`); Ingress via Azure Front Door (blue‑green support) with TLS and security headers.  
+### Frontend Architecture
+- React SPA with TypeScript
+- Material-UI component library
+- React Router for navigation
+- React Query for server state management
 
-## Major Design Decisions
+### Backend Architecture
+- Express.js with TypeScript
+- Azure Cosmos DB for data storage
+- Azure Blob Storage for file uploads
+- Azure Cognitive Search for search functionality
+- JWT-based authentication
 
-| Decision                        | Rationale                                                | Alternatives Considered           |
-|---------------------------------|----------------------------------------------------------|-----------------------------------|
-| Monorepo structure              | Single repo simplifies coordination & shared configs     | Separate repos (more isolation)   |
-| API‑First workflow              | Clear contract for frontend, decoupling dev teams        | Backend‑driven endpoints          |
-| Azure AD B2C for auth           | Enterprise‑grade identity, OOTB UI for login/signup      | Auth0; custom JWT provider        |
-| Cosmos DB (SQL API)             | Globally distributed, auto‑scale, JSON document model    | PostgreSQL on Azure DB for Postgres|
-| AKS + Helm charts               | Kubernetes standard for scale, extensible CI/CD          | App Service + Web App containers   |
-| Terraform remote state in Blob  | Single source of truth with locking, team safety        | Local state; Terraform Cloud       |
-| React Query for data caching    | Automatic background refresh and mutation handling      | Redux Toolkit Query; custom hooks  |
-| Non-root containers             | Enhanced security posture by dropping privileges        | Default root-user containers       |
-| Security headers                | Protection against common web vulnerabilities           | No headers (default behavior)      |
-| Centralized route configuration | Single source of truth for all routes with typed interface | Individual route definitions in components |
+## Key Components
 
-## Infrastructure & Deployment
+### Frontend Components
+- `App`: Main application component
+- `pages/`: Route-level components
+- `components/`: Reusable UI components
+- `hooks/`: Custom React hooks
+- `services/`: API client functions
+- `types/`: TypeScript type definitions
 
-- **CI/CD**: GitHub Actions → lint, build, test, Docker build/push, helm lint/deploy.  
-- **Stateful Services**: Cosmos as primary datastore; Redis for low‑latency cache; Blob for user assets.  
-- **Search**: Azure Cognitive Search indexes all data for global feature.  
-- **Monitoring**: Azure Monitor + Application Insights track performance, errors, and custom events.  
-- **Backups & DR**: Automated backup policies for Cosmos & Blob; Geo‑redundant storage.  
-- **Container Security**: Pinned versions, non-root users, content security policies, and regular vulnerability scanning.
+### Backend Components
+- `routes/`: API endpoint definitions
+- `controllers/`: Request handlers
+- `models/`: Data models
+- `services/`: Business logic and external API integrations
+- `middleware/`: Express middlewares
 
-## Security Architecture
+## Data Flow
+1. User interacts with the React frontend
+2. Frontend uses services to make API calls to the backend
+3. Backend validates and processes requests
+4. Backend interacts with Cosmos DB and other Azure services
+5. Backend returns responses to the frontend
+6. Frontend updates UI with new data
 
-- **Authentication**: Azure AD B2C manages user identity with JWT tokens verified by backend services.
-- **Authorization**: Role-based access control (RBAC) in API middleware.
-- **Container Security**:
-  - Non-root users for all containers (frontend NGINX, backend Node)
-  - Explicitly pinned image versions to prevent drift
-  - Minimized image sizes through multi-stage builds
-  - Custom NGINX configuration with security-focused defaults
-- **Network Security**:
-  - Ingress configured with TLS and security headers
-  - Content-Security-Policy restricting resource origins
-  - X-Content-Type-Options, X-Frame-Options, and X-XSS-Protection headers
-- **API Security**:
-  - Health endpoints for monitoring without exposing sensitive data
-  - Rate limiting and throttling for all public endpoints
-  - Input validation for all request parameters
+## Third-Party Services
+- Azure Cosmos DB: NoSQL database
+- Azure Blob Storage: File storage
+- Azure Cognitive Search: Search indexing
+- Azure Text Analytics: Natural language processing
+- Azure OpenAI: AI capabilities
 
-## Observability & Testing
+## Environmental Configuration
+The application uses different configuration for development, testing, and production environments. The backend supports local development with mock services when Azure credentials are not available.
 
-- **Unit & Integration**: Jest + Supertest on backend; Jest + React Testing Library on frontend with 80% code coverage threshold.  
-- **E2E**: Cypress flows: login → profile → tasks → dashboard.  
-- **Smoke tests**: Active at CI startup for core health checks.  
-- **Telemetry**: Request/response logging middleware, custom metrics for key endpoints.  
-- **Health Probes**: Dedicated health endpoints for each service with standardized responses for Kubernetes liveness/readiness checks.
-- **Automated Validation**:
-  - Test scripts validate Docker image security configurations
-  - K8s manifest validation ensures proper configuration of probes and security annotations
-  - CI pipeline includes security scanning steps
+## Architectural Decisions
 
-## Testing Strategy
-
-We've implemented a comprehensive testing strategy with multiple layers:
-
-1. **Unit Testing**:
-   - Frontend: Jest + React Testing Library for components
-   - Backend: Jest for business logic and service layers
-
-2. **Integration Testing**:
-   - Frontend: Mock server or API with MSW
-   - Backend: Supertest for API endpoints
-
-3. **E2E Testing**:
-   - Cypress for critical user journeys including navigation flow and route validation
-   - Contract testing for API endpoints
-   - Dedicated tests for route configuration and navigation state management
-
-4. **Security Testing**:
-   - Docker image scanning with Trivy
-   - Kubernetes manifest validation 
-   - Content Security Policy verification
-
-5. **Performance Testing**:
-   - Load testing key API endpoints
-   - Frontend bundle size monitoring
-   - Memory usage tracking
-
-## Next Steps
-
-- Expand microservice boundaries for chat/AI assistant.  
-- Introduce feature flags for controlled rollout.  
-- Refine Azure Policy & RBAC for tighter security.  
-- Implement automated security scanning for Docker images in CI pipeline.
-- Add contract testing between frontend and backend.
-- Enhance monitoring with custom dashboards for security events.  
-- Expand test coverage for route configuration and navigation flow.
-
-## Recent Architecture Updates
-
-### [2023-05-15] – Centralized Route Configuration
-- **Decision:** Implemented a centralized route configuration in `routes.tsx` with a typed interface to standardize route definitions throughout the application.
-- **Rationale:** This approach provides a single source of truth for route definitions, simplifies adding new routes, and ensures consistent route handling across components (NavBar, App routing, etc.).
-- **Alternatives:** Individual route definitions in components (more flexible but prone to inconsistencies), or using a routing library with built-in centralized routing (adds dependency but provides more features).
-- **Testing:** Added dedicated Cypress tests to verify route configuration, ensuring navigation items are properly displayed, active states are correctly applied, and invalid routes are redirected appropriately.
-
-### [2023-05-23] – Fitness Goals Feature Implementation
-- **Decision:** Implemented a comprehensive Goals feature with React Query for state management, Material UI for components, and a modular architecture for testability.
-- **Rationale:** This approach provides a consistent pattern for CRUD operations with proper loading/error handling, optimistic updates, and typed interfaces between frontend and backend.
-- **Alternatives:** Using Redux + thunks for state management (more boilerplate but more centralized), or a custom hook solution without React Query (less code but would require manual caching logic).
-- **Implementation Details:**
-  - Organized components into feature folders with clear separation of concerns
-  - Used React Query for data fetching with optimistic updates for better UX
-  - Implemented fallback to mock data when backend services are unavailable
-  - Added comprehensive error handling with user-friendly messages
-  - Created reusable pagination component with configurable settings
-
-### [2025-04-23] – App Layout & Routing Refactoring
-- **Decision:** Extracted a centralized `AppLayout` component, improved route structure with lazy loading, and enhanced backend service reliability.
-- **Rationale:** This approach reduces code duplication, improves maintainability, and provides better error handling for development environment issues.
+## [2025-05-09] – Component Architecture Refactoring
+- **Decision:** Refactored common UI patterns into reusable components and improved type safety
+- **Rationale:** Improved maintainability by extracting repetitive patterns into dedicated components, fixed TypeScript errors, and improved performance with React.useCallback
 - **Alternatives:** 
-  - Keeping route-specific layouts (more flexibility but more duplication)
-  - Using third-party routing libraries (adds dependencies)
-  - Hard-coding fallback behavior (simpler but less configurable)
-- **Implementation Details:**
-  - Created centralized `AppLayout` component to eliminate duplicate protected route wrappers
-  - Enhanced route definitions with lazy-loaded components for better code splitting
-  - Added graceful handling of port conflicts and SSL validation issues
-  - Improved environment-based configuration with feature flags (MOCK_DATA_ON_FAILURE, COSMOS_INSECURE_DEV)
-  - Updated scripts in package.json for better developer experience
+  1. Continue with inline component definitions (rejected due to code duplication)
+  2. Use a component library like Storybook (considered for future)
 
-### [2023-05-23] – Fitness Goals Feature Implementation
-// ... existing code ...  
+### Components Created/Modified:
+1. `LinkButton`: Reusable component for Material-UI Buttons that work with React Router
+2. `JournalHeader`: Extracted common journal header pattern
+3. `JournalEditor`: Optimized with useCallback for better performance
 
-### [2023-06-10] – Activities Feature Implementation
-- **Decision:** Implemented a complete Activities tracking feature with a robust data model, CRUD API, and comprehensive test coverage.
-- **Rationale:** This approach enables users to log, track, and filter their fitness activities while maintaining data consistency and security.
-- **Alternatives:** 
-  - Using a generic document structure (simpler but less type-safe)
-  - Storing activities within the user profile (simpler initial implementation but less scalable)
-  - Using a relational database (more structured but less flexible for evolving data models)
-- **Implementation Details:**
-  - Created TypeScript interfaces for `Activity`, `ActivityCreateDTO`, and `ActivityUpdateDTO`
-  - Designed a flexible filtering system with support for activity type and date ranges
-  - Built a dedicated Cosmos DB container with `/userId` partition key for efficient user-specific queries
-  - Implemented comprehensive input validation with express-validator
-  - Added thorough test coverage with Jest and Supertest, including edge cases
-  - Integrated with the authentication system to ensure data security and user isolation  
-
-### [2025-04-27] – Analytics & Dashboard Resilience Improvements
-- **Decision:** Enhanced error handling in analytics hooks and components, added comprehensive mock data support, and improved URL parameter handling.
-- **Rationale:** These changes ensure the application remains functional even when backend services are unavailable, providing graceful degradation instead of runtime errors.
-- **Alternatives:** 
-  - More complex error boundaries at component level (higher maintenance overhead)
-  - Less granular error handling at the hook level (simpler but less user-friendly)
-  - Service worker for offline caching (more complex implementation)
-- **Implementation Details:**
-  - Fixed URL construction in `useAnalytics` and `useFitnessSummary` hooks
-  - Added property-level null checks in `InsightsCard` component to prevent "Cannot read property of undefined" errors
-  - Created comprehensive mock data for analytics and fitness summary services
-  - Enhanced API service to detect and handle failed requests with appropriate mock data
-  - Improved the consistency of the code structure across different custom hooks
-  - Added detailed documentation of implementation status and bug fixes  
-
-### [2025-04-28] – Live Azure Cosmos DB Integration
-- **Decision:** Use an Azure Cosmos DB SQL (Core) API account for production environments, provisioned and managed via Terraform, and configure backend services to connect using environment variables.
-- **Rationale:** Provides a fully managed, globally distributed document database with automatic scaling, integrated security, and seamless Azure SDK support, ensuring persistent and resilient data storage in production.
-- **Alternatives:**
-  - PostgreSQL on Azure Database for PostgreSQL (relational), which offers ACID guarantees but lacks JSON-first flexibility and autoscaling for high-throughput workloads.
-  - MongoDB Atlas (NoSQL), which is document-oriented but introduces external network egress and separate billing outside Azure.
-  - Self-hosted Cosmos DB emulator in production (not supported, only for local dev/testing).
-  - In-memory store/cache for ephemeral data (not persistent or reliable for production use).
-
-### [2023-06-16] – Habit Tracker UI & Streak Visualization
-- **Decision:** Implemented a modular React UI for the Habit Tracker feature with streaks visualization using Recharts.
-- **Rationale:** 
-  - Used React Query for data fetching and cache management to optimize network requests and provide a responsive UX.
-  - Implemented Zod validation for form inputs to ensure data integrity before submission to the API.
-  - Lazy-loaded Recharts components to improve initial load performance.
-  - Utilized custom hooks to abstract API interaction logic, making components more testable and focused on UI concerns.
-- **Alternatives:** 
-  - Considered using D3.js directly for more customized charts, but chose Recharts for faster development and simpler API while still providing sufficient customization.
-  - Considered integrating habit tracking within each activity type but decided to implement as a standalone feature for better user experience and clearer separation of concerns.
-  - Evaluated using SWR instead of React Query, but the latter provided better devtools and a more comprehensive API for our caching and mutation needs.
-
-## [2023-04-30] – Habits Feature Optimization
-
-- **Decision:** Refactored the Habits feature components and services with several optimizations:
-  1. Created centralized Zod validation schemas in a dedicated `schemas/` directory
-  2. Implemented standardized API client and error handling
-  3. Added custom Cypress commands for consistent E2E testing
-  4. Refactored React Query hooks with proper type safety
-  5. Added data-testid attributes for more reliable component testing
-
-- **Rationale:** 
-  - The previous implementation had several issues that made testing unstable
-  - Form validation schemas were duplicated across components
-  - Error handling was inconsistent across API calls
-  - Tests were too tightly coupled to implementation details
-
-- **Alternatives:**
-  - Continue with component-localized schemas: Rejected due to increased maintenance burden and potential for validation inconsistency
-  - Use class-based services instead of hooks: Rejected as hooks aligned better with React paradigms and component lifecycle
-  - Mock-free integration tests: Rejected due to test brittleness and need for a running backend
-
-- **Technical Details:**
-  - Created `schemas/habits.schema.ts` for centralized validation
-  - Implemented `services/apiClient.ts` for standardized network handling
-  - Added `data-testid` attributes for more resilient component testing
-  - Added Cypress type declarations and custom commands
+### Type Definition Improvements:
+1. Consolidated Button type definitions in global.d.ts
+2. Used proper TypeScript types for all components
