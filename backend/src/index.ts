@@ -33,16 +33,16 @@ const jwtCheck = jwt({
 });
 
 // Routes
-app.get('/health', (req, res) => {
+app.get('/health', (req: any, res: any) => {
   res.status(200).json({ status: 'ok' });
 });
 
-app.get('/api/health', (req, res) => {
+app.get('/api/health', (req: any, res: any) => {
   res.status(200).json({ status: 'ok', message: 'LifeTracker Pro API is running!' });
 });
 
 // Protected profile route
-app.get('/api/profile', jwtCheck, (req: any, res) => {
+app.get('/api/profile', jwtCheck, (req: any, res: any) => {
   res.status(200).json(req.auth);
 });
 

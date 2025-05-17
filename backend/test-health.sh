@@ -15,11 +15,12 @@ fi
 
 # Test the health endpoint
 echo "Testing /health endpoint..."
-RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:4000/health)
+PORT="${PORT:-4000}"
+RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:$PORT/health)
 
 if [ $RESPONSE -eq 200 ]; then
   echo "Health check passed: HTTP $RESPONSE"
-  curl -s http://localhost:4000/health | jq
+  curl -s http://localhost:$PORT/health | jq
   exit 0
 else
   echo "Health check failed: HTTP $RESPONSE"

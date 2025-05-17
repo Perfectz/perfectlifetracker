@@ -15,8 +15,10 @@ if ($null -eq $serverProcess) {
 
 # Test the health endpoint
 Write-Output "Testing /health endpoint..."
+$port = $env:PORT
+if (-not $port) { $port = 4000 }
 try {
-    $response = Invoke-WebRequest -Uri "http://localhost:4000/health" -Method Get -ErrorAction Stop
+    $response = Invoke-WebRequest -Uri "http://localhost:$port/health" -Method Get -ErrorAction Stop
     $statusCode = $response.StatusCode
     
     if ($statusCode -eq 200) {
