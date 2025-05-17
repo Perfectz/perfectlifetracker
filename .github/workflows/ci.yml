@@ -54,7 +54,15 @@ jobs:
     
     - name: Frontend - Run Tests
       working-directory: ./frontend
-      run: npm test
+      run: |
+        npm test > test-results.txt 2>&1
+
+    - name: Upload Frontend Test Results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: frontend-tests
+        path: ./frontend/test-results.txt
     
     - name: Backend - Install Dependencies
       working-directory: ./backend
@@ -62,7 +70,15 @@ jobs:
     
     - name: Backend - Run Tests
       working-directory: ./backend
-      run: npm test
+      run: |
+        npm test > test-results.txt 2>&1
+
+    - name: Upload Backend Test Results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: backend-tests
+        path: ./backend/test-results.txt
   
   terraform-validate:
     runs-on: ubuntu-latest
