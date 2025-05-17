@@ -5,6 +5,9 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import { expressjwt as jwt } from 'express-jwt';
 import jwksRsa from 'jwks-rsa';
+import { CosmosClient } from '@azure/cosmos';
+import { TextAnalyticsClient, AzureKeyCredential } from '@azure/ai-text-analytics';
+import { createJournalRouter } from './journals';
 
 // Load environment variables
 dotenv.config();
@@ -32,6 +35,16 @@ const jwtCheck = jwt({
   algorithms: ['RS256'],
 });
 
+// Cosmos and Text Analytics clients
+const cosmosClient = new CosmosClient(process.env.COSMOS_CONNECTION_STRING || '');
+const container = cosmosClient
+  .database(process.env.COSMOS_DB || 'lifeTracker')
+  .container('journals');
+const textClient = new TextAnalyticsClient(
+  process.env.TEXT_ANALYTICS_ENDPOINT || '',
+  new AzureKeyCredential(process.env.TEXT_ANALYTICS_KEY || '')
+);
+
 // Routes
 app.get('/health', (req: any, res: any) => {
   res.status(200).json({ status: 'ok' });
@@ -46,7 +59,13 @@ app.get('/api/profile', jwtCheck, (req: any, res: any) => {
   res.status(200).json(req.auth);
 });
 
+app.use('/journals', createJournalRouter(container, textClient));
+
 // Start server
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-}); 
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+  });
+}
+
+export default app;
