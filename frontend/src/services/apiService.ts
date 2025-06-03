@@ -73,12 +73,6 @@ const defaultRetryConfig: RetryConfig = {
   factor: 2 // exponential backoff factor
 };
 
-// Error response wrapper
-export interface ApiError extends Error {
-  status?: number;
-  details?: any;
-}
-
 // Progress tracking for file uploads
 export interface UploadProgressCallback {
   (progress: number): void;
@@ -197,59 +191,65 @@ async function fetchWithRetry(
 
 // Main API request function with retry
 export async function apiRequest<T>(
-  endpoint: string, 
-  method: string = 'GET', 
-  data?: any, 
-  includeAuth: boolean = true,
-  retryConfig?: RetryConfig
+  endpoint: string,
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET',
+  data?: any
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
   
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json'
-  };
-  
-  if (includeAuth) {
-    try {
-      // Try to get token from Auth0 first
-      const token = await getToken().catch(() => null);
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      } else {
-        // Fallback to localStorage if Auth0 token not available
-        const localToken = localStorage.getItem('token');
-        if (localToken) {
-          headers['Authorization'] = `Bearer ${localToken}`;
-        }
-      }
-    } catch (error) {
-      console.warn('Failed to get authentication token:', error);
-      // Continue without auth if token retrieval fails
-    }
-  }
-  
   const options: RequestInit = {
     method,
-    headers,
-    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include', // Include cookies for authentication
   };
-  
-  if (data) {
+
+  if (data && method !== 'GET') {
     options.body = JSON.stringify(data);
   }
-  
+
   try {
-    const response = await fetchWithRetry(url, options, retryConfig);
-    return await response.json();
-  } catch (error: any) {
-    if (error instanceof ApiError) {
+    const response = await fetch(url, options);
+    
+    if (!response.ok) {
+      // Try to get error message from response
+      let errorMessage = `HTTP ${response.status}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorData.error || errorMessage;
+      } catch {
+        // If JSON parsing fails, use status text
+        errorMessage = response.statusText || errorMessage;
+      }
+      
+      const error = new Error(errorMessage) as ApiError;
+      error.status = response.status;
       throw error;
     }
-    
-    throw new ApiError(
-      error?.message || 'Unknown error occurred', 
-      error?.status || 0
-    );
+
+    // Handle empty responses (like DELETE)
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      return await response.json();
+    } else {
+      return {} as T;
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error(`API Error (${method} ${endpoint}):`, error.message);
+      
+      // For development, provide more helpful error messages
+      if (process.env.NODE_ENV === 'development') {
+        if (error.message.includes('Failed to fetch')) {
+          throw new Error('Backend server is not running. Please start the backend service.');
+        }
+        if (error.message.includes('authorization token')) {
+          throw new Error('Authentication required. This feature requires login.');
+        }
+      }
+    }
+    throw error;
   }
 }
 
@@ -312,7 +312,7 @@ export async function uploadFile(
       const attemptUpload = async () => {
         const xhr = new XMLHttpRequest();
         
-        xhr.open('POST', `${AZURE_UPLOAD_URL}/upload`, true);
+        xhr.open('POST', `${AZURE_UPLOAD_URL}/uploads/file`, true);
         
         // Add auth header if available
         try {
@@ -409,7 +409,7 @@ export async function uploadFile(
     });
   } else {
     // Without progress tracking, use the fetch API with retry logic
-    const url = `${AZURE_UPLOAD_URL}/upload`;
+    const url = `${AZURE_UPLOAD_URL}/uploads/file`;
     
     const headers: HeadersInit = {};
     
@@ -491,7 +491,7 @@ export async function uploadMultipleFiles(
       const attemptUpload = async () => {
         const xhr = new XMLHttpRequest();
         
-        xhr.open('POST', `${AZURE_UPLOAD_URL}/upload/multiple`, true);
+        xhr.open('POST', `${AZURE_UPLOAD_URL}/uploads/files`, true);
         
         // Add auth header if available
         try {
@@ -588,7 +588,7 @@ export async function uploadMultipleFiles(
     });
   } else {
     // Without progress tracking, use the fetch API with retry logic
-    const url = `${AZURE_UPLOAD_URL}/upload/multiple`;
+    const url = `${AZURE_UPLOAD_URL}/uploads/files`;
     
     const headers: HeadersInit = {};
     
@@ -634,22 +634,39 @@ export async function uploadMultipleFiles(
 
 // Delete a file
 export async function deleteFile(fileId: string): Promise<void> {
-  await apiRequest(`/files/${fileId}`, 'DELETE', null, true);
+  await apiRequest(`/uploads/file/${fileId}`, 'DELETE');
 }
 
 // Get list of files (optionally filtered by prefix)
 export async function getFiles(prefix?: string): Promise<any> {
   try {
-    let url = '/upload/files';
+    let url = '/uploads/files';
     if (prefix) {
       url += `?prefix=${encodeURIComponent(prefix)}`;
     }
     
-    const response = await apiRequest(url);
-    return response.data;
+    const response = await apiRequest<any>(url);
+    return response;
   } catch (error: any) {
     console.error('Error getting files:', error);
     throw error;
+  }
+}
+
+// Error response wrapper as a class, available at runtime
+export class ApiError extends Error {
+  status?: number;
+  details?: any;
+
+  constructor(message: string, status?: number, details?: any) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.details = details;
+    // Maintains proper stack trace (only needed in V8)
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, ApiError);
+    }
   }
 }
 

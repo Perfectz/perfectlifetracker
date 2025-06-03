@@ -31,11 +31,29 @@ const HomePage = () => {
             color="primary" 
             size="large"
             onClick={() => navigate('/login')}
-            sx={{ mt: 2 }}
+            sx={{ mt: 2, mr: 2 }}
           >
             Get Started
           </Button>
         )}
+        <Button 
+          variant="outlined" 
+          color="primary" 
+          size="large"
+          onClick={() => navigate('/weight')}
+          sx={{ mt: 2, mr: 2 }}
+        >
+          Weight Tracker
+        </Button>
+        <Button 
+          variant="outlined" 
+          color="secondary" 
+          size="large"
+          onClick={() => navigate('/meals')}
+          sx={{ mt: 2 }}
+        >
+          Meal Tracker
+        </Button>
       </Box>
 
       {/* Feature Cards */}

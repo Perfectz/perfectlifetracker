@@ -27,6 +27,17 @@ MONGODB_URI=mongodb://localhost:27017/perfectltp
 AZURE_CLIENT_ID=d9764c39-1eb9-4963-83a0-e8ba859c8965
 AZURE_AUTHORITY=https://login.microsoftonline.com/78e9993f-a208-4c38-9d9d-6b15f0d2407d
 FRONTEND_URL=http://localhost:3000
+
+# Azure Storage (for file uploads)
+# Note: For development, you'll need to set up an Azure Storage account or use Azurite emulator
+# AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=https;AccountName=yourstorageaccount;AccountKey=yourkey;EndpointSuffix=core.windows.net
+AZURE_STORAGE_CONNECTION_STRING=UseDevelopmentStorage=true
+AZURE_STORAGE_CONTAINER_NAME=perfectltp-uploads
+
+# Azure OpenAI Service (optional for AI features)
+# AZURE_OPENAI_API_KEY=your-azure-openai-key
+# AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
+# OPENAI_API_KEY=your-openai-key
 `;
 
 async function createEnvFile() {

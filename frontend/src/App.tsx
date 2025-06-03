@@ -12,6 +12,8 @@ import Layout from './components/Layout';
 import { ThemeModeProvider } from './theme';
 import { MockAuthProvider } from './services/MockAuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
+import WeightTrackerPage from './pages/WeightTrackerPage';
+import MealTrackerPage from './pages/MealTrackerPage';
 
 // Temporary placeholder components for the dashboard sub-routes
 const TasksPage = () => <div>Tasks Page - Coming Soon</div>;
@@ -30,6 +32,8 @@ function App() {
               <Route element={<Layout useStandardHeader={true} />}>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/weight" element={<WeightTrackerPage />} />
+                <Route path="/meals" element={<MealTrackerPage />} />
               </Route>
 
               {/* Dashboard & Subpages (Protected) */}
@@ -42,7 +46,8 @@ function App() {
               }>
                 <Route index element={<DashboardPage />} />
                 <Route path="tasks" element={<TasksPage />} />
-                <Route path="fitness" element={<FitnessPage />} />
+                <Route path="fitness" element={<WeightTrackerPage />} />
+                <Route path="meals" element={<MealTrackerPage />} />
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="profile" element={<ProfilePage />} />
               </Route>

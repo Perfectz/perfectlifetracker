@@ -3,8 +3,10 @@
  * Configuration for API endpoints and services
  */
 
-// API base URL for backend services
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+// Use relative path in dev for proxy, otherwise use configured URL
+export const API_BASE_URL = import.meta.env.DEV
+  ? '/api'
+  : (import.meta.env.VITE_API_URL || 'http://localhost:3001/api');
 
 // Azure Blob Storage upload endpoint
 export const AZURE_UPLOAD_URL = import.meta.env.VITE_AZURE_UPLOAD_URL || 'http://localhost:3001/api';

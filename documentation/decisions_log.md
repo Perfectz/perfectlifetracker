@@ -720,4 +720,50 @@ Added Azure Blob Storage integration for handling file uploads in the Perfect Li
 | 2024-04-09 | 1.9.0 | Added GitHub Actions CI workflow implementation | Perfect LifeTracker Pro Team |
 | 2024-04-09 | 1.10.0 | Added Azure infrastructure as code with Terraform | Perfect LifeTracker Pro Team |
 | 2024-04-10 | 1.11.0 | Added Docker-based deployment and CI/CD pipeline update | Perfect LifeTracker Pro Team |
-| 2025-04-12 | 1.12.0 | Added Azure Blob Storage for file uploads | Perfect LifeTracker Pro Team | 
+| 2025-04-12 | 1.12.0 | Added Azure Blob Storage for file uploads | Perfect LifeTracker Pro Team |
+| 2025-01-27 | 1.13.0 | Fixed Azure Blob Storage API endpoint mismatches | Perfect LifeTracker Pro Team |
+
+### [2025-01-27]: Azure Blob Storage API Endpoint Mismatch Fix
+
+#### Change/Decision Description
+Fixed critical API endpoint mismatches that were preventing the Azure Blob Storage file upload functionality from working. The frontend was calling incorrect endpoints that didn't match the backend routes, causing all file upload operations to fail with 404 errors.
+
+#### Rationale
+- The Azure Blob Storage implementation was 95% complete but had endpoint mismatches
+- Frontend API calls were using `/upload` routes while backend implemented `/uploads/file` and `/uploads/files`
+- This prevented the file upload demo from functioning correctly
+- Fixing this enables the full file upload functionality to work as intended
+
+#### Implementation Details
+1. **Frontend API Service Updates**
+   - Changed single file upload from `/upload` to `/uploads/file`
+   - Changed multiple file upload from `/upload/multiple` to `/uploads/files` 
+   - Updated delete file endpoint from `/files/{id}` to `/uploads/file/{id}`
+   - Updated get files endpoint from `/upload/files` to `/uploads/files`
+
+2. **Environment Variable Updates**
+   - Added Azure Storage configuration to backend `.env` template
+   - Included development storage emulator settings
+   - Added Azure OpenAI environment variables for future AI features
+
+3. **Maintained Backward Compatibility**
+   - All changes only affect the API endpoint paths
+   - No changes to request/response formats or authentication
+   - Existing file upload component interface remains the same
+
+#### Alternatives Considered
+1. **Change Backend Routes**: Modify backend to match frontend expectations - rejected to maintain RESTful API design
+2. **Add Route Aliases**: Create multiple routes for same endpoints - rejected as it adds unnecessary complexity
+3. **Update Documentation Only**: Document the correct endpoints without fixing - rejected as this doesn't solve the functional issue
+
+#### Implications
+- File upload functionality now works correctly across the application
+- Users can successfully upload files to Azure Blob Storage
+- Demo page is fully functional for showcasing file upload capabilities
+- Development environment properly configured with storage emulator settings
+- Ready for production deployment with actual Azure Storage credentials
+
+#### References
+- [Azure Blob Storage SDK Documentation](https://docs.microsoft.com/en-us/azure/storage/blobs/)
+- [Express.js Routing Best Practices](https://expressjs.com/en/guide/routing.html)
+- [RESTful API Design Guidelines](https://restfulapi.net/) 

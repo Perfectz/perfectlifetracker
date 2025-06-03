@@ -34,7 +34,7 @@ export interface UserDocument extends BaseDocument {
  * Fitness data including workouts, measurements, etc.
  */
 export interface FitnessDocument extends BaseDocument {
-  type: 'workout' | 'measurement' | 'goal';
+  type: 'workout' | 'measurement' | 'goal' | 'nutrition';
   date: string;
   
   // Workout specific fields
@@ -56,6 +56,24 @@ export interface FitnessDocument extends BaseDocument {
   currentValue?: number;
   deadline?: string;
   completed?: boolean;
+
+  // Nutrition specific fields
+  mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  foodName?: string;
+  brand?: string;
+  servingSize?: number;
+  servingUnit?: string;
+  totalCalories?: number;
+  macros?: {
+    protein?: number; // in grams
+    carbs?: number;   // in grams
+    fat?: number;     // in grams
+    fiber?: number;   // in grams
+    sugar?: number;   // in grams
+  };
+  imageUrl?: string;
+  analysisMethod?: 'manual' | 'ai_vision' | 'barcode' | 'database';
+  confidence?: number; // AI confidence score 0-1
 }
 
 /**

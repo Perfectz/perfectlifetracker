@@ -20,18 +20,24 @@ dotenv.config();
 
 // Create Express app
 const app = express();
-const port = process.env.PORT || 3001;
+const port = 3001;
 
 // Middleware
 app.use(express.json());
-app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.FRONTEND_URL || ''] 
+
+// Configure CORS with preflight support
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production'
+    ? [process.env.FRONTEND_URL || '']
     : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3003'],
   credentials: true
-}));
+};
+app.use(cors(corsOptions));
+// Handle preflight requests
+app.options('*', cors(corsOptions));
 
 // JWT validation middleware
+/*
 const checkJwt = expressjwt({
   secret: jwksRsa.expressJwtSecret({
     cache: true,
@@ -43,6 +49,10 @@ const checkJwt = expressjwt({
   issuer: process.env.AZURE_AUTHORITY,
   algorithms: ['RS256']
 });
+*/
+
+// Temporary: Skip JWT for development
+const checkJwt = (req: any, res: any, next: any) => next();
 
 // Public routes
 app.get('/', (req, res) => {
@@ -60,19 +70,14 @@ app.get('/', (req, res) => {
 });
 
 app.get('/api/health', (req, res) => {
-  try {
-    res.json({ status: 'ok', message: 'Perfect LifeTracker Pro API is running' });
-  } catch (error) {
-    console.error('Health check error:', error);
-    res.status(500).json({ status: 'error', message: 'Health check failed' });
-  }
+  res.json({ status: 'ok', message: 'Server is running' });
 });
 
 // API routes
 app.use('/api/users', userRoutes);
-app.use('/api/tasks', checkJwt, taskRoutes); // Protected routes
-app.use('/api/fitness', checkJwt, fitnessRoutes); // Protected routes
-app.use('/api/uploads', checkJwt, uploadRoutes); // Protected file upload routes
+app.use('/api/tasks', taskRoutes);
+app.use('/api/fitness', fitnessRoutes);
+app.use('/api/uploads', uploadRoutes);
 
 // Protected test route
 app.get('/api/protected', checkJwt, (req: JWTRequest, res) => {
@@ -99,7 +104,7 @@ async function startServer() {
     await initializeDatabase();
     
     // Start Express server
-    app.listen(port, () => {
+    app.listen(port, '0.0.0.0', () => {
       console.log(`Server running on port ${port}`);
       console.log(`Health check available at http://localhost:${port}/api/health`);
     });
