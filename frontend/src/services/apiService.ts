@@ -115,7 +115,7 @@ function sleep(ms: number): Promise<void> {
 const isRetryableError = (error: unknown): boolean => {
   if (typeof error !== 'object' || error === null) return false;
   const err = error as Record<string, unknown>;
-  
+
   return (
     typeof err.details === 'object' &&
     err.details !== null &&
