@@ -15,6 +15,10 @@ NODE_ENV=development
 PORT=3001
 USE_MOCK_DATABASE=true
 
+# Authentication Configuration  
+# Set to true ONLY in development to bypass JWT authentication
+USE_MOCK_AUTH=true
+
 # Cosmos DB Configuration
 COSMOS_DB_ENDPOINT=https://localhost:8081
 COSMOS_DB_KEY=dummy-key-for-development

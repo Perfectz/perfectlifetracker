@@ -52,21 +52,23 @@ const DevelopmentCard: React.FC<DevelopmentCardProps> = ({
   title = 'Development',
 }) => {
   // Memoize the rendered activities list
-  const renderedActivities = useMemo(() => (
-    activities.map(activity => (
-      <Box key={activity.id} sx={{ mt: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-          <Typography variant="body2" color={terraColors.maastrichtBlue}>
-            {activity.name}
-          </Typography>
-          <Typography variant="body2" color={terraColors.tropicalRain} fontWeight="medium">
-            {activity.progress}%
-          </Typography>
+  const renderedActivities = useMemo(
+    () =>
+      activities.map(activity => (
+        <Box key={activity.id} sx={{ mt: 3 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+            <Typography variant="body2" color={terraColors.maastrichtBlue}>
+              {activity.name}
+            </Typography>
+            <Typography variant="body2" color={terraColors.tropicalRain} fontWeight="medium">
+              {activity.progress}%
+            </Typography>
+          </Box>
+          <TerraLinearProgress variant="determinate" value={activity.progress} />
         </Box>
-        <TerraLinearProgress variant="determinate" value={activity.progress} />
-      </Box>
-    ))
-  ), [activities]);
+      )),
+    [activities]
+  );
 
   return (
     <Card>

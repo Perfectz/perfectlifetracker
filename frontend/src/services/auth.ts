@@ -5,15 +5,15 @@ const auth0 = new Auth0Client({
   client_id: import.meta.env.VITE_AUTH0_CLIENT_ID || '',
   redirect_uri: window.location.origin,
   cacheLocation: 'localstorage',
-  useRefreshTokens: true
+  useRefreshTokens: true,
 });
 
 export const login = async () => {
   try {
     await auth0.loginWithPopup({
       authorizationParams: {
-        redirect_uri: window.location.origin
-      }
+        redirect_uri: window.location.origin,
+      },
     });
     const user = await auth0.getUser();
     return user;
@@ -26,8 +26,8 @@ export const login = async () => {
 export const logout = () => {
   return auth0.logout({
     logoutParams: {
-      returnTo: window.location.origin
-    }
+      returnTo: window.location.origin,
+    },
   });
 };
 
@@ -53,4 +53,4 @@ export const getUser = async () => {
   }
 };
 
-export default auth0; 
+export default auth0;

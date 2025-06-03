@@ -2,28 +2,28 @@
  * frontend/src/services/authService.ts
  * Service for handling authentication operations with Microsoft Entra ID
  */
-import { 
-  PublicClientApplication, 
-  AuthenticationResult, 
+import {
+  PublicClientApplication,
+  AuthenticationResult,
   AccountInfo,
   InteractionRequiredAuthError,
-  PopupRequest
-} from "@azure/msal-browser";
-import { 
-  msalConfig, 
-  loginRequest, 
+  PopupRequest,
+} from '@azure/msal-browser';
+import {
+  msalConfig,
+  loginRequest,
   graphRequest,
   microsoftLoginRequest,
   googleLoginRequest,
-  graphConfig
-} from "./authConfig";
+  graphConfig,
+} from './authConfig';
 
 // Create an MSAL instance
 const msalInstance = new PublicClientApplication(msalConfig);
 
 // Initialize MSAL
 msalInstance.initialize().catch(error => {
-  console.error("Error initializing MSAL:", error);
+  console.error('Error initializing MSAL:', error);
 });
 
 // Authentication service class
@@ -34,14 +34,14 @@ class AuthService {
     if (activeAccount) {
       return activeAccount;
     }
-    
+
     // If no active account is set, but accounts exist, set the first one as active
     const accounts = msalInstance.getAllAccounts();
     if (accounts.length > 0) {
       msalInstance.setActiveAccount(accounts[0]);
       return accounts[0];
     }
-    
+
     return null;
   }
 
@@ -54,7 +54,7 @@ class AuthService {
       }
       return authResult;
     } catch (error) {
-      console.error("Error during sign-in", error);
+      console.error('Error during sign-in', error);
       return null;
     }
   }
@@ -68,7 +68,7 @@ class AuthService {
       }
       return authResult;
     } catch (error) {
-      console.error("Error during Microsoft login", error);
+      console.error('Error during Microsoft login', error);
       return null;
     }
   }
@@ -82,7 +82,7 @@ class AuthService {
       }
       return authResult;
     } catch (error) {
-      console.error("Error during Google login", error);
+      console.error('Error during Google login', error);
       return null;
     }
   }
@@ -97,7 +97,7 @@ class AuthService {
 
       const response = await msalInstance.acquireTokenSilent({
         ...graphRequest,
-        account: account
+        account: account,
       });
 
       return response.accessToken;
@@ -107,11 +107,11 @@ class AuthService {
           const response = await msalInstance.acquireTokenPopup(graphRequest);
           return response.accessToken;
         } catch (popupError) {
-          console.error("Error acquiring token via popup", popupError);
+          console.error('Error acquiring token via popup', popupError);
           return null;
         }
       }
-      console.error("Error acquiring token silently", error);
+      console.error('Error acquiring token silently', error);
       return null;
     }
   }
@@ -136,7 +136,7 @@ class AuthService {
 
       return await response.json();
     } catch (error) {
-      console.error("Error getting user info", error);
+      console.error('Error getting user info', error);
       return null;
     }
   }
@@ -159,4 +159,4 @@ export const getToken = () => authService.getToken();
 export const getUserInfo = () => authService.getUserInfo();
 
 // Export msalInstance for use with MsalProvider
-export { msalInstance }; 
+export { msalInstance };

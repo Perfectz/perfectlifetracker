@@ -1,0 +1,335 @@
+# PERFECT LIFETRACKER PRO - HEALTH CHECK FIX USER STORIES
+# Generated from repository health check analysis
+# Following AI vibe coding best practices
+
+================================================================================
+## EPIC: Code Quality & Security Hardening
+================================================================================
+
+### USER STORY #1: Fix Critical Linting Errors
+**Priority:** CRITICAL (High Impact, Low Effort)
+**Estimate:** 2 Story Points (15 minutes)
+
+**As a** developer
+**I want** all linting errors fixed in the frontend codebase
+**So that** the code follows consistent formatting standards and is maintainable
+
+**Acceptance Criteria:**
+- [ ] All 1,483 linting errors are resolved
+- [ ] Code follows Prettier formatting standards
+- [ ] ESLint rules are satisfied
+- [ ] Build process completes without warnings
+- [ ] No functionality is broken after formatting changes
+
+**CURSOR PROMPTS:**
+```
+Prompt 1:
+"Fix all ESLint and Prettier formatting errors in the frontend codebase. Run the automated linting fix command and then manually resolve any remaining TypeScript strict mode violations. Ensure all imports use single quotes consistently and proper spacing. Do not change any business logic - only fix formatting and style issues."
+
+Prompt 2:
+"After running npm run lint:fix, there may be remaining TypeScript errors. Fix any remaining @typescript-eslint/no-explicit-any errors by replacing 'any' types with proper TypeScript interfaces or 'unknown' where appropriate. Maintain existing functionality."
+
+Prompt 3:
+"Verify that all files in frontend/src follow the project's ESLint configuration. Fix any remaining unused imports, missing semicolons, or quote style inconsistencies."
+```
+
+**Commands to Execute:**
+```bash
+cd frontend
+npm run lint:fix
+npm run build  # Verify no build errors
+```
+
+================================================================================
+
+### USER STORY #2: Enable JWT Authentication Security
+**Priority:** CRITICAL (High Impact, Low Effort)
+**Estimate:** 1 Story Point (5 minutes)
+
+**As a** security engineer
+**I want** JWT authentication properly enabled in production
+**So that** API endpoints are protected from unauthorized access
+
+**Acceptance Criteria:**
+- [ ] JWT bypass middleware is removed from production code
+- [ ] Proper JWT validation middleware is active
+- [ ] Environment variables for Azure AD are configured
+- [ ] All protected routes require valid JWT tokens
+- [ ] Development mode still allows easy testing
+
+**CURSOR PROMPTS:**
+```
+Prompt 1:
+"Remove the security vulnerability in backend/src/index.ts line 55 where JWT authentication is bypassed. Enable the proper JWT middleware that uses Azure AD B2C validation. The bypass line 'const checkJwt = (req: any, res: any, next: any) => next();' should be deleted and the commented-out proper JWT middleware should be uncommented and used instead."
+
+Prompt 2:
+"Ensure that the JWT middleware properly validates tokens from Azure AD B2C using the jwks-rsa library. The middleware should check the AZURE_AUTHORITY and AZURE_CLIENT_ID environment variables. Add proper error handling for invalid tokens."
+
+Prompt 3:
+"Add a conditional check so that JWT authentication can be bypassed only in development mode when USE_MOCK_AUTH environment variable is set to true, but always enforced in production."
+```
+
+**Files to Modify:**
+- backend/src/index.ts (lines 55-56)
+- backend/.env.template (add USE_MOCK_AUTH variable)
+
+================================================================================
+
+### USER STORY #3: Remove Duplicate Backend Code
+**Priority:** HIGH (High Impact, Low Effort)
+**Estimate:** 1 Story Point (10 minutes)
+
+**As a** developer
+**I want** duplicate backend code removed from the repository
+**So that** there's no confusion about which codebase is authoritative
+
+**Acceptance Criteria:**
+- [ ] temp_backend directory is completely removed
+- [ ] All references to temp_backend are removed from documentation
+- [ ] Git history preserves the removal for audit trail
+- [ ] No functionality is lost
+- [ ] Build and deployment scripts work correctly
+
+**CURSOR PROMPTS:**
+```
+Prompt 1:
+"Analyze the temp_backend directory and compare it with the main backend directory. Identify any unique functionality in temp_backend that doesn't exist in backend. If temp_backend is truly redundant, prepare it for removal."
+
+Prompt 2:
+"Remove the temp_backend directory entirely from the repository. Update any documentation files that reference temp_backend. Ensure no build scripts, Docker files, or configuration files reference the temp_backend path."
+
+Prompt 3:
+"Search through all configuration files (docker-compose.yml, package.json, README files) and remove any references to temp_backend. Update paths to point to the main backend directory only."
+```
+
+**Commands to Execute:**
+```bash
+# After Cursor analysis confirms temp_backend is duplicate
+rm -rf temp_backend/
+git add .
+git commit -m "remove: duplicate temp_backend directory"
+```
+
+================================================================================
+
+### USER STORY #4: Fix TypeScript Strict Mode Violations
+**Priority:** HIGH (High Impact, Medium Effort)
+**Estimate:** 5 Story Points (1 hour)
+
+**As a** developer
+**I want** all TypeScript 'any' types replaced with proper type definitions
+**So that** the codebase has better type safety and catches errors at compile time
+
+**Acceptance Criteria:**
+- [ ] All explicit 'any' types are replaced with proper interfaces
+- [ ] Generic types are used where appropriate
+- [ ] API response types are properly defined
+- [ ] Event handler types are properly typed
+- [ ] Unknown type is used where any was appropriate
+- [ ] Type safety is maintained without breaking functionality
+
+**CURSOR PROMPTS:**
+```
+Prompt 1:
+"Create proper TypeScript interfaces for all API responses in frontend/src/services/apiService.ts. Replace all 'any' types with specific interfaces like ApiResponse<T>, UploadResponse, FileResponse, etc. Use generic types where the response structure varies."
+
+Prompt 2:
+"In frontend/src/services/apiService.ts, replace the generic apiRequest function signature to use proper TypeScript generics. Change 'function apiRequest(url: string, method = 'GET', data?: any, auth = false): Promise<any>' to use proper generic types like 'function apiRequest<T>(url: string, method = 'GET', data?: unknown, auth = false): Promise<T>'"
+
+Prompt 3:
+"Fix TypeScript strict mode violations in authentication-related files (AuthContext.tsx, authService.ts, etc.). Create proper interfaces for user objects, authentication responses, and error objects. Replace 'any' with specific types or 'unknown' where the type is genuinely unknown."
+
+Prompt 4:
+"Create a types directory with shared interfaces for common data structures like User, Task, Fitness records, etc. Export these interfaces and use them consistently across all service files to replace 'any' types."
+```
+
+**Files to Create:**
+- frontend/src/types/api.ts
+- frontend/src/types/user.ts
+- frontend/src/types/common.ts
+
+================================================================================
+
+### USER STORY #5: Create Production Environment Configuration
+**Priority:** HIGH (High Impact, Medium Effort)
+**Estimate:** 3 Story Points (30 minutes)
+
+**As a** DevOps engineer
+**I want** proper environment configuration templates for production deployment
+**So that** the application can be deployed securely with real credentials
+
+**Acceptance Criteria:**
+- [ ] .env.production templates exist for both frontend and backend
+- [ ] All required environment variables are documented
+- [ ] Placeholder values are clearly marked for replacement
+- [ ] Development and production configurations are separated
+- [ ] Security-sensitive variables are properly identified
+
+**CURSOR PROMPTS:**
+```
+Prompt 1:
+"Create .env.production template files for both frontend and backend directories. Include all required environment variables with placeholder values that clearly indicate they need to be replaced with real credentials in production. Add comments explaining each variable's purpose."
+
+Prompt 2:
+"Create a comprehensive environment setup guide in ENV_SETUP.md that explains how to configure the application for different environments (development, staging, production). Include Azure service setup instructions and security best practices."
+
+Prompt 3:
+"Update the backend/scripts/create-env.js script to handle production environment setup. Add validation to check that production environment variables are not using placeholder values when NODE_ENV=production."
+
+Prompt 4:
+"Create environment variable validation in the backend startup process. The application should fail fast with clear error messages if required environment variables are missing or using placeholder values in production."
+```
+
+**Files to Create:**
+- backend/.env.production
+- frontend/.env.production
+- ENV_SETUP.md
+- backend/src/utils/envValidation.ts
+
+================================================================================
+
+### USER STORY #6: Implement Proper Logging Strategy
+**Priority:** MEDIUM (Medium Impact, Medium Effort)
+**Estimate:** 5 Story Points (1 hour)
+
+**As a** operations engineer
+**I want** console.log statements replaced with proper structured logging
+**So that** application logs are useful for debugging and monitoring in production
+
+**Acceptance Criteria:**
+- [ ] All console.log statements are removed from production code
+- [ ] Proper logging library is implemented (Winston)
+- [ ] Log levels are appropriately used (error, warn, info, debug)
+- [ ] Logs are structured with consistent format
+- [ ] Sensitive information is not logged
+
+**CURSOR PROMPTS:**
+```
+Prompt 1:
+"Install and configure Winston logging library in the backend. Create a logger utility that supports different log levels and formats. Replace all console.log statements with appropriate logger calls using proper log levels."
+
+Prompt 2:
+"Create a logging configuration that outputs to console in development and can be configured for Azure Application Insights in production. Ensure no sensitive information (passwords, tokens, personal data) is logged."
+
+Prompt 3:
+"Implement request logging middleware for the Express server that logs incoming requests with correlation IDs. This should help with debugging API issues in production."
+
+Prompt 4:
+"Remove or replace console.log statements in the frontend code. Create a client-side logging service that can send errors to a monitoring service in production but logs to console in development."
+```
+
+================================================================================
+
+### USER STORY #7: Set Up Pre-commit Quality Gates
+**Priority:** MEDIUM (Medium Impact, Low Effort)
+**Estimate:** 3 Story Points (30 minutes)
+
+**As a** development team lead
+**I want** automated quality checks to run before code is committed
+**So that** code quality issues are caught early and don't reach the main branch
+
+**Acceptance Criteria:**
+- [ ] Pre-commit hooks are configured with Husky
+- [ ] Linting runs automatically before commit
+- [ ] TypeScript compilation is verified before commit
+- [ ] Tests run before commit (when they exist)
+- [ ] Commits are blocked if quality gates fail
+
+**CURSOR PROMPTS:**
+```
+Prompt 1:
+"Set up Husky pre-commit hooks in the root package.json. Configure it to run linting, TypeScript compilation, and formatting checks before allowing commits. The hooks should run for both frontend and backend code."
+
+Prompt 2:
+"Create a lint-staged configuration that only runs checks on staged files to improve performance. Configure it to run eslint --fix, prettier --write, and tsc --noEmit on appropriate file types."
+
+Prompt 3:
+"Add a pre-push hook that runs the full build process to ensure that code being pushed will not break the CI/CD pipeline. Include instructions in README.md for developers on how to bypass hooks in emergency situations."
+```
+
+================================================================================
+
+## IMPLEMENTATION SEQUENCE
+
+### Phase 1: Critical Security & Quality (30 minutes)
+1. User Story #1: Fix Critical Linting Errors
+2. User Story #2: Enable JWT Authentication Security
+3. User Story #3: Remove Duplicate Backend Code
+
+### Phase 2: Type Safety & Configuration (1.5 hours)
+4. User Story #4: Fix TypeScript Strict Mode Violations
+5. User Story #5: Create Production Environment Configuration
+
+### Phase 3: Operational Excellence (1.5 hours)
+6. User Story #6: Implement Proper Logging Strategy
+7. User Story #7: Set Up Pre-commit Quality Gates
+
+================================================================================
+
+## AI VIBE CODING BEST PRACTICES APPLIED
+
+### 1. Incremental Changes
+- Each user story represents a focused, testable change
+- Changes can be made and verified independently
+- Risk is minimized through small, atomic commits
+
+### 2. Clear Context Setting
+- Each Cursor prompt provides specific context about what needs to be changed
+- File paths and line numbers are included where relevant
+- Business reasoning is provided for each change
+
+### 3. Verification Steps
+- Each story includes clear acceptance criteria
+- Commands are provided to verify changes work
+- Build and test steps are included
+
+### 4. Safety First
+- Security fixes are prioritized
+- Production deployment considerations are included
+- Rollback procedures are implied through Git workflow
+
+### 5. Documentation Driven
+- Environment setup is properly documented
+- Configuration changes are explained
+- Future developers have clear guidance
+
+================================================================================
+
+## CURSOR WORKFLOW EXAMPLE
+
+To implement User Story #1 (Fix Critical Linting Errors):
+
+1. **Select all files in frontend/src**
+2. **Use Cursor Chat with prompt:**
+   "Fix all ESLint and Prettier formatting errors in the selected frontend files. Run the automated linting fix and then manually resolve any remaining TypeScript strict mode violations. Ensure all imports use single quotes consistently and proper spacing. Do not change any business logic - only fix formatting and style issues."
+
+3. **After AI makes changes, run verification:**
+   ```bash
+   cd frontend
+   npm run lint
+   npm run build
+   ```
+
+4. **If issues remain, follow up with:**
+   "There are still [number] linting errors remaining. Please fix the remaining @typescript-eslint/no-explicit-any errors and unused variable warnings shown in the terminal output."
+
+5. **Commit when all checks pass:**
+   ```bash
+   git add .
+   git commit -m "fix: resolve 1,483 linting errors and format issues"
+   ```
+
+================================================================================
+
+## SUCCESS METRICS
+
+- [ ] All linting errors resolved (1,483 → 0)
+- [ ] JWT authentication enabled (security vulnerability closed)
+- [ ] Codebase cleaned (temp_backend removed)
+- [ ] Type safety improved (0 'any' types in critical paths)
+- [ ] Production deployment ready (environment templates exist)
+- [ ] Operational monitoring ready (proper logging implemented)
+- [ ] Developer experience improved (pre-commit hooks active)
+
+Total Estimated Effort: 20 Story Points (4-5 hours)
+Business Value: High (Production-ready, secure, maintainable codebase) 

@@ -17,7 +17,6 @@ import MealTrackerPage from './pages/MealTrackerPage';
 
 // Temporary placeholder components for the dashboard sub-routes
 const TasksPage = () => <div>Tasks Page - Coming Soon</div>;
-const FitnessPage = () => <div>Fitness Page - Coming Soon</div>;
 const SettingsPage = () => <div>Settings Page - Coming Soon</div>;
 const ProfilePage = () => <div>Profile Page - Coming Soon</div>;
 
@@ -37,13 +36,16 @@ function App() {
               </Route>
 
               {/* Dashboard & Subpages (Protected) */}
-              <Route path="/dashboard/*" element={
-                <ProtectedRoute>
-                  <Layout title="Dashboard" useStandardHeader={true}>
-                    <Outlet />
-                  </Layout>
-                </ProtectedRoute>
-              }>
+              <Route
+                path="/dashboard/*"
+                element={
+                  <ProtectedRoute>
+                    <Layout title="Dashboard" useStandardHeader={true}>
+                      <Outlet />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              >
                 <Route index element={<DashboardPage />} />
                 <Route path="tasks" element={<TasksPage />} />
                 <Route path="fitness" element={<WeightTrackerPage />} />

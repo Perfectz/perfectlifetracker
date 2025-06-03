@@ -21,13 +21,9 @@ const LoginButton = () => {
         py: 1.5,
       }}
     >
-      {isLoading ? (
-        <CircularProgress size={24} color="inherit" />
-      ) : (
-        'Sign in (Demo)'
-      )}
+      {isLoading ? <CircularProgress size={24} color="inherit" /> : 'Sign in (Demo)'}
     </Button>
   );
 };
 
-export default LoginButton; 
+export default LoginButton;

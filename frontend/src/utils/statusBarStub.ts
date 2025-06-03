@@ -11,4 +11,4 @@ export const StatusBar = ({ style }: { style?: 'auto' | 'inverted' | 'light' | '
 };
 
 // Export the default StatusBar
-export default StatusBar; 
+export default StatusBar;

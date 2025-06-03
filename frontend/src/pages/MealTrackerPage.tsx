@@ -36,7 +36,7 @@ import {
   TableRow,
   Accordion,
   AccordionSummary,
-  AccordionDetails
+  AccordionDetails,
 } from '@mui/material';
 import {
   PhotoCamera,
@@ -47,7 +47,7 @@ import {
   Analytics,
   ExpandMore,
   Visibility,
-  Science
+  Science,
 } from '@mui/icons-material';
 import {
   fetchMealRecords,
@@ -59,7 +59,7 @@ import {
   deleteMealRecord,
   MealRecord,
   FoodAnalysis,
-  DailySummary
+  DailySummary,
 } from '../services/mealService';
 
 interface TabPanelProps {
@@ -107,14 +107,16 @@ const MealTrackerPage: React.FC = () => {
     fiber: '',
     sugar: '',
     brand: '',
-    notes: ''
+    notes: '',
   });
 
   // AI analysis state
   const [analysisResult, setAnalysisResult] = useState<FoodAnalysis | null>(null);
   const [analysisImage, setAnalysisImage] = useState<File | null>(null);
   const [analysisImagePreview, setAnalysisImagePreview] = useState<string>('');
-  const [analysisMealType, setAnalysisMealType] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack'>('lunch');
+  const [analysisMealType, setAnalysisMealType] = useState<
+    'breakfast' | 'lunch' | 'dinner' | 'snack'
+  >('lunch');
 
   // Edit dialog state
   const [editDialogOpen, setEditDialogOpen] = useState<boolean>(false);
@@ -131,7 +133,7 @@ const MealTrackerPage: React.FC = () => {
       setLoading(true);
       const [mealsData, summaryData] = await Promise.all([
         fetchMealRecords(selectedDate),
-        getDailySummary(selectedDate)
+        getDailySummary(selectedDate),
       ]);
       setMeals(mealsData);
       setDailySummary(summaryData);
@@ -150,56 +152,59 @@ const MealTrackerPage: React.FC = () => {
   }, []);
 
   // Handle manual meal logging
-  const handleManualSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!manualForm.foodName || !manualForm.calories) {
-      showMessage('Food name and calories are required', 'error');
-      return;
-    }
+  const handleManualSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!manualForm.foodName || !manualForm.calories) {
+        showMessage('Food name and calories are required', 'error');
+        return;
+      }
 
-    try {
-      setLoading(true);
-      await logMeal({
-        foodName: manualForm.foodName,
-        mealType: manualForm.mealType,
-        calories: Number(manualForm.calories),
-        servingSize: manualForm.servingSize ? Number(manualForm.servingSize) : undefined,
-        servingUnit: manualForm.servingUnit,
-        protein: manualForm.protein ? Number(manualForm.protein) : undefined,
-        carbs: manualForm.carbs ? Number(manualForm.carbs) : undefined,
-        fat: manualForm.fat ? Number(manualForm.fat) : undefined,
-        fiber: manualForm.fiber ? Number(manualForm.fiber) : undefined,
-        sugar: manualForm.sugar ? Number(manualForm.sugar) : undefined,
-        brand: manualForm.brand || undefined,
-        date: selectedDate + 'T12:00:00.000Z',
-        notes: manualForm.notes || undefined
-      });
+      try {
+        setLoading(true);
+        await logMeal({
+          foodName: manualForm.foodName,
+          mealType: manualForm.mealType,
+          calories: Number(manualForm.calories),
+          servingSize: manualForm.servingSize ? Number(manualForm.servingSize) : undefined,
+          servingUnit: manualForm.servingUnit,
+          protein: manualForm.protein ? Number(manualForm.protein) : undefined,
+          carbs: manualForm.carbs ? Number(manualForm.carbs) : undefined,
+          fat: manualForm.fat ? Number(manualForm.fat) : undefined,
+          fiber: manualForm.fiber ? Number(manualForm.fiber) : undefined,
+          sugar: manualForm.sugar ? Number(manualForm.sugar) : undefined,
+          brand: manualForm.brand || undefined,
+          date: selectedDate + 'T12:00:00.000Z',
+          notes: manualForm.notes || undefined,
+        });
 
-      // Reset form
-      setManualForm({
-        foodName: '',
-        mealType: 'lunch',
-        calories: '',
-        servingSize: '',
-        servingUnit: 'serving',
-        protein: '',
-        carbs: '',
-        fat: '',
-        fiber: '',
-        sugar: '',
-        brand: '',
-        notes: ''
-      });
+        // Reset form
+        setManualForm({
+          foodName: '',
+          mealType: 'lunch',
+          calories: '',
+          servingSize: '',
+          servingUnit: 'serving',
+          protein: '',
+          carbs: '',
+          fat: '',
+          fiber: '',
+          sugar: '',
+          brand: '',
+          notes: '',
+        });
 
-      await loadMealsAndSummary();
-      showMessage('Meal logged successfully!', 'success');
-    } catch (error) {
-      console.error('Failed to log meal', error);
-      showMessage('Failed to log meal', 'error');
-    } finally {
-      setLoading(false);
-    }
-  }, [manualForm, selectedDate, loadMealsAndSummary, showMessage]);
+        await loadMealsAndSummary();
+        showMessage('Meal logged successfully!', 'success');
+      } catch (error) {
+        console.error('Failed to log meal', error);
+        showMessage('Failed to log meal', 'error');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [manualForm, selectedDate, loadMealsAndSummary, showMessage]
+  );
 
   // Handle image selection for AI analysis
   const handleImageSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -245,7 +250,7 @@ const MealTrackerPage: React.FC = () => {
         analysis: analysisResult,
         mealType: analysisMealType,
         date: selectedDate + 'T12:00:00.000Z',
-        imageUrl: analysisImagePreview
+        imageUrl: analysisImagePreview,
       });
 
       // Reset analysis
@@ -264,7 +269,14 @@ const MealTrackerPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [analysisResult, analysisMealType, selectedDate, analysisImagePreview, loadMealsAndSummary, showMessage]);
+  }, [
+    analysisResult,
+    analysisMealType,
+    selectedDate,
+    analysisImagePreview,
+    loadMealsAndSummary,
+    showMessage,
+  ]);
 
   // Handle edit meal
   const handleEditClick = useCallback((meal: MealRecord) => {
@@ -273,23 +285,26 @@ const MealTrackerPage: React.FC = () => {
   }, []);
 
   // Handle delete meal
-  const handleDeleteClick = useCallback(async (mealId: string) => {
-    if (!window.confirm('Are you sure you want to delete this meal entry?')) {
-      return;
-    }
+  const handleDeleteClick = useCallback(
+    async (mealId: string) => {
+      if (!window.confirm('Are you sure you want to delete this meal entry?')) {
+        return;
+      }
 
-    try {
-      setLoading(true);
-      await deleteMealRecord(mealId);
-      await loadMealsAndSummary();
-      showMessage('Meal deleted successfully!', 'success');
-    } catch (error) {
-      console.error('Failed to delete meal', error);
-      showMessage('Failed to delete meal', 'error');
-    } finally {
-      setLoading(false);
-    }
-  }, [loadMealsAndSummary, showMessage]);
+      try {
+        setLoading(true);
+        await deleteMealRecord(mealId);
+        await loadMealsAndSummary();
+        showMessage('Meal deleted successfully!', 'success');
+      } catch (error) {
+        console.error('Failed to delete meal', error);
+        showMessage('Failed to delete meal', 'error');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [loadMealsAndSummary, showMessage]
+  );
 
   const getConfidenceColor = useCallback((confidence?: number) => {
     if (!confidence) return 'default';
@@ -320,7 +335,7 @@ const MealTrackerPage: React.FC = () => {
           label="Date"
           type="date"
           value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
+          onChange={e => setSelectedDate(e.target.value)}
           InputLabelProps={{ shrink: true }}
           sx={{ mb: 2 }}
         />
@@ -398,7 +413,7 @@ const MealTrackerPage: React.FC = () => {
               onChange={handleImageSelect}
               style={{ display: 'none' }}
             />
-            
+
             <Button
               variant="outlined"
               startIcon={<PhotoCamera />}
@@ -420,7 +435,7 @@ const MealTrackerPage: React.FC = () => {
                     <InputLabel>Meal Type</InputLabel>
                     <Select
                       value={analysisMealType}
-                      onChange={(e) => setAnalysisMealType(e.target.value as any)}
+                      onChange={e => setAnalysisMealType(e.target.value as any)}
                     >
                       <MenuItem value="breakfast">Breakfast</MenuItem>
                       <MenuItem value="lunch">Lunch</MenuItem>
@@ -443,15 +458,22 @@ const MealTrackerPage: React.FC = () => {
             {analysisResult && (
               <Card sx={{ mt: 2, textAlign: 'left' }}>
                 <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      mb: 2,
+                    }}
+                  >
                     <Typography variant="h6">{analysisResult.foodName}</Typography>
-                    <Chip 
+                    <Chip
                       label={`${Math.round(analysisResult.confidence * 100)}% confidence`}
                       color={getConfidenceColor(analysisResult.confidence)}
                       size="small"
                     />
                   </Box>
-                  
+
                   <Grid container spacing={2}>
                     <Grid item xs={6}>
                       <Typography variant="body2">
@@ -460,7 +482,8 @@ const MealTrackerPage: React.FC = () => {
                     </Grid>
                     <Grid item xs={6}>
                       <Typography variant="body2">
-                        <strong>Serving:</strong> {analysisResult.servingSize} {analysisResult.servingUnit}
+                        <strong>Serving:</strong> {analysisResult.servingSize}{' '}
+                        {analysisResult.servingUnit}
                       </Typography>
                     </Grid>
                     <Grid item xs={4}>
@@ -479,7 +502,7 @@ const MealTrackerPage: React.FC = () => {
                       </Typography>
                     </Grid>
                   </Grid>
-                  
+
                   <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                     {analysisResult.description}
                   </Typography>
@@ -507,7 +530,7 @@ const MealTrackerPage: React.FC = () => {
                 <TextField
                   label="Food Name"
                   value={manualForm.foodName}
-                  onChange={(e) => setManualForm({ ...manualForm, foodName: e.target.value })}
+                  onChange={e => setManualForm({ ...manualForm, foodName: e.target.value })}
                   fullWidth
                   required
                 />
@@ -517,7 +540,9 @@ const MealTrackerPage: React.FC = () => {
                   <InputLabel>Meal Type</InputLabel>
                   <Select
                     value={manualForm.mealType}
-                    onChange={(e) => setManualForm({ ...manualForm, mealType: e.target.value as any })}
+                    onChange={e =>
+                      setManualForm({ ...manualForm, mealType: e.target.value as any })
+                    }
                   >
                     <MenuItem value="breakfast">Breakfast</MenuItem>
                     <MenuItem value="lunch">Lunch</MenuItem>
@@ -531,18 +556,18 @@ const MealTrackerPage: React.FC = () => {
                   label="Calories"
                   type="number"
                   value={manualForm.calories}
-                  onChange={(e) => setManualForm({ ...manualForm, calories: e.target.value })}
+                  onChange={e => setManualForm({ ...manualForm, calories: e.target.value })}
                   fullWidth
                   required
                 />
               </Grid>
-              
+
               <Grid item xs={12} md={4}>
                 <TextField
                   label="Serving Size"
                   type="number"
                   value={manualForm.servingSize}
-                  onChange={(e) => setManualForm({ ...manualForm, servingSize: e.target.value })}
+                  onChange={e => setManualForm({ ...manualForm, servingSize: e.target.value })}
                   fullWidth
                 />
               </Grid>
@@ -550,7 +575,7 @@ const MealTrackerPage: React.FC = () => {
                 <TextField
                   label="Serving Unit"
                   value={manualForm.servingUnit}
-                  onChange={(e) => setManualForm({ ...manualForm, servingUnit: e.target.value })}
+                  onChange={e => setManualForm({ ...manualForm, servingUnit: e.target.value })}
                   fullWidth
                 />
               </Grid>
@@ -558,21 +583,23 @@ const MealTrackerPage: React.FC = () => {
                 <TextField
                   label="Brand"
                   value={manualForm.brand}
-                  onChange={(e) => setManualForm({ ...manualForm, brand: e.target.value })}
+                  onChange={e => setManualForm({ ...manualForm, brand: e.target.value })}
                   fullWidth
                 />
               </Grid>
 
               {/* Macros section */}
               <Grid item xs={12}>
-                <Typography variant="h6" sx={{ mb: 1 }}>Macronutrients (optional)</Typography>
+                <Typography variant="h6" sx={{ mb: 1 }}>
+                  Macronutrients (optional)
+                </Typography>
               </Grid>
               <Grid item xs={6} md={2.4}>
                 <TextField
                   label="Protein (g)"
                   type="number"
                   value={manualForm.protein}
-                  onChange={(e) => setManualForm({ ...manualForm, protein: e.target.value })}
+                  onChange={e => setManualForm({ ...manualForm, protein: e.target.value })}
                   fullWidth
                 />
               </Grid>
@@ -581,7 +608,7 @@ const MealTrackerPage: React.FC = () => {
                   label="Carbs (g)"
                   type="number"
                   value={manualForm.carbs}
-                  onChange={(e) => setManualForm({ ...manualForm, carbs: e.target.value })}
+                  onChange={e => setManualForm({ ...manualForm, carbs: e.target.value })}
                   fullWidth
                 />
               </Grid>
@@ -590,7 +617,7 @@ const MealTrackerPage: React.FC = () => {
                   label="Fat (g)"
                   type="number"
                   value={manualForm.fat}
-                  onChange={(e) => setManualForm({ ...manualForm, fat: e.target.value })}
+                  onChange={e => setManualForm({ ...manualForm, fat: e.target.value })}
                   fullWidth
                 />
               </Grid>
@@ -599,7 +626,7 @@ const MealTrackerPage: React.FC = () => {
                   label="Fiber (g)"
                   type="number"
                   value={manualForm.fiber}
-                  onChange={(e) => setManualForm({ ...manualForm, fiber: e.target.value })}
+                  onChange={e => setManualForm({ ...manualForm, fiber: e.target.value })}
                   fullWidth
                 />
               </Grid>
@@ -608,7 +635,7 @@ const MealTrackerPage: React.FC = () => {
                   label="Sugar (g)"
                   type="number"
                   value={manualForm.sugar}
-                  onChange={(e) => setManualForm({ ...manualForm, sugar: e.target.value })}
+                  onChange={e => setManualForm({ ...manualForm, sugar: e.target.value })}
                   fullWidth
                 />
               </Grid>
@@ -619,7 +646,7 @@ const MealTrackerPage: React.FC = () => {
                   multiline
                   rows={2}
                   value={manualForm.notes}
-                  onChange={(e) => setManualForm({ ...manualForm, notes: e.target.value })}
+                  onChange={e => setManualForm({ ...manualForm, notes: e.target.value })}
                   fullWidth
                 />
               </Grid>
@@ -649,18 +676,25 @@ const MealTrackerPage: React.FC = () => {
             </Typography>
           ) : (
             <Box>
-              {sortedMeals.map((meal) => (
+              {sortedMeals.map(meal => (
                 <Accordion key={meal.id}>
                   <AccordionSummary expandIcon={<ExpandMore />}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between' }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        width: '100%',
+                        justifyContent: 'space-between',
+                      }}
+                    >
                       <Box>
                         <Typography variant="h6">{meal.foodName}</Typography>
                         <Typography variant="body2" color="text.secondary">
                           {meal.mealType} • {meal.totalCalories} calories
                           {meal.confidence && (
-                            <Chip 
+                            <Chip
                               label={`AI: ${Math.round(meal.confidence * 100)}%`}
-                              size="small" 
+                              size="small"
                               sx={{ ml: 1 }}
                               color={getConfidenceColor(meal.confidence)}
                             />
@@ -671,7 +705,11 @@ const MealTrackerPage: React.FC = () => {
                         <IconButton onClick={() => handleEditClick(meal)} size="small">
                           <Edit />
                         </IconButton>
-                        <IconButton onClick={() => handleDeleteClick(meal.id)} size="small" color="error">
+                        <IconButton
+                          onClick={() => handleDeleteClick(meal.id)}
+                          size="small"
+                          color="error"
+                        >
                           <Delete />
                         </IconButton>
                       </Box>
@@ -734,11 +772,7 @@ const MealTrackerPage: React.FC = () => {
         onClose={() => setSnackbarOpen(false)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert 
-          onClose={() => setSnackbarOpen(false)} 
-          severity={messageType}
-          sx={{ width: '100%' }}
-        >
+        <Alert onClose={() => setSnackbarOpen(false)} severity={messageType} sx={{ width: '100%' }}>
           {message}
         </Alert>
       </Snackbar>
@@ -746,4 +780,4 @@ const MealTrackerPage: React.FC = () => {
   );
 };
 
-export default MealTrackerPage; 
+export default MealTrackerPage;

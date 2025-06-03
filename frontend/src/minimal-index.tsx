@@ -17,4 +17,4 @@ if (container) {
   );
 } else {
   console.error('Root element not found');
-} 
+}

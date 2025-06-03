@@ -30,7 +30,7 @@ const Header: React.FC<HeaderProps> = ({ height = 200, marginBottom = 2 }) => {
   // Check if the image can be loaded
   useEffect(() => {
     if (!headerAnimation) return;
-    
+
     const img = new Image();
     img.onload = () => setImageLoaded(true);
     img.onerror = () => setImageLoaded(false);
@@ -49,19 +49,20 @@ const Header: React.FC<HeaderProps> = ({ height = 200, marginBottom = 2 }) => {
           position: 'relative',
           borderRadius: isMobile ? '0 0 16px 16px' : 1,
           boxShadow: 2,
-          background: theme.palette.mode === 'dark' 
-            ? `linear-gradient(135deg, ${terraColors.prussianBlue}, ${terraColors.maastrichtBlue})`
-            : `linear-gradient(135deg, ${terraColors.tropicalRain}, ${terraColors.softTeal})`,
+          background:
+            theme.palette.mode === 'dark'
+              ? `linear-gradient(135deg, ${terraColors.prussianBlue}, ${terraColors.maastrichtBlue})`
+              : `linear-gradient(135deg, ${terraColors.tropicalRain}, ${terraColors.softTeal})`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        <Typography 
-          variant="h3" 
-          component="h1" 
-          sx={{ 
-            color: 'white', 
+        <Typography
+          variant="h3"
+          component="h1"
+          sx={{
+            color: 'white',
             fontWeight: 'bold',
             textShadow: '1px 1px 3px rgba(0,0,0,0.3)',
           }}
@@ -98,7 +99,7 @@ const Header: React.FC<HeaderProps> = ({ height = 200, marginBottom = 2 }) => {
           }}
         />
       )}
-      
+
       <Box
         component="img"
         src={headerAnimation}
@@ -111,7 +112,7 @@ const Header: React.FC<HeaderProps> = ({ height = 200, marginBottom = 2 }) => {
           filter: isMobile ? 'brightness(0.9)' : 'none',
         }}
       />
-      
+
       {/* Optional: Add logo or text overlay for mobile */}
       {isMobile && (
         <Box

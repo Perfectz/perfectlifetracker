@@ -17,11 +17,11 @@ export const isMobileDevice = (): boolean => {
   if (isReactNative()) {
     return true;
   }
-  
+
   if (typeof window !== 'undefined') {
     return window.innerWidth <= 768; // Common breakpoint for mobile devices
   }
-  
+
   return false;
 };
 
@@ -32,11 +32,11 @@ export const isIOS = (): boolean => {
   if (isReactNative()) {
     return typeof navigator !== 'undefined' && navigator.platform.indexOf('iOS') !== -1;
   }
-  
+
   if (typeof navigator !== 'undefined') {
     return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
   }
-  
+
   return false;
 };
 
@@ -47,11 +47,11 @@ export const isAndroid = (): boolean => {
   if (isReactNative()) {
     return typeof navigator !== 'undefined' && navigator.platform === 'Android';
   }
-  
+
   if (typeof navigator !== 'undefined') {
     return /Android/.test(navigator.userAgent);
   }
-  
+
   return false;
 };
 
@@ -75,9 +75,6 @@ export const getPlatformStyles = <T extends object, U extends object>(
 /**
  * Conditionally render components based on platform
  */
-export const renderBasedOnPlatform = <T, U>(
-  webComponent: T,
-  mobileComponent: U
-): T | U => {
+export const renderBasedOnPlatform = <T, U>(webComponent: T, mobileComponent: U): T | U => {
   return isWeb() ? webComponent : mobileComponent;
-}; 
+};

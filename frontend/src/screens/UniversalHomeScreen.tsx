@@ -16,14 +16,14 @@ import PlatformHomeScreen from './PlatformHomeScreen'; // Web version
  */
 const UniversalHomeScreen: React.FC = () => {
   const navigate = useNavigate();
-  
+
   // Optional - Convert navigation prop for React Native screens
   const navigationAdapter = {
     navigate: (screenName: string, params?: Record<string, unknown>) => {
       navigate(`/${screenName.toLowerCase()}`, { state: params });
-    }
+    },
   };
-  
+
   return (
     <PlatformScreenWrapper
       webComponent={<PlatformHomeScreen />}
@@ -33,4 +33,4 @@ const UniversalHomeScreen: React.FC = () => {
   );
 };
 
-export default UniversalHomeScreen; 
+export default UniversalHomeScreen;

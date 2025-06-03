@@ -34,4 +34,4 @@ export const settingsStyles = {
   errorText: {
     color: 'error.main',
   },
-} as const; 
+} as const;

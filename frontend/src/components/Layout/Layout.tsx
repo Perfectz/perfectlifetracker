@@ -3,22 +3,22 @@
  * Core responsive layout component with sidebar and header
  */
 import React, { useState, ReactNode } from 'react';
-import { 
-  AppBar, 
-  Box, 
-  CssBaseline, 
-  Divider, 
-  Drawer, 
-  IconButton, 
-  List, 
-  ListItem, 
-  ListItemButton, 
-  ListItemIcon, 
-  ListItemText, 
-  Toolbar, 
-  Typography, 
-  useMediaQuery, 
-  useTheme 
+import {
+  AppBar,
+  Box,
+  CssBaseline,
+  Divider,
+  Drawer,
+  IconButton,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Toolbar,
+  Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -27,7 +27,7 @@ import {
   FitnessCenter as FitnessIcon,
   Settings as SettingsIcon,
   AccountCircle as ProfileIcon,
-  ChevronLeft as ChevronLeftIcon
+  ChevronLeft as ChevronLeftIcon,
 } from '@mui/icons-material';
 import HomeIcon from '@mui/icons-material/Home';
 import { styled } from '@mui/material/styles';
@@ -61,7 +61,7 @@ const navigationItems = [
   { name: 'Tasks', path: '/dashboard/tasks', icon: <TasksIcon />, protected: true },
   { name: 'Fitness', path: '/dashboard/fitness', icon: <FitnessIcon />, protected: true },
   { name: 'Settings', path: '/dashboard/settings', icon: <SettingsIcon />, protected: true },
-  { name: 'Profile', path: '/dashboard/profile', icon: <ProfileIcon />, protected: true }
+  { name: 'Profile', path: '/dashboard/profile', icon: <ProfileIcon />, protected: true },
 ];
 
 interface LayoutProps {
@@ -70,14 +70,18 @@ interface LayoutProps {
   useStandardHeader?: boolean;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, title = 'Perfect LifeTracker Pro', useStandardHeader = false }) => {
+const Layout: React.FC<LayoutProps> = ({
+  children,
+  title = 'Perfect LifeTracker Pro',
+  useStandardHeader = false,
+}) => {
   const theme = useTheme();
   const { isDarkMode, toggleTheme } = useThemeMode();
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  
+
   const [open, setOpen] = useState(!isMobile);
 
   const handleDrawerToggle = () => {
@@ -100,15 +104,13 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'Perfect LifeTracker 
       </DrawerHeader>
       <Divider />
       <List>
-        {drawerItems.map((item) => (
+        {drawerItems.map(item => (
           <ListItem key={item.name} disablePadding>
-            <ListItemButton 
+            <ListItemButton
               selected={location.pathname === item.path}
               onClick={() => navigate(item.path)}
             >
-              <ListItemIcon>
-                {item.icon}
-              </ListItemIcon>
+              <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText primary={item.name} />
             </ListItemButton>
           </ListItem>
@@ -120,11 +122,11 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'Perfect LifeTracker 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <CssBaseline />
-      
+
       {/* Top AppBar */}
-      <AppBar 
-        position="fixed" 
-        sx={{ 
+      <AppBar
+        position="fixed"
+        sx={{
           zIndex: theme.zIndex.drawer + 1,
           width: { md: open ? `calc(100% - ${DRAWER_WIDTH}px)` : '100%' },
           ml: { md: open ? `${DRAWER_WIDTH}px` : 0 },
@@ -158,7 +160,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'Perfect LifeTracker 
           </Box>
         </Toolbar>
       </AppBar>
-      
+
       {/* Sidebar Drawer */}
       <Box component="nav">
         {isMobile ? (
@@ -170,9 +172,9 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'Perfect LifeTracker 
               keepMounted: true, // Better mobile performance
             }}
             sx={{
-              '& .MuiDrawer-paper': { 
+              '& .MuiDrawer-paper': {
                 width: DRAWER_WIDTH,
-                boxSizing: 'border-box' 
+                boxSizing: 'border-box',
               },
             }}
           >
@@ -195,9 +197,10 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'Perfect LifeTracker 
           </Drawer>
         )}
       </Box>
-      
+
       {/* Main Content */}
-      <Box component="main"
+      <Box
+        component="main"
         sx={{
           flexGrow: 1,
           p: 3,
@@ -213,10 +216,8 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'Perfect LifeTracker 
         }}
       >
         <Toolbar /> {/* Spacer to push content below the AppBar */}
-        
         {/* Optionally use the standard Header component */}
         {useStandardHeader && <Header height={180} marginBottom={3} />}
-        
         <Box sx={{ flexGrow: 1 }}>
           <Outlet />
         </Box>
@@ -227,4 +228,4 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'Perfect LifeTracker 
   );
 };
 
-export default Layout; 
+export default Layout;

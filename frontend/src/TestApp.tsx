@@ -7,31 +7,38 @@ function TestApp() {
     <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
       <h1>React Test Application</h1>
       <p>This is a basic test to verify React rendering.</p>
-      
-      <div style={{ marginTop: '20px', padding: '15px', border: '1px solid #ccc', borderRadius: '5px' }}>
+
+      <div
+        style={{
+          marginTop: '20px',
+          padding: '15px',
+          border: '1px solid #ccc',
+          borderRadius: '5px',
+        }}
+      >
         <h2>Counter: {count}</h2>
-        <button 
+        <button
           onClick={() => setCount(count + 1)}
-          style={{ 
-            padding: '8px 16px', 
-            background: '#4285F4', 
-            color: 'white', 
-            border: 'none', 
+          style={{
+            padding: '8px 16px',
+            background: '#4285F4',
+            color: 'white',
+            border: 'none',
             borderRadius: '4px',
             cursor: 'pointer',
-            marginRight: '10px'
+            marginRight: '10px',
           }}
         >
           Increment
         </button>
-        <button 
+        <button
           onClick={() => setCount(0)}
-          style={{ 
-            padding: '8px 16px', 
-            background: '#ddd', 
-            border: 'none', 
+          style={{
+            padding: '8px 16px',
+            background: '#ddd',
+            border: 'none',
             borderRadius: '4px',
-            cursor: 'pointer' 
+            cursor: 'pointer',
           }}
         >
           Reset
@@ -41,4 +48,4 @@ function TestApp() {
   );
 }
 
-export default TestApp; 
+export default TestApp;

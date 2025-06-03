@@ -3,19 +3,19 @@
  * Login dialog modal component for authentication
  */
 import React, { useState, useEffect } from 'react';
-import { 
-  Dialog, 
-  DialogTitle, 
-  DialogContent, 
-  DialogActions, 
-  Button, 
-  Typography, 
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Typography,
   Box,
   CircularProgress,
   Alert,
   AlertTitle,
   Divider,
-  Chip
+  Chip,
 } from '@mui/material';
 import { useAuth } from '../services/AuthContext';
 import { useAuthModals } from '../hooks/useAuthModals';
@@ -48,23 +48,23 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
   useEffect(() => {
     const detectBrowser = () => {
       const userAgent = navigator.userAgent;
-      let browserName = "your browser";
-      
+      let browserName = 'your browser';
+
       if (userAgent.match(/chrome|chromium|crios/i)) {
-        browserName = "Chrome";
+        browserName = 'Chrome';
       } else if (userAgent.match(/firefox|fxios/i)) {
-        browserName = "Firefox";
+        browserName = 'Firefox';
       } else if (userAgent.match(/safari/i)) {
-        browserName = "Safari";
+        browserName = 'Safari';
       } else if (userAgent.match(/opr\//i)) {
-        browserName = "Opera";
+        browserName = 'Opera';
       } else if (userAgent.match(/edg/i)) {
-        browserName = "Edge";
+        browserName = 'Edge';
       }
-      
+
       setBrowserInfo(browserName);
     };
-    
+
     detectBrowser();
   }, []);
 
@@ -72,10 +72,11 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
   const detectPopupBlocker = (): boolean => {
     // Simple detection - check window size difference
     const heightDiff = window.outerHeight - window.innerHeight;
-    if (heightDiff < 100) { // This is a heuristic - if toolbar is too large it may be blocking popups
+    if (heightDiff < 100) {
+      // This is a heuristic - if toolbar is too large it may be blocking popups
       return true;
     }
-    
+
     // Try a more reliable test
     try {
       const popup = window.open('about:blank', '_blank', 'width=100,height=100');
@@ -95,10 +96,12 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
       if (detectPopupBlocker()) {
         setPopupBlockDetected(true);
         setShowPopupHelp(true);
-        setLocalError(`Popup blocker detected. Please allow popups for this site in ${browserInfo}.`);
+        setLocalError(
+          `Popup blocker detected. Please allow popups for this site in ${browserInfo}.`
+        );
         return;
       }
-      
+
       setLocalError(null);
       setShowPopupHelp(false);
       setIsMicrosoftLoading(true);
@@ -107,13 +110,14 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
       closeAllModals();
     } catch (err: any) {
       setLocalError(err.message || 'Failed to sign in with Microsoft');
-      
+
       // Show popup help for popup-related errors
-      if (err.message && (
-        err.message.includes('popup') || 
-        err.message.includes('blocked') ||
-        err.message.includes('cancelled')
-      )) {
+      if (
+        err.message &&
+        (err.message.includes('popup') ||
+          err.message.includes('blocked') ||
+          err.message.includes('cancelled'))
+      ) {
         setShowPopupHelp(true);
         setPopupBlockDetected(true);
       }
@@ -128,10 +132,12 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
       if (detectPopupBlocker()) {
         setPopupBlockDetected(true);
         setShowPopupHelp(true);
-        setLocalError(`Popup blocker detected. Please allow popups for this site in ${browserInfo}.`);
+        setLocalError(
+          `Popup blocker detected. Please allow popups for this site in ${browserInfo}.`
+        );
         return;
       }
-      
+
       setLocalError(null);
       setShowPopupHelp(false);
       setIsGoogleLoading(true);
@@ -140,13 +146,14 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
       closeAllModals();
     } catch (err: any) {
       setLocalError(err.message || 'Failed to sign in with Google');
-      
+
       // Show popup help for popup-related errors
-      if (err.message && (
-        err.message.includes('popup') || 
-        err.message.includes('blocked') ||
-        err.message.includes('cancelled')
-      )) {
+      if (
+        err.message &&
+        (err.message.includes('popup') ||
+          err.message.includes('blocked') ||
+          err.message.includes('cancelled'))
+      ) {
         setShowPopupHelp(true);
         setPopupBlockDetected(true);
       }
@@ -172,7 +179,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
     setRetryCount(count => count + 1);
     setLocalError(null);
     setShowPopupHelp(false);
-    
+
     // Use different timeout and positioning on retry
     try {
       const msalInstance = new PublicClientApplication(msalConfig);
@@ -181,10 +188,10 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
         prompt: 'select_account',
         popupWindowAttributes: {
           popupSize: { width: 800, height: 600 },
-          popupPosition: { top: 100, left: 100 }
-        }
+          popupPosition: { top: 100, left: 100 },
+        },
       };
-      
+
       const result = await msalInstance.loginPopup(loginRequest);
       if (result) {
         window.location.reload(); // Reload page to update auth state
@@ -199,11 +206,11 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
   const displayError = localError || error;
 
   return (
-    <Dialog 
-      open={open} 
-      onClose={onClose} 
-      aria-labelledby="login-dialog-title" 
-      maxWidth="sm" 
+    <Dialog
+      open={open}
+      onClose={onClose}
+      aria-labelledby="login-dialog-title"
+      maxWidth="sm"
       fullWidth
       disableScrollLock={false}
     >
@@ -212,14 +219,14 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
         <Typography gutterBottom>
           Please sign in to continue using Perfect LifeTracker Pro.
         </Typography>
-        
+
         {displayError && (
           <Alert severity="error" sx={{ my: 2 }}>
             <AlertTitle>Sign-in Error</AlertTitle>
             {displayError}
           </Alert>
         )}
-        
+
         {showPopupHelp && (
           <Alert severity="info" sx={{ my: 2 }} icon={<InfoIcon />}>
             <AlertTitle>Popup Window Tips</AlertTitle>
@@ -235,22 +242,23 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
             <Divider sx={{ my: 1 }} />
             {browserInfo && (
               <Typography variant="body2" sx={{ mb: 1 }}>
-                <strong>For {browserInfo} users:</strong> Check the address bar for popup blocking indicators.
+                <strong>For {browserInfo} users:</strong> Check the address bar for popup blocking
+                indicators.
               </Typography>
             )}
             <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-              <Button 
-                size="small" 
-                startIcon={<LoopIcon />} 
+              <Button
+                size="small"
+                startIcon={<LoopIcon />}
                 variant="outlined"
                 onClick={handleRetry}
                 disabled={isLoading || isMicrosoftLoading || isGoogleLoading || isRedirectLoading}
               >
                 Retry Sign-in
               </Button>
-              <Button 
-                size="small" 
-                startIcon={<OpenInNewIcon />} 
+              <Button
+                size="small"
+                startIcon={<OpenInNewIcon />}
                 variant="outlined"
                 onClick={handleRedirectSignIn}
                 disabled={isLoading || isMicrosoftLoading || isGoogleLoading || isRedirectLoading}
@@ -260,7 +268,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
             </Box>
           </Alert>
         )}
-        
+
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
           <Button
             variant="contained"
@@ -268,34 +276,42 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
             onClick={handleMicrosoftSignIn}
             disabled={isLoading || isMicrosoftLoading || isGoogleLoading || isRedirectLoading}
             fullWidth
-            sx={{ 
+            sx={{
               backgroundColor: '#2F2F2F',
               '&:hover': {
-                backgroundColor: '#1E1E1E'
+                backgroundColor: '#1E1E1E',
               },
-              height: '48px'
+              height: '48px',
             }}
           >
-            {isMicrosoftLoading ? <CircularProgress size={24} color="inherit" /> : 'Sign in with Microsoft'}
+            {isMicrosoftLoading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              'Sign in with Microsoft'
+            )}
           </Button>
-          
+
           <Button
             variant="contained"
             startIcon={!isGoogleLoading && <GoogleIcon />}
             onClick={handleGoogleSignIn}
             disabled={isLoading || isMicrosoftLoading || isGoogleLoading || isRedirectLoading}
             fullWidth
-            sx={{ 
+            sx={{
               backgroundColor: '#4285F4',
               '&:hover': {
-                backgroundColor: '#357AE8'
+                backgroundColor: '#357AE8',
               },
-              height: '48px'
+              height: '48px',
             }}
           >
-            {isGoogleLoading ? <CircularProgress size={24} color="inherit" /> : 'Sign in with Google'}
+            {isGoogleLoading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              'Sign in with Google'
+            )}
           </Button>
-          
+
           {popupBlockDetected && (
             <Button
               variant="outlined"
@@ -305,7 +321,11 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
               fullWidth
               sx={{ height: '48px' }}
             >
-              {isRedirectLoading ? <CircularProgress size={24} color="inherit" /> : 'Sign in with Redirect (No Popup)'}
+              {isRedirectLoading ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : (
+                'Sign in with Redirect (No Popup)'
+              )}
             </Button>
           )}
         </Box>
@@ -319,4 +339,4 @@ const LoginModal: React.FC<LoginModalProps> = ({ open, onClose }) => {
   );
 };
 
-export default LoginModal; 
+export default LoginModal;

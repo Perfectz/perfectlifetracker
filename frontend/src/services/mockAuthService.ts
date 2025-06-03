@@ -17,14 +17,14 @@ const mockUsers: MockUser[] = [
     id: 'user-1',
     username: 'admin',
     email: 'admin@example.com',
-    name: 'Admin User'
+    name: 'Admin User',
   },
   {
     id: 'user-2',
     username: 'user',
     email: 'user@example.com',
-    name: 'Test User'
-  }
+    name: 'Test User',
+  },
 ];
 
 // Mock authentication service class
@@ -41,23 +41,26 @@ class MockAuthService {
   }
 
   // Mock sign-in functionality
-  async signIn(email: string = 'admin@example.com', password: string = 'password'): Promise<MockUser> {
+  async signIn(
+    email: string = 'admin@example.com',
+    password: string = 'password'
+  ): Promise<MockUser> {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 500));
-    
+
     // Find user by email
     const user = mockUsers.find(u => u.email === email);
-    
+
     if (!user) {
       throw new Error('User not found');
     }
-    
+
     // In a real app, we would validate the password here
     // For this mock, we'll just accept any password
-    
+
     // Save to localStorage
     localStorage.setItem('mockUser', JSON.stringify(user));
-    
+
     return user;
   }
 
@@ -65,19 +68,19 @@ class MockAuthService {
   async signOut(): Promise<void> {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 300));
-    
+
     // Clear from localStorage
     localStorage.removeItem('mockUser');
   }
-  
+
   // Get user info (profile)
   async getUserInfo(): Promise<MockUser | null> {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 300));
-    
+
     return this.getCurrentUser();
   }
-  
+
   // Simplified sign in function for demo
   async demoSignIn(): Promise<MockUser> {
     return this.signIn();
@@ -87,4 +90,4 @@ class MockAuthService {
 // Export a singleton instance
 export const mockAuthService = new MockAuthService();
 
-export default mockAuthService; 
+export default mockAuthService;

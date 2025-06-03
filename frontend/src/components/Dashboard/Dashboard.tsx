@@ -48,34 +48,28 @@ const sizeToColumns = {
   small: { xs: 12, sm: 6, md: 4, lg: 3 },
   medium: { xs: 12, sm: 12, md: 6, lg: 6 },
   large: { xs: 12, md: 8, lg: 8 },
-  full: { xs: 12 }
+  full: { xs: 12 },
 };
 
 /**
  * Individual Widget Component
  */
-export const Widget: React.FC<WidgetProps> = ({ 
-  id, 
-  title, 
-  children, 
+export const Widget: React.FC<WidgetProps> = ({
+  id,
+  title,
+  children,
   size = 'medium',
-  height = 'auto'
+  height = 'auto',
 }) => {
   return (
     <Grid item {...sizeToColumns[size]}>
-      <WidgetContainer 
-        elevation={1} 
-        id={`widget-${id}`}
-        sx={{ height }}
-      >
+      <WidgetContainer elevation={1} id={`widget-${id}`} sx={{ height }}>
         <WidgetHeader>
           <Typography variant="h6" component="h2">
             {title}
           </Typography>
         </WidgetHeader>
-        <WidgetContent>
-          {children}
-        </WidgetContent>
+        <WidgetContent>{children}</WidgetContent>
       </WidgetContainer>
     </Grid>
   );
@@ -89,10 +83,7 @@ interface DashboardProps {
   spacing?: number;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ 
-  children, 
-  spacing = 3
-}) => {
+const Dashboard: React.FC<DashboardProps> = ({ children, spacing = 3 }) => {
   return (
     <Box sx={{ flexGrow: 1, py: 2 }}>
       <Grid container spacing={spacing}>
@@ -102,4 +93,4 @@ const Dashboard: React.FC<DashboardProps> = ({
   );
 };
 
-export default Dashboard; 
+export default Dashboard;

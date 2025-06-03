@@ -72,14 +72,14 @@ const TerraAppBar: React.FC = () => {
   const { userProfile, signOut } = useAuth();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const isDevelopment = import.meta.env.MODE === 'development';
-  
+
   // Determine the initials to display
   const getUserInitials = (): string => {
     // In development mode, show PLT (PerfectLifeTrack) as initials
     if (isDevelopment) {
       return 'PLT';
     }
-    
+
     // If we have a user profile, extract initials from name
     if (userProfile && userProfile.name) {
       const names = userProfile.name.split(' ');
@@ -89,19 +89,19 @@ const TerraAppBar: React.FC = () => {
         return names[0].substring(0, 2).toUpperCase();
       }
     }
-    
+
     // Fallback to generic user initials
     return 'UR'; // User
   };
-  
+
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
-  
+
   const handleMenuClose = () => {
     setAnchorEl(null);
   };
-  
+
   const handleSignOut = () => {
     handleMenuClose();
     signOut();
@@ -181,7 +181,7 @@ const TerraAppBar: React.FC = () => {
             {getUserInitials()}
           </Avatar>
         </IconButton>
-        
+
         {/* User Menu */}
         <Menu
           id="user-menu"
@@ -197,19 +197,31 @@ const TerraAppBar: React.FC = () => {
             horizontal: 'right',
           }}
         >
-          <MenuItem onClick={() => { handleMenuClose(); window.location.href = '/profile'; }}>
+          <MenuItem
+            onClick={() => {
+              handleMenuClose();
+              window.location.href = '/profile';
+            }}
+          >
             Profile
           </MenuItem>
-          <MenuItem onClick={() => { handleMenuClose(); window.location.href = '/settings'; }}>
+          <MenuItem
+            onClick={() => {
+              handleMenuClose();
+              window.location.href = '/settings';
+            }}
+          >
             Settings
           </MenuItem>
           {isDevelopment && (
-            <MenuItem onClick={() => { 
-              handleMenuClose(); 
-              if (typeof (window as any).toggleAuth === 'function') {
-                (window as any).toggleAuth();
-              }
-            }}>
+            <MenuItem
+              onClick={() => {
+                handleMenuClose();
+                if (typeof (window as any).toggleAuth === 'function') {
+                  (window as any).toggleAuth();
+                }
+              }}
+            >
               Toggle Auth (Dev)
             </MenuItem>
           )}

@@ -67,7 +67,11 @@ const AuthNavigator = () => (
 // Profile stack navigator (nested in tabs)
 const ProfileNavigator = () => (
   <ProfileStack.Navigator>
-    <ProfileStack.Screen name="ProfileMain" component={ProfileScreen} options={{ title: "Profile" }} />
+    <ProfileStack.Screen
+      name="ProfileMain"
+      component={ProfileScreen}
+      options={{ title: 'Profile' }}
+    />
     <ProfileStack.Screen name="Settings" component={SettingsScreen} />
   </ProfileStack.Navigator>
 );
@@ -121,4 +125,4 @@ const AppNavigator = () => {
   );
 };
 
-export default AppNavigator; 
+export default AppNavigator;

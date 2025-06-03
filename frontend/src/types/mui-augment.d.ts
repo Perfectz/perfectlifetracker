@@ -9,4 +9,4 @@ declare module '@mui/material/Grid' {
     lg?: number | 'auto';
     xl?: number | 'auto';
   }
-} 
+}

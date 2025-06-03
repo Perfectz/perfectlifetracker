@@ -22,4 +22,4 @@ declare module '@react-navigation/stack' {
   // Add minimal necessary exports if known, otherwise leave empty
   export function createStackNavigator(): any;
   // Add other exports used by your app if necessary
-} 
+}

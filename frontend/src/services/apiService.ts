@@ -4,7 +4,27 @@
  */
 // Replacing axios with a simple fetch-based implementation
 import { getToken } from './auth';
-import { API_BASE_URL, AZURE_UPLOAD_URL } from "../config/api";
+import { API_BASE_URL, AZURE_UPLOAD_URL } from '../config/api';
+
+// Type definitions for API responses
+interface ApiResponse<T = unknown> {
+  data?: T;
+  message?: string;
+  error?: string;
+}
+
+interface FileResponse {
+  id: string;
+  filename: string;
+  size: number;
+  mimeType: string;
+  uploadedAt: string;
+  downloadUrl?: string;
+}
+
+interface UploadProgressCallback {
+  (progress: number): void;
+}
 
 // Circuit breaker implementation
 interface CircuitBreakerState {
@@ -16,7 +36,7 @@ interface CircuitBreakerState {
 const circuitBreaker: CircuitBreakerState = {
   failures: 0,
   lastFailure: 0,
-  isOpen: false
+  isOpen: false,
 };
 
 const CIRCUIT_THRESHOLD = 5; // Number of failures before opening circuit
@@ -25,7 +45,7 @@ const CIRCUIT_RESET_TIMEOUT = 30000; // 30 seconds timeout before resetting
 // Check if circuit is open and should block requests
 function isCircuitOpen(): boolean {
   if (!circuitBreaker.isOpen) return false;
-  
+
   // Check if enough time has passed to try again
   const now = Date.now();
   if (now - circuitBreaker.lastFailure > CIRCUIT_RESET_TIMEOUT) {
@@ -34,7 +54,7 @@ function isCircuitOpen(): boolean {
     circuitBreaker.failures = 0;
     return false;
   }
-  
+
   return true;
 }
 
@@ -43,10 +63,12 @@ function recordFailure(): void {
   const now = Date.now();
   circuitBreaker.failures++;
   circuitBreaker.lastFailure = now;
-  
+
   if (circuitBreaker.failures >= CIRCUIT_THRESHOLD) {
     circuitBreaker.isOpen = true;
-    console.warn(`Circuit breaker opened after ${CIRCUIT_THRESHOLD} failures. Will retry after ${CIRCUIT_RESET_TIMEOUT/1000}s`);
+    console.warn(
+      `Circuit breaker opened after ${CIRCUIT_THRESHOLD} failures. Will retry after ${CIRCUIT_RESET_TIMEOUT / 1000}s`
+    );
   }
 }
 
@@ -70,13 +92,8 @@ const defaultRetryConfig: RetryConfig = {
   maxRetries: 3,
   initialDelay: 1000, // 1 second
   maxDelay: 30000, // 30 seconds
-  factor: 2 // exponential backoff factor
+  factor: 2, // exponential backoff factor
 };
-
-// Progress tracking for file uploads
-export interface UploadProgressCallback {
-  (progress: number): void;
-}
 
 // Function to calculate backoff delay
 function getBackoffDelay(retryCount: number, config: RetryConfig): number {
@@ -84,7 +101,7 @@ function getBackoffDelay(retryCount: number, config: RetryConfig): number {
     config.maxDelay,
     config.initialDelay * Math.pow(config.factor, retryCount)
   );
-  
+
   // Add some jitter to prevent all clients retrying simultaneously
   return delay * (0.8 + Math.random() * 0.4);
 }
@@ -95,40 +112,24 @@ function sleep(ms: number): Promise<void> {
 }
 
 // Function to determine if an error is retryable
-function isRetryableError(error: any): boolean {
-  // Network errors are generally retryable
-  if (!error.status) return true;
+const isRetryableError = (error: unknown): boolean => {
+  if (typeof error !== 'object' || error === null) return false;
+  const err = error as Record<string, unknown>;
   
-  // 5xx server errors are retryable
-  if (error.status >= 500 && error.status < 600) return true;
-  
-  // 429 Too Many Requests is retryable
-  if (error.status === 429) return true;
-  
-  // Azure Blob Storage specific errors that are retryable
-  // 409 Conflict can occur during concurrent operations
-  // 412 Precondition Failed might be temporary in some cases
-  const azureBlobRetryableErrors = [409, 412];
-  if (azureBlobRetryableErrors.includes(error.status)) {
-    // Check if error is from Azure Blob storage specifically
-    if (error.details?.error?.includes('BlobAlreadyExists') || 
-        error.details?.error?.includes('ConditionNotMet')) {
-      return true;
-    }
-  }
-  
-  // Specific API errors that might be retryable
-  const retryableStatusCodes = [408, 503, 504];
-  return retryableStatusCodes.includes(error.status);
-}
+  return (
+    typeof err.details === 'object' &&
+    err.details !== null &&
+    (String((err.details as Record<string, unknown>).error).includes('BlobAlreadyExists') ||
+      String((err.details as Record<string, unknown>).error).includes('ConditionNotMet'))
+  );
+};
 
 // Base fetch function with retry logic
-async function fetchWithRetry(
-  url: string, 
-  options: RequestInit, 
-  retryConfig = defaultRetryConfig,
-  progressCallback?: UploadProgressCallback
-): Promise<Response> {
+async function fetchWithRetry<T = unknown>(
+  url: string,
+  options: RequestInit = {},
+  retryConfig: RetryConfig = defaultRetryConfig
+): Promise<T> {
   let retries = 0;
   let lastError: any;
 
@@ -142,16 +143,8 @@ async function fetchWithRetry(
 
   while (retries <= retryConfig.maxRetries) {
     try {
-      // If this is a retry and we're using a progress callback, reset progress to previous value
-      if (retries > 0 && progressCallback) {
-        // Calculate approximate progress based on retry count
-        // Each retry starts from 0, so we adjust progress to show continuity
-        const approximateProgress = Math.min(90, (retries / (retryConfig.maxRetries + 1)) * 100);
-        progressCallback(approximateProgress);
-      }
-
       const response = await fetch(url, options);
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
         throw new ApiError(
@@ -160,21 +153,21 @@ async function fetchWithRetry(
           errorData
         );
       }
-      
+
       // Record success in circuit breaker
       recordSuccess();
-      return response;
+      return await response.json();
     } catch (error: any) {
       lastError = error;
-      
+
       // Record failure for circuit breaker
       recordFailure();
-      
+
       // Only retry if the error is retryable
       if (retries >= retryConfig.maxRetries || !isRetryableError(error) || isCircuitOpen()) {
         break;
       }
-      
+
       // Calculate backoff delay and wait
       const delay = getBackoffDelay(retries, retryConfig);
       console.log(`API call failed, retrying in ${delay}ms...`, error);
@@ -182,21 +175,19 @@ async function fetchWithRetry(
       retries++;
     }
   }
-  
+
   // If we've exhausted retries, throw the last error
-  throw lastError instanceof ApiError 
-    ? lastError 
+  throw lastError instanceof ApiError
+    ? lastError
     : new ApiError(lastError?.message || 'Network error', 0);
 }
 
 // Main API request function with retry
-export async function apiRequest<T>(
+export async function apiRequest<T = unknown>(
   endpoint: string,
   method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET',
-  data?: any
+  data?: unknown
 ): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint}`;
-  
   const options: RequestInit = {
     method,
     headers: {
@@ -210,8 +201,8 @@ export async function apiRequest<T>(
   }
 
   try {
-    const response = await fetch(url, options);
-    
+    const response = await fetch(endpoint, options);
+
     if (!response.ok) {
       // Try to get error message from response
       let errorMessage = `HTTP ${response.status}`;
@@ -222,7 +213,7 @@ export async function apiRequest<T>(
         // If JSON parsing fails, use status text
         errorMessage = response.statusText || errorMessage;
       }
-      
+
       const error = new Error(errorMessage) as ApiError;
       error.status = response.status;
       throw error;
@@ -238,7 +229,7 @@ export async function apiRequest<T>(
   } catch (error) {
     if (error instanceof Error) {
       console.error(`API Error (${method} ${endpoint}):`, error.message);
-      
+
       // For development, provide more helpful error messages
       if (process.env.NODE_ENV === 'development') {
         if (error.message.includes('Failed to fetch')) {
@@ -253,34 +244,10 @@ export async function apiRequest<T>(
   }
 }
 
-// File interface for upload responses
-export interface FileResponse {
-  file: {
-    id: string;
-    fileName: string;
-    url: string;
-    contentType: string;
-    size: number;
-    blobName: string;
-  };
-}
-
-// Multiple files interface for upload responses
-export interface MultipleFilesResponse {
-  files: Array<{
-    id: string;
-    fileName: string;
-    url: string;
-    contentType: string;
-    size: number;
-    blobName: string;
-  }>;
-}
-
 // Upload a single file with retry logic and progress tracking
 export async function uploadFile(
-  file: File, 
-  category?: string, 
+  file: File,
+  category?: string,
   relatedEntityId?: string,
   progressCallback?: UploadProgressCallback
 ): Promise<FileResponse> {
@@ -289,130 +256,62 @@ export async function uploadFile(
     maxRetries: 3,
     initialDelay: 2000,
     maxDelay: 60000,
-    factor: 2
+    factor: 2,
   };
 
   const formData = new FormData();
   formData.append('file', file);
-  
+
   if (category) {
     formData.append('category', category);
   }
-  
+
   if (relatedEntityId) {
     formData.append('relatedEntityId', relatedEntityId);
   }
-  
+
   // Use XMLHttpRequest for progress tracking
   if (progressCallback) {
     return new Promise((resolve, reject) => {
-      let retries = 0;
-      const maxRetries = uploadRetryConfig.maxRetries;
-      
-      const attemptUpload = async () => {
-        const xhr = new XMLHttpRequest();
-        
-        xhr.open('POST', `${AZURE_UPLOAD_URL}/uploads/file`, true);
-        
-        // Add auth header if available
-        try {
-          // Try to get token from Auth0 first
-          const token = await getToken().catch(() => null);
-          if (token) {
-            xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-          } else {
-            // Fallback to localStorage if Auth0 token not available
-            const localToken = localStorage.getItem('token');
-            if (localToken) {
-              xhr.setRequestHeader('Authorization', `Bearer ${localToken}`);
-            }
-          }
-        } catch (error) {
-          console.warn('Failed to get authentication token:', error);
-          // Continue without auth if token retrieval fails
+      const xhr = new XMLHttpRequest();
+
+      xhr.upload.onprogress = (event: ProgressEvent) => {
+        if (event.lengthComputable) {
+          const progress = Math.round((event.loaded / event.total) * 100);
+          progressCallback(progress);
         }
-        
-        // Track upload progress
-        xhr.upload.onprogress = (event) => {
-          if (event.lengthComputable) {
-            const percentComplete = Math.round((event.loaded / event.total) * 100);
-            progressCallback(percentComplete);
-          }
-        };
-        
-        xhr.onload = function() {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              const response = JSON.parse(xhr.responseText);
-              resolve(response);
-            } catch (error) {
-              reject(new ApiError('Failed to parse server response', xhr.status));
-            }
-          } else {
-            // Handle error response
-            let errorMessage = `Upload failed with status ${xhr.status}`;
-            let errorData = null;
-            
-            try {
-              errorData = JSON.parse(xhr.responseText);
-              errorMessage = errorData.message || errorMessage;
-            } catch (e) {
-              // Ignore JSON parse error for error response
-            }
-            
-            const error = new ApiError(errorMessage, xhr.status, errorData);
-            
-            // Check if we should retry
-            if (retries < maxRetries && isRetryableError(error)) {
-              retries++;
-              const delay = getBackoffDelay(retries, uploadRetryConfig);
-              console.log(`Upload failed, retrying in ${delay}ms...`, error);
-              
-              // Signal retry is happening via progress callback
-              if (progressCallback) {
-                progressCallback(0); // Reset progress for new attempt
-              }
-              
-              setTimeout(attemptUpload, delay);
-            } else {
-              reject(error);
-            }
-          }
-        };
-        
-        xhr.onerror = function() {
-          const error = new ApiError('Network error during upload', 0);
-          
-          // Check if we should retry
-          if (retries < maxRetries) {
-            retries++;
-            const delay = getBackoffDelay(retries, uploadRetryConfig);
-            console.log(`Upload failed due to network error, retrying in ${delay}ms...`);
-            
-            // Signal retry is happening via progress callback
-            if (progressCallback) {
-              progressCallback(0); // Reset progress for new attempt
-            }
-            
-            setTimeout(attemptUpload, delay);
-          } else {
-            reject(error);
-          }
-        };
-        
-        // Start the upload
-        xhr.send(formData);
       };
-      
-      // Start first attempt
-      attemptUpload();
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const response = JSON.parse(xhr.responseText) as FileResponse;
+            resolve(response);
+          } catch (error) {
+            reject(new Error('Invalid response format'));
+          }
+        } else {
+          reject(new Error(`Upload failed with status ${xhr.status}`));
+        }
+      };
+
+      xhr.onerror = () => reject(new Error('Upload failed'));
+
+      xhr.open('POST', `${API_BASE_URL}/uploads/file`);
+
+      const token = getToken();
+      if (token) {
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      }
+
+      xhr.send(formData);
     });
   } else {
     // Without progress tracking, use the fetch API with retry logic
     const url = `${AZURE_UPLOAD_URL}/uploads/file`;
-    
+
     const headers: HeadersInit = {};
-    
+
     try {
       // Try to get token from Auth0 first
       const token = await getToken().catch(() => null);
@@ -429,14 +328,14 @@ export async function uploadFile(
       console.warn('Failed to get authentication token:', error);
       // Continue without auth if token retrieval fails
     }
-    
+
     const options: RequestInit = {
       method: 'POST',
       headers,
       body: formData,
       credentials: 'include',
     };
-    
+
     try {
       const response = await fetchWithRetry(url, options, uploadRetryConfig);
       return await response.json();
@@ -444,9 +343,9 @@ export async function uploadFile(
       if (error instanceof ApiError) {
         throw error;
       }
-      
+
       throw new ApiError(
-        error?.message || 'Unknown error occurred during upload', 
+        error?.message || 'Unknown error occurred during upload',
         error?.status || 0
       );
     }
@@ -455,143 +354,75 @@ export async function uploadFile(
 
 // Upload multiple files with retry logic and progress tracking
 export async function uploadMultipleFiles(
-  files: File[], 
-  category?: string, 
+  files: File[],
+  category?: string,
   relatedEntityId?: string,
   progressCallback?: UploadProgressCallback
-): Promise<MultipleFilesResponse> {
+): Promise<FileResponse[]> {
   // Custom retry config for uploads with longer timeouts
   const uploadRetryConfig: RetryConfig = {
     maxRetries: 3,
     initialDelay: 2000,
     maxDelay: 60000,
-    factor: 2
+    factor: 2,
   };
 
   const formData = new FormData();
-  
-  files.forEach((file, index) => {
-    formData.append(`files`, file);
+
+  files.forEach((file, _) => {
+    formData.append('files', file);
   });
-  
+
   if (category) {
     formData.append('category', category);
   }
-  
+
   if (relatedEntityId) {
     formData.append('relatedEntityId', relatedEntityId);
   }
-  
+
   // Use XMLHttpRequest for progress tracking
   if (progressCallback) {
     return new Promise((resolve, reject) => {
-      let retries = 0;
-      const maxRetries = uploadRetryConfig.maxRetries;
-      
-      const attemptUpload = async () => {
-        const xhr = new XMLHttpRequest();
-        
-        xhr.open('POST', `${AZURE_UPLOAD_URL}/uploads/files`, true);
-        
-        // Add auth header if available
-        try {
-          // Try to get token from Auth0 first
-          const token = await getToken().catch(() => null);
-          if (token) {
-            xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-          } else {
-            // Fallback to localStorage if Auth0 token not available
-            const localToken = localStorage.getItem('token');
-            if (localToken) {
-              xhr.setRequestHeader('Authorization', `Bearer ${localToken}`);
-            }
-          }
-        } catch (error) {
-          console.warn('Failed to get authentication token:', error);
-          // Continue without auth if token retrieval fails
+      const xhr = new XMLHttpRequest();
+
+      xhr.upload.onprogress = (event: ProgressEvent) => {
+        if (event.lengthComputable) {
+          const progress = Math.round((event.loaded / event.total) * 100);
+          progressCallback(progress);
         }
-        
-        // Track upload progress
-        xhr.upload.onprogress = (event) => {
-          if (event.lengthComputable) {
-            const percentComplete = Math.round((event.loaded / event.total) * 100);
-            progressCallback(percentComplete);
-          }
-        };
-        
-        xhr.onload = function() {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              const response = JSON.parse(xhr.responseText);
-              resolve(response);
-            } catch (error) {
-              reject(new ApiError('Failed to parse server response', xhr.status));
-            }
-          } else {
-            // Handle error response
-            let errorMessage = `Upload failed with status ${xhr.status}`;
-            let errorData = null;
-            
-            try {
-              errorData = JSON.parse(xhr.responseText);
-              errorMessage = errorData.message || errorMessage;
-            } catch (e) {
-              // Ignore JSON parse error for error response
-            }
-            
-            const error = new ApiError(errorMessage, xhr.status, errorData);
-            
-            // Check if we should retry
-            if (retries < maxRetries && isRetryableError(error)) {
-              retries++;
-              const delay = getBackoffDelay(retries, uploadRetryConfig);
-              console.log(`Upload failed, retrying in ${delay}ms...`, error);
-              
-              // Signal retry is happening via progress callback
-              if (progressCallback) {
-                progressCallback(0); // Reset progress for new attempt
-              }
-              
-              setTimeout(attemptUpload, delay);
-            } else {
-              reject(error);
-            }
-          }
-        };
-        
-        xhr.onerror = function() {
-          const error = new ApiError('Network error during upload', 0);
-          
-          // Check if we should retry
-          if (retries < maxRetries) {
-            retries++;
-            const delay = getBackoffDelay(retries, uploadRetryConfig);
-            console.log(`Upload failed due to network error, retrying in ${delay}ms...`);
-            
-            // Signal retry is happening via progress callback
-            if (progressCallback) {
-              progressCallback(0); // Reset progress for new attempt
-            }
-            
-            setTimeout(attemptUpload, delay);
-          } else {
-            reject(error);
-          }
-        };
-        
-        // Start the upload
-        xhr.send(formData);
       };
-      
-      // Start first attempt
-      attemptUpload();
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const response = JSON.parse(xhr.responseText) as FileResponse[];
+            resolve(response);
+          } catch (error) {
+            reject(new Error('Invalid response format'));
+          }
+        } else {
+          reject(new Error(`Upload failed with status ${xhr.status}`));
+        }
+      };
+
+      xhr.onerror = () => reject(new Error('Upload failed'));
+
+      xhr.open('POST', `${API_BASE_URL}/uploads/files`);
+
+      const token = getToken();
+      if (token) {
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      }
+
+      xhr.send(formData);
     });
   } else {
     // Without progress tracking, use the fetch API with retry logic
     const url = `${AZURE_UPLOAD_URL}/uploads/files`;
-    
+
     const headers: HeadersInit = {};
-    
+
     try {
       // Try to get token from Auth0 first
       const token = await getToken().catch(() => null);
@@ -608,14 +439,14 @@ export async function uploadMultipleFiles(
       console.warn('Failed to get authentication token:', error);
       // Continue without auth if token retrieval fails
     }
-    
+
     const options: RequestInit = {
       method: 'POST',
       headers,
       body: formData,
       credentials: 'include',
     };
-    
+
     try {
       const response = await fetchWithRetry(url, options, uploadRetryConfig);
       return await response.json();
@@ -623,9 +454,9 @@ export async function uploadMultipleFiles(
       if (error instanceof ApiError) {
         throw error;
       }
-      
+
       throw new ApiError(
-        error?.message || 'Unknown error occurred during upload', 
+        error?.message || 'Unknown error occurred during upload',
         error?.status || 0
       );
     }
@@ -638,16 +469,16 @@ export async function deleteFile(fileId: string): Promise<void> {
 }
 
 // Get list of files (optionally filtered by prefix)
-export async function getFiles(prefix?: string): Promise<any> {
+export async function getFiles(prefix?: string): Promise<FileResponse[]> {
   try {
     let url = '/uploads/files';
     if (prefix) {
       url += `?prefix=${encodeURIComponent(prefix)}`;
     }
-    
-    const response = await apiRequest<any>(url);
+
+    const response = await apiRequest<FileResponse[]>(url);
     return response;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error getting files:', error);
     throw error;
   }
@@ -670,4 +501,4 @@ export class ApiError extends Error {
   }
 }
 
-export default apiRequest; 
+export default apiRequest;

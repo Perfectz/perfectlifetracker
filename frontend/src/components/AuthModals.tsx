@@ -17,22 +17,13 @@ const AuthModals = () => {
 
   return (
     <>
-      <LoginModal
-        open={activeModal === ModalType.LOGIN}
-        onClose={handleClose}
-      />
-      
-      <RegisterModal
-        open={activeModal === ModalType.REGISTER}
-        onClose={handleClose}
-      />
-      
-      <ResetPasswordModal
-        open={activeModal === ModalType.RESET_PASSWORD}
-        onClose={handleClose}
-      />
+      <LoginModal open={activeModal === ModalType.LOGIN} onClose={handleClose} />
+
+      <RegisterModal open={activeModal === ModalType.REGISTER} onClose={handleClose} />
+
+      <ResetPasswordModal open={activeModal === ModalType.RESET_PASSWORD} onClose={handleClose} />
     </>
   );
 };
 
-export default AuthModals; 
+export default AuthModals;

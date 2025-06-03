@@ -47,7 +47,7 @@ interface ThemeModeProviderProps {
 
 /**
  * Creates a Material UI theme based on the terraColors palette.
- * 
+ *
  * @param isDarkMode - Whether to create a dark theme or light theme
  * @returns A Material UI Theme object
  */
@@ -85,7 +85,8 @@ export const createMuiTheme = (isDarkMode: boolean) => {
       divider: terraColors.outline,
     },
     typography: {
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+      fontFamily:
+        '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
       h5: {
         fontWeight: 'bold',
       },
@@ -147,7 +148,7 @@ export const ThemeModeProvider: React.FC<ThemeModeProviderProps> = ({ children }
 
   // Toggle theme mode
   const toggleTheme = () => {
-    setIsDarkMode((prev) => {
+    setIsDarkMode(prev => {
       const newMode = !prev;
       // Save to localStorage
       try {
@@ -175,4 +176,4 @@ export const ThemeModeProvider: React.FC<ThemeModeProviderProps> = ({ children }
 // Export a default light theme for standalone usage
 export const defaultTheme = createMuiTheme(false);
 
-export default defaultTheme; 
+export default defaultTheme;

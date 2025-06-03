@@ -89,7 +89,7 @@ function setCachedData<T>(key: string, data: T, ttl: number = CACHE_TTL): void {
   responseCache.set(key, {
     data,
     timestamp: Date.now(),
-    ttl
+    ttl,
   });
 }
 
@@ -105,7 +105,7 @@ async function makeApiRequest<T>(
 ): Promise<T> {
   const url = `${API_URL}/api${endpoint}`;
   const cacheKey = `${method}:${endpoint}:${JSON.stringify(data)}`;
-  
+
   // Check cache for GET requests
   if (method === 'GET' && useCache) {
     const cached = getCachedData<T>(cacheKey);
@@ -113,7 +113,7 @@ async function makeApiRequest<T>(
       return cached;
     }
   }
-  
+
   const options: RequestInit = {
     method,
     credentials: 'include',
@@ -132,11 +132,11 @@ async function makeApiRequest<T>(
 
   try {
     const response = await fetch(url, options);
-    
+
     if (!response.ok) {
       let errorMessage = `HTTP ${response.status}`;
       let shouldFallback = false;
-      
+
       try {
         const errorData = await response.json();
         errorMessage = errorData.message || errorData.error || errorMessage;
@@ -144,7 +144,7 @@ async function makeApiRequest<T>(
       } catch {
         errorMessage = response.statusText || errorMessage;
       }
-      
+
       const error = new Error(errorMessage) as Error & { shouldFallback?: boolean };
       error.shouldFallback = shouldFallback;
       throw error;
@@ -152,7 +152,7 @@ async function makeApiRequest<T>(
 
     const contentType = response.headers.get('content-type');
     let result: T;
-    
+
     if (contentType && contentType.includes('application/json')) {
       result = await response.json();
     } else {
@@ -167,25 +167,26 @@ async function makeApiRequest<T>(
     return result;
   } catch (error) {
     console.error(`API Error (${method} ${endpoint}):`, error);
-    
+
     // Check if this is a fallback-eligible error
-    const shouldFallback = (error as any)?.shouldFallback || 
-                          error instanceof TypeError || // Network errors
-                          (error as any)?.code === 'ECONNREFUSED';
-    
+    const shouldFallback =
+      (error as any)?.shouldFallback ||
+      error instanceof TypeError || // Network errors
+      (error as any)?.code === 'ECONNREFUSED';
+
     // For demo purposes, return mock data if API fails and fallback is appropriate
     if (shouldFallback) {
       if (method === 'GET' && endpoint === '/fitness/meals') {
         console.warn('API not available, returning mock meal data');
         return generateMockMealData() as T;
       }
-      
+
       if (method === 'GET' && endpoint.includes('/fitness/meals/daily-summary')) {
         console.warn('API not available, returning mock daily summary');
         return generateMockDailySummary() as T;
       }
     }
-    
+
     throw error;
   }
 }
@@ -208,11 +209,11 @@ function generateMockMealData(): MealRecord[] {
       macros: {
         protein: 53,
         carbs: 0,
-        fat: 6
+        fat: 6,
       },
       analysisMethod: 'manual',
       createdAt: now.toISOString(),
-      updatedAt: now.toISOString()
+      updatedAt: now.toISOString(),
     },
     {
       id: 'mock-2',
@@ -226,13 +227,13 @@ function generateMockMealData(): MealRecord[] {
       macros: {
         protein: 15,
         carbs: 20,
-        fat: 2
+        fat: 2,
       },
       analysisMethod: 'ai_vision',
       confidence: 0.85,
       createdAt: now.toISOString(),
-      updatedAt: now.toISOString()
-    }
+      updatedAt: now.toISOString(),
+    },
   ];
 }
 
@@ -252,9 +253,9 @@ function generateMockDailySummary(): DailySummary {
       breakfast: 1,
       lunch: 1,
       dinner: 0,
-      snack: 0
+      snack: 0,
     },
-    meals
+    meals,
   };
 }
 
@@ -307,13 +308,13 @@ export async function logMeal(mealData: {
           carbs: mealData.carbs || 0,
           fat: mealData.fat || 0,
           fiber: mealData.fiber,
-          sugar: mealData.sugar
+          sugar: mealData.sugar,
         },
         analysisMethod: 'manual',
         brand: mealData.brand,
         notes: mealData.notes,
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
     }
     throw error;
@@ -323,11 +324,13 @@ export async function logMeal(mealData: {
 /**
  * Analyze food image using AI
  */
-export async function analyzeFoodImage(imageFile: File): Promise<{ analysis: FoodAnalysis; message: string }> {
+export async function analyzeFoodImage(
+  imageFile: File
+): Promise<{ analysis: FoodAnalysis; message: string }> {
   try {
     const formData = new FormData();
     formData.append('image', imageFile);
-    
+
     return await makeApiRequest('/fitness/meals/analyze-image', 'POST', formData, true);
   } catch (error) {
     // Check if fallback is appropriate based on error response
@@ -342,12 +345,12 @@ export async function analyzeFoodImage(imageFile: File): Promise<{ analysis: Foo
           macros: {
             protein: 5,
             carbs: 15,
-            fat: 8
+            fat: 8,
           },
           confidence: 0.4,
-          description: 'Mock analysis - API unavailable'
+          description: 'Mock analysis - API unavailable',
         },
-        message: 'Food analysis completed with 40% confidence (mock data)'
+        message: 'Food analysis completed with 40% confidence (mock data)',
       };
     }
     throw error;
@@ -388,7 +391,7 @@ export async function logMealFromAnalysis(data: {
         imageUrl: data.imageUrl,
         notes: data.notes || data.analysis.description,
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
     }
     throw error;
@@ -406,7 +409,10 @@ export async function getDailySummary(date?: string): Promise<DailySummary> {
 /**
  * Update an existing meal record
  */
-export async function updateMealRecord(id: string, updates: Partial<MealRecord>): Promise<MealRecord> {
+export async function updateMealRecord(
+  id: string,
+  updates: Partial<MealRecord>
+): Promise<MealRecord> {
   try {
     const result = await makeApiRequest<MealRecord>(`/fitness/${id}`, 'PUT', updates);
     // Clear meal cache after successful update
@@ -418,7 +424,7 @@ export async function updateMealRecord(id: string, updates: Partial<MealRecord>)
       return {
         ...updates,
         id,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       } as MealRecord;
     }
     throw error;
@@ -453,4 +459,4 @@ function clearMealCache(): void {
     }
   }
   keysToRemove.forEach(key => responseCache.delete(key));
-} 
+}

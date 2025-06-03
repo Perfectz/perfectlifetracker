@@ -3,7 +3,14 @@
  * Password reset dialog modal component for forgotten passwords
  */
 import React from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography } from '@mui/material';
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Typography,
+} from '@mui/material';
 import { useAuth } from '../services/AuthContext';
 import { useAuthModals } from '../hooks/useAuthModals';
 
@@ -38,4 +45,4 @@ const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({ open, onClose }
   );
 };
 
-export default ResetPasswordModal; 
+export default ResetPasswordModal;

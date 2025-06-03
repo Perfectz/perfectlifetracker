@@ -3,16 +3,16 @@
  * Data-driven settings configuration
  */
 import React from 'react';
-import { 
-  Brightness4, 
-  Brightness7, 
-  CloudSync, 
-  Backup, 
-  Language, 
-  CalendarToday, 
-  AccessTime, 
-  Security, 
-  Info
+import {
+  Brightness4,
+  Brightness7,
+  CloudSync,
+  Backup,
+  Language,
+  CalendarToday,
+  AccessTime,
+  Security,
+  Info,
 } from '@mui/icons-material';
 
 export interface SelectOption {
@@ -47,7 +47,7 @@ export const displaySettings: ToggleSettingConfig[] = [
   {
     id: 'darkMode',
     label: 'Dark Mode',
-    getIcon: (value) => value ? <Brightness4 /> : <Brightness7 />,
+    getIcon: value => (value ? <Brightness4 /> : <Brightness7 />),
   },
   {
     id: 'compactMode',
@@ -147,4 +147,4 @@ export const aboutSettings: ActionSettingConfig[] = [
     label: 'Help & Support',
     icon: <Info />,
   },
-]; 
+];

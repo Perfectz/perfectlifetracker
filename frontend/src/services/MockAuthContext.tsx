@@ -87,7 +87,7 @@ export const MockAuthProvider = ({ children }: MockAuthProviderProps) => {
     signIn,
     signOut,
     isLoading,
-    error
+    error,
   };
 
   return <MockAuthContext.Provider value={value}>{children}</MockAuthContext.Provider>;
@@ -102,4 +102,4 @@ export const useMockAuth = () => {
 };
 
 // Replace this export with useAuth for easy switching between real and mock auth
-export const useAuth = useMockAuth; 
+export const useAuth = useMockAuth;

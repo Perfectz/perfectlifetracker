@@ -14,29 +14,23 @@ interface SettingsSectionProps {
   titleSx?: SxProps;
 }
 
-export const SettingsSection: React.FC<SettingsSectionProps> = React.memo(({ 
-  title, 
-  children, 
-  marginBottom = true,
-  paperSx,
-  titleSx,
-}) => (
-  <Paper 
-    sx={{ 
-      ...settingsStyles.section,
-      mb: marginBottom ? 3 : 0,
-      ...paperSx 
-    }}
-  >
-    <Typography variant="h6" sx={{ ...settingsStyles.sectionTitle, ...titleSx }}>
-      {title}
-    </Typography>
-    <List>
-      {children}
-    </List>
-  </Paper>
-));
+export const SettingsSection: React.FC<SettingsSectionProps> = React.memo(
+  ({ title, children, marginBottom = true, paperSx, titleSx }) => (
+    <Paper
+      sx={{
+        ...settingsStyles.section,
+        mb: marginBottom ? 3 : 0,
+        ...paperSx,
+      }}
+    >
+      <Typography variant="h6" sx={{ ...settingsStyles.sectionTitle, ...titleSx }}>
+        {title}
+      </Typography>
+      <List>{children}</List>
+    </Paper>
+  )
+);
 
 SettingsSection.displayName = 'SettingsSection';
 
-export default SettingsSection; 
+export default SettingsSection;

@@ -3,12 +3,7 @@
  * Reusable action button component for settings
  */
 import React from 'react';
-import { 
-  ListItemButton, 
-  ListItemIcon, 
-  ListItemText,
-  SxProps
-} from '@mui/material';
+import { ListItemButton, ListItemIcon, ListItemText, SxProps } from '@mui/material';
 
 interface ActionButtonProps {
   icon: React.ReactNode;
@@ -18,19 +13,15 @@ interface ActionButtonProps {
   sx?: SxProps;
 }
 
-export const ActionButton: React.FC<ActionButtonProps> = React.memo(({
-  icon,
-  label,
-  onClick,
-  secondary,
-  sx
-}) => (
-  <ListItemButton onClick={onClick} sx={sx}>
-    <ListItemIcon>{icon}</ListItemIcon>
-    <ListItemText primary={label} secondary={secondary} />
-  </ListItemButton>
-));
+export const ActionButton: React.FC<ActionButtonProps> = React.memo(
+  ({ icon, label, onClick, secondary, sx }) => (
+    <ListItemButton onClick={onClick} sx={sx}>
+      <ListItemIcon>{icon}</ListItemIcon>
+      <ListItemText primary={label} secondary={secondary} />
+    </ListItemButton>
+  )
+);
 
 ActionButton.displayName = 'ActionButton';
 
-export default ActionButton; 
+export default ActionButton;

@@ -16,7 +16,7 @@ import {
   Button,
   Tabs,
   Tab,
-  Fab
+  Fab,
 } from '@mui/material';
 import Grid from '../components/Grid';
 import {
@@ -26,7 +26,7 @@ import {
   Timeline,
   Add as AddIcon,
   ShowChart as ShowChartIcon,
-  BarChart as BarChartIcon // Placeholder for chart
+  BarChart as BarChartIcon, // Placeholder for chart
 } from '@mui/icons-material';
 import { terraColors } from '../theme';
 import type { StackScreenProps } from '@react-navigation/stack';
@@ -36,7 +36,7 @@ type FitnessScreenProps = StackScreenProps<MainTabParamList, 'Fitness'>;
 
 // Placeholder for chart data
 const chartData = {
-  labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+  labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
   datasets: [
     {
       data: [
@@ -45,10 +45,10 @@ const chartData = {
         Math.random() * 100,
         Math.random() * 100,
         Math.random() * 100,
-        Math.random() * 100
-      ]
-    }
-  ]
+        Math.random() * 100,
+      ],
+    },
+  ],
 };
 
 const FitnessScreen: React.FC<FitnessScreenProps> = () => {
@@ -63,23 +63,29 @@ const FitnessScreen: React.FC<FitnessScreenProps> = () => {
 
   const getActivityIcon = (type: string) => {
     switch (type.toLowerCase()) {
-      case 'running': return <DirectionsRun />;
-      case 'weight training': return <FitnessCenter />;
-      case 'yoga': return <LocalFireDepartment />; // Placeholder
-      default: return <FitnessCenter />;
+      case 'running':
+        return <DirectionsRun />;
+      case 'weight training':
+        return <FitnessCenter />;
+      case 'yoga':
+        return <LocalFireDepartment />; // Placeholder
+      default:
+        return <FitnessCenter />;
     }
   };
 
   return (
-    <Box sx={{ 
-      flex: 1, 
-      backgroundColor: terraColors.pearl,
-      p: 2,
-      position: 'relative', 
-      height: '100%', 
-      display: 'flex',
-      flexDirection: 'column'
-    }}>
+    <Box
+      sx={{
+        flex: 1,
+        backgroundColor: terraColors.pearl,
+        p: 2,
+        position: 'relative',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <Container maxWidth="lg" sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
         <Typography variant="h5" sx={{ color: terraColors.prussianBlue, mb: 2 }}>
           Fitness Tracker
@@ -91,31 +97,59 @@ const FitnessScreen: React.FC<FitnessScreenProps> = () => {
             Fitness Metrics
           </Typography>
           <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-            <Tabs value={selectedMetric} onChange={(e, newValue) => setSelectedMetric(newValue)} aria-label="Fitness metric filters">
+            <Tabs
+              value={selectedMetric}
+              onChange={(e, newValue) => setSelectedMetric(newValue)}
+              aria-label="Fitness metric filters"
+            >
               <Tab label="Weight" value="weight" />
               <Tab label="Steps" value="steps" />
               <Tab label="Calories" value="calories" />
             </Tabs>
           </Box>
-          
+
           {/* Placeholder for Chart */}
-          <Box sx={{ height: 220, bgcolor: '#f0f0f0', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+          <Box
+            sx={{
+              height: 220,
+              bgcolor: '#f0f0f0',
+              borderRadius: 2,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mb: 2,
+            }}
+          >
             <BarChartIcon sx={{ fontSize: 60, color: '#ccc' }} />
-            <Typography variant="caption" sx={{ color: '#999' }}>Chart Placeholder</Typography>
+            <Typography variant="caption" sx={{ color: '#999' }}>
+              Chart Placeholder
+            </Typography>
           </Box>
 
           <Grid container spacing={2} sx={{ textAlign: 'center' }}>
             <Grid item xs={4}>
-              <Typography variant="h6" sx={{ color: terraColors.maastrichtBlue }}>75kg</Typography>
-              <Typography variant="body2" sx={{ color: terraColors.softTeal }}>Current Weight</Typography>
+              <Typography variant="h6" sx={{ color: terraColors.maastrichtBlue }}>
+                75kg
+              </Typography>
+              <Typography variant="body2" sx={{ color: terraColors.softTeal }}>
+                Current Weight
+              </Typography>
             </Grid>
             <Grid item xs={4}>
-              <Typography variant="h6" sx={{ color: terraColors.maastrichtBlue }}>8,500</Typography>
-              <Typography variant="body2" sx={{ color: terraColors.softTeal }}>Today's Steps</Typography>
+              <Typography variant="h6" sx={{ color: terraColors.maastrichtBlue }}>
+                8,500
+              </Typography>
+              <Typography variant="body2" sx={{ color: terraColors.softTeal }}>
+                Today's Steps
+              </Typography>
             </Grid>
             <Grid item xs={4}>
-              <Typography variant="h6" sx={{ color: terraColors.maastrichtBlue }}>2,100</Typography>
-              <Typography variant="body2" sx={{ color: terraColors.softTeal }}>Calories Burned</Typography>
+              <Typography variant="h6" sx={{ color: terraColors.maastrichtBlue }}>
+                2,100
+              </Typography>
+              <Typography variant="body2" sx={{ color: terraColors.softTeal }}>
+                Calories Burned
+              </Typography>
             </Grid>
           </Grid>
         </Paper>
@@ -129,21 +163,24 @@ const FitnessScreen: React.FC<FitnessScreenProps> = () => {
             {recentActivities.map((activity, index) => (
               <React.Fragment key={activity.id}>
                 <ListItem>
-                  <ListItemIcon>
-                    {getActivityIcon(activity.type)}
-                  </ListItemIcon>
-                  <ListItemText 
+                  <ListItemIcon>{getActivityIcon(activity.type)}</ListItemIcon>
+                  <ListItemText
                     primary={activity.type}
                     secondary={`${activity.duration} - ${activity.date}`}
                   />
-                  <Typography variant="body2" sx={{ color: terraColors.maastrichtBlue }}>{`${activity.calories} kcal`}</Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: terraColors.maastrichtBlue }}
+                  >{`${activity.calories} kcal`}</Typography>
                 </ListItem>
                 {index < recentActivities.length - 1 && <Divider component="li" />}
               </React.Fragment>
             ))}
           </List>
           <Box sx={{ p: 2, pt: 0, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button variant="outlined" size="small">View All Activity</Button>
+            <Button variant="outlined" size="small">
+              View All Activity
+            </Button>
           </Box>
         </Paper>
 
@@ -153,21 +190,19 @@ const FitnessScreen: React.FC<FitnessScreenProps> = () => {
             AI Fitness Insights
           </Typography>
           <Typography sx={{ color: terraColors.maastrichtBlue, mb: 1 }}>
-            Based on your recent activity patterns, you're more likely to complete workouts in the morning. Consider scheduling your strength training sessions before 9 AM.
+            Based on your recent activity patterns, you're more likely to complete workouts in the
+            morning. Consider scheduling your strength training sessions before 9 AM.
           </Typography>
-          <Button 
-            variant="text" 
-            sx={{ color: terraColors.tropicalRain, alignSelf: 'flex-start' }}
-          >
+          <Button variant="text" sx={{ color: terraColors.tropicalRain, alignSelf: 'flex-start' }}>
             Get More Insights
           </Button>
         </Paper>
       </Container>
 
       {/* Floating Action Button */}
-      <Fab 
-        color="primary" 
-        aria-label="log workout" 
+      <Fab
+        color="primary"
+        aria-label="log workout"
         sx={{ position: 'absolute', bottom: 16, right: 16, bgcolor: terraColors.tropicalRain }}
       >
         <AddIcon />
@@ -176,4 +211,4 @@ const FitnessScreen: React.FC<FitnessScreenProps> = () => {
   );
 };
 
-export default FitnessScreen; 
+export default FitnessScreen;

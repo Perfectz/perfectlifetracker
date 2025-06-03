@@ -12,7 +12,7 @@ interface TabPanelProps {
   value: number;
 }
 
-const TabPanel: React.FC<TabPanelProps> = (props) => {
+const TabPanel: React.FC<TabPanelProps> = props => {
   const { children, value, index, ...other } = props;
 
   return (
@@ -104,7 +104,8 @@ const FileUploadDemo: React.FC = () => {
 
           {uploadedSingleFile && (
             <Alert severity="success" sx={{ mt: 3 }}>
-              File uploaded successfully: {uploadedSingleFile.fileName} ({(uploadedSingleFile.size / 1024).toFixed(2)} KB)
+              File uploaded successfully: {uploadedSingleFile.fileName} (
+              {(uploadedSingleFile.size / 1024).toFixed(2)} KB)
             </Alert>
           )}
         </TabPanel>
@@ -166,4 +167,4 @@ const FileUploadDemo: React.FC = () => {
   );
 };
 
-export default FileUploadDemo; 
+export default FileUploadDemo;

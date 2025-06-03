@@ -3,7 +3,14 @@
  * Registration dialog modal component for new user sign-up
  */
 import React from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography } from '@mui/material';
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Typography,
+} from '@mui/material';
 import { useAuth } from '../services/AuthContext';
 import { useAuthModals } from '../hooks/useAuthModals';
 
@@ -27,7 +34,9 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ open, onClose }) => {
     <Dialog open={open} onClose={onClose} aria-labelledby="register-dialog-title">
       <DialogTitle id="register-dialog-title">Create an Account</DialogTitle>
       <DialogContent dividers>
-        <Typography>Don't have an account? Sign up to start using Perfect LifeTracker Pro.</Typography>
+        <Typography>
+          Don't have an account? Sign up to start using Perfect LifeTracker Pro.
+        </Typography>
       </DialogContent>
       <DialogActions>
         <Button variant="contained" color="secondary" onClick={handleRegister}>
@@ -38,4 +47,4 @@ const RegisterModal: React.FC<RegisterModalProps> = ({ open, onClose }) => {
   );
 };
 
-export default RegisterModal; 
+export default RegisterModal;

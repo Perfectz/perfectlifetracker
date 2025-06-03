@@ -37,7 +37,6 @@ app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 
 // JWT validation middleware
-/*
 const checkJwt = expressjwt({
   secret: jwksRsa.expressJwtSecret({
     cache: true,
@@ -49,10 +48,18 @@ const checkJwt = expressjwt({
   issuer: process.env.AZURE_AUTHORITY,
   algorithms: ['RS256']
 });
-*/
 
-// Temporary: Skip JWT for development
-const checkJwt = (req: any, res: any, next: any) => next();
+// Development-only JWT bypass (only when explicitly enabled)
+const conditionalJwt = (req: any, res: any, next: any) => {
+  // Only bypass JWT in development with explicit flag
+  if (process.env.NODE_ENV === 'development' && process.env.USE_MOCK_AUTH === 'true') {
+    console.warn('⚠️  JWT authentication bypassed for development mode');
+    return next();
+  }
+  
+  // Use proper JWT validation in production or when mock auth is disabled
+  return checkJwt(req, res, next);
+};
 
 // Public routes
 app.get('/', (req, res) => {
@@ -80,7 +87,7 @@ app.use('/api/fitness', fitnessRoutes);
 app.use('/api/uploads', uploadRoutes);
 
 // Protected test route
-app.get('/api/protected', checkJwt, (req: JWTRequest, res) => {
+app.get('/api/protected', conditionalJwt, (req: JWTRequest, res) => {
   res.json({ 
     message: 'This is a protected endpoint', 
     user: req.auth

@@ -16,66 +16,82 @@ interface ChartProps {
 
 // Create a basic placeholder component for BarChart
 export const BarChart: React.FC<ChartProps> = ({ width, height, style }) => {
-  return React.createElement('div', {
-    style: {
-      width: `${width}px`,
-      height: `${height}px`,
-      backgroundColor: '#f0f0f0',
-      borderRadius: '8px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      ...style
+  return React.createElement(
+    'div',
+    {
+      style: {
+        width: `${width}px`,
+        height: `${height}px`,
+        backgroundColor: '#f0f0f0',
+        borderRadius: '8px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        ...style,
+      },
     },
-  }, 'Bar Chart Placeholder');
+    'Bar Chart Placeholder'
+  );
 };
 
 // Create a basic placeholder component for LineChart
 export const LineChart: React.FC<ChartProps> = ({ width, height, style }) => {
-  return React.createElement('div', {
-    style: {
-      width: `${width}px`,
-      height: `${height}px`,
-      backgroundColor: '#f0f0f0',
-      borderRadius: '8px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      ...style
+  return React.createElement(
+    'div',
+    {
+      style: {
+        width: `${width}px`,
+        height: `${height}px`,
+        backgroundColor: '#f0f0f0',
+        borderRadius: '8px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        ...style,
+      },
     },
-  }, 'Line Chart Placeholder');
+    'Line Chart Placeholder'
+  );
 };
 
 // Create a basic placeholder component for PieChart
 export const PieChart: React.FC<ChartProps> = ({ width, height, style }) => {
-  return React.createElement('div', {
-    style: {
-      width: `${width}px`,
-      height: `${height}px`,
-      backgroundColor: '#f0f0f0',
-      borderRadius: '50%',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      ...style
+  return React.createElement(
+    'div',
+    {
+      style: {
+        width: `${width}px`,
+        height: `${height}px`,
+        backgroundColor: '#f0f0f0',
+        borderRadius: '50%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        ...style,
+      },
     },
-  }, 'Pie Chart Placeholder');
+    'Pie Chart Placeholder'
+  );
 };
 
 // Create a basic placeholder component for ProgressChart
 export const ProgressChart: React.FC<ChartProps> = ({ width, height, style }) => {
-  return React.createElement('div', {
-    style: {
-      width: `${width}px`,
-      height: `${height}px`,
-      backgroundColor: '#f0f0f0',
-      borderRadius: '8px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      ...style
+  return React.createElement(
+    'div',
+    {
+      style: {
+        width: `${width}px`,
+        height: `${height}px`,
+        backgroundColor: '#f0f0f0',
+        borderRadius: '8px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        ...style,
+      },
     },
-  }, 'Progress Chart Placeholder');
+    'Progress Chart Placeholder'
+  );
 };
 
 // Export a default configuration object
@@ -87,11 +103,11 @@ export const chartConfig = {
   color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
   labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
   style: {
-    borderRadius: 16
+    borderRadius: 16,
   },
   propsForDots: {
     r: '6',
     strokeWidth: '2',
-    stroke: '#ffa726'
-  }
-}; 
+    stroke: '#ffa726',
+  },
+};

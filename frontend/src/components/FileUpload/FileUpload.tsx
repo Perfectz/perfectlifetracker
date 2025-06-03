@@ -2,31 +2,32 @@
  * frontend/src/components/FileUpload/FileUpload.tsx
  * Reusable file upload component with Azure Blob Storage integration
  */
-import React, { useState, useRef, useCallback } from 'react';
-import { 
+import React, { useState, useCallback, useRef } from 'react';
+import {
   Box,
   Button,
-  CircularProgress,
   Typography,
+  LinearProgress,
+  Alert,
   List,
   ListItem,
   ListItemText,
-  ListItemIcon,
+  ListItemSecondaryAction,
   IconButton,
   Paper,
-  Alert,
-  AlertTitle,
-  LinearProgress
+  Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
-import { 
-  CloudUpload as CloudUploadIcon,
-  AttachFile as AttachFileIcon,
+import {
+  CloudUpload as UploadIcon,
   Delete as DeleteIcon,
-  InsertDriveFile as FileIcon,
-  Refresh as RefreshIcon,
-  CheckCircle as CheckCircleIcon
+  Download as DownloadIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material';
-import { uploadFile, uploadMultipleFiles, deleteFile, ApiError, UploadProgressCallback } from '../../services/apiService';
+import { uploadFile, uploadMultipleFiles, deleteFile, getFiles } from '../../services/apiService';
 
 // Generate a temporary ID for optimistic updates
 const generateTempId = (): string => {
@@ -107,40 +108,42 @@ const FileUpload: React.FC<FileUploadProps> = ({
       blobName: file.name,
       status: 'pending',
       progress: 0,
-      tempId
+      tempId,
     };
   };
 
   // Update file progress
   const updateFileProgress = (tempId: string, progress: number) => {
-    setUploadedFiles(prev => 
-      prev.map(file => 
-        file.tempId === tempId 
-          ? { ...file, progress, status: 'uploading' } 
-          : file
-      )
+    setUploadedFiles(prev =>
+      prev.map(file => (file.tempId === tempId ? { ...file, progress, status: 'uploading' } : file))
     );
   };
 
   // Update file status
-  const updateFileStatus = (tempId: string, status: 'success' | 'error', actualFile?: FileData, errorMessage?: string) => {
-    setUploadedFiles(prev => 
+  const updateFileStatus = (
+    tempId: string,
+    status: 'success' | 'error',
+    actualFile?: FileData,
+    errorMessage?: string
+  ) => {
+    setUploadedFiles(prev =>
       prev.map(file => {
         if (file.tempId === tempId) {
           if (status === 'success' && actualFile) {
-            return { 
-              ...actualFile, 
-              status: 'success', 
-              progress: 100, 
-              tempId 
+            return {
+              ...actualFile,
+              status: 'success',
+              progress: 100,
+              tempId,
             };
           } else if (status === 'error') {
             // Format error message to be more user-friendly
             let userFriendlyError = errorMessage || 'Upload failed';
-            
+
             // Map common error codes to user-friendly messages
             if (errorMessage?.includes('403')) {
-              userFriendlyError = 'Permission denied. You may not have access to upload to this location.';
+              userFriendlyError =
+                'Permission denied. You may not have access to upload to this location.';
             } else if (errorMessage?.includes('413')) {
               userFriendlyError = 'File is too large for the server to accept.';
             } else if (errorMessage?.includes('415')) {
@@ -148,15 +151,17 @@ const FileUpload: React.FC<FileUploadProps> = ({
             } else if (errorMessage?.includes('429')) {
               userFriendlyError = 'Too many upload requests. Please try again in a moment.';
             } else if (errorMessage?.includes('network error')) {
-              userFriendlyError = 'Network error. Please check your internet connection and try again.';
+              userFriendlyError =
+                'Network error. Please check your internet connection and try again.';
             } else if (errorMessage?.includes('timeout')) {
-              userFriendlyError = 'Request timed out. The file might be too large or your connection is slow.';
+              userFriendlyError =
+                'Request timed out. The file might be too large or your connection is slow.';
             }
-            
-            return { 
-              ...file, 
-              status: 'error', 
-              error: userFriendlyError
+
+            return {
+              ...file,
+              status: 'error',
+              error: userFriendlyError,
             };
           }
         }
@@ -168,10 +173,10 @@ const FileUpload: React.FC<FileUploadProps> = ({
   // Handle file selection
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.files?.length) return;
-    
+
     const fileArray = Array.from(event.target.files);
     validateAndSetFiles(fileArray);
-    
+
     // Reset the input value so the same file can be selected again
     if (event.target) {
       event.target.value = '';
@@ -181,41 +186,46 @@ const FileUpload: React.FC<FileUploadProps> = ({
   // Validate files before setting them
   const validateAndSetFiles = (files: File[]) => {
     setError(null);
-    
+
     // Check number of files
     if (multiple && files.length > maxFiles) {
       setError(`You can upload a maximum of ${maxFiles} files`);
       return;
     }
-    
+
     // Check file size and type
     const validFiles = files.filter(file => {
       if (file.size > maxSize) {
         setError(`File ${file.name} is too large. Maximum size is ${formatFileSize(maxSize)}`);
         return false;
       }
-      
-      if (accept !== '*' && !accept.split(',').some(type => {
-        return type.trim() === file.type || 
-               (type.includes('/*') && file.type.startsWith(type.split('/*')[0]));
-      })) {
+
+      if (
+        accept !== '*' &&
+        !accept.split(',').some(type => {
+          return (
+            type.trim() === file.type ||
+            (type.includes('/*') && file.type.startsWith(type.split('/*')[0]))
+          );
+        })
+      ) {
         setError(`File ${file.name} is not an accepted file type`);
         return false;
       }
-      
+
       return true;
     });
-    
+
     if (validFiles.length > 0) {
       setSelectedFiles(validFiles);
-      
+
       // Auto upload if enabled
       if (autoUpload) {
         // Add optimistic updates first
         const optimisticFiles = validFiles.map(createOptimisticFile);
         setUploadedFiles(prev => [...prev, ...optimisticFiles]);
         setSelectedFiles([]);
-        
+
         // Then start the actual upload
         handleUploadWithOptimistic(validFiles, optimisticFiles);
       }
@@ -226,7 +236,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
   const handleDrag = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     event.stopPropagation();
-    
+
     if (event.type === 'dragenter' || event.type === 'dragover') {
       setDragActive(true);
     } else if (event.type === 'dragleave') {
@@ -235,16 +245,19 @@ const FileUpload: React.FC<FileUploadProps> = ({
   }, []);
 
   // Handle drop event
-  const handleDrop = useCallback((event: React.DragEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setDragActive(false);
-    
-    if (event.dataTransfer.files.length > 0) {
-      const fileArray = Array.from(event.dataTransfer.files);
-      validateAndSetFiles(fileArray);
-    }
-  }, [autoUpload]);
+  const handleDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setDragActive(false);
+
+      if (event.dataTransfer.files.length > 0) {
+        const fileArray = Array.from(event.dataTransfer.files);
+        validateAndSetFiles(fileArray);
+      }
+    },
+    [autoUpload]
+  );
 
   // Trigger file input click
   const onButtonClick = () => {
@@ -255,68 +268,65 @@ const FileUpload: React.FC<FileUploadProps> = ({
   const handleUploadWithOptimistic = async (filesToUpload: File[], optimisticFiles: FileData[]) => {
     setIsUploading(true);
     setError(null);
-    
+
     try {
       if (multiple) {
         const uploadPromise = uploadMultipleFiles(
-          filesToUpload, 
-          category, 
+          filesToUpload,
+          category,
           relatedEntityId,
-          (progress) => {
+          progress => {
             // Update progress for all files
             optimisticFiles.forEach(file => {
               updateFileProgress(file.tempId!, progress);
             });
           }
         );
-        
+
         const result = await uploadPromise;
         const newFiles = result.files;
-        
+
         // Update optimistic files with real data
         optimisticFiles.forEach((optimisticFile, index) => {
           if (index < newFiles.length) {
             updateFileStatus(optimisticFile.tempId!, 'success', newFiles[index]);
           }
         });
-        
+
         if (onUploadComplete) onUploadComplete(newFiles);
       } else {
         const optimisticFile = optimisticFiles[0];
         const file = filesToUpload[0];
-        
-        const uploadPromise = uploadFile(
-          file, 
-          category, 
-          relatedEntityId,
-          (progress) => {
-            updateFileProgress(optimisticFile.tempId!, progress);
-          }
-        );
-        
+
+        const uploadPromise = uploadFile(file, category, relatedEntityId, progress => {
+          updateFileProgress(optimisticFile.tempId!, progress);
+        });
+
         const result = await uploadPromise;
         const newFile = result.file;
-        
+
         // Update optimistic file with real data
         updateFileStatus(optimisticFile.tempId!, 'success', newFile);
-        
+
         if (onUploadComplete) onUploadComplete(newFile);
       }
     } catch (err: any) {
       const errorMessage = err.message || 'An error occurred during upload';
-      
+
       // Check for circuit breaker errors
       if (err.status === 503 && errorMessage.includes('temporarily unavailable')) {
-        setError(`${errorMessage} The system has detected multiple failures and is preventing further attempts to protect resources. Please try again in 30 seconds.`);
+        setError(
+          `${errorMessage} The system has detected multiple failures and is preventing further attempts to protect resources. Please try again in 30 seconds.`
+        );
       } else {
         setError(errorMessage);
       }
-      
+
       // Update optimistic files with error status
       optimisticFiles.forEach(file => {
         updateFileStatus(file.tempId!, 'error', undefined, errorMessage);
       });
-      
+
       if (onUploadError) onUploadError(err);
     } finally {
       setIsUploading(false);
@@ -326,15 +336,15 @@ const FileUpload: React.FC<FileUploadProps> = ({
   // Upload selected files (non-optimistic version for manual upload)
   const handleUpload = async () => {
     if (selectedFiles.length === 0) return;
-    
+
     // Create optimistic updates
     const optimisticFiles = selectedFiles.map(createOptimisticFile);
     setUploadedFiles(prev => [...prev, ...optimisticFiles]);
-    
+
     // Clear selected files
     const filesToUpload = [...selectedFiles];
     setSelectedFiles([]);
-    
+
     // Start the actual upload
     await handleUploadWithOptimistic(filesToUpload, optimisticFiles);
   };
@@ -344,22 +354,20 @@ const FileUpload: React.FC<FileUploadProps> = ({
     // Find the original file in the uploaded files
     const fileToRetry = uploadedFiles.find(f => f.id === fileData.id);
     if (!fileToRetry) return;
-    
+
     // Create a new file object from the blob URL
     try {
       const response = await fetch(fileToRetry.url);
       const blob = await response.blob();
       const file = new File([blob], fileToRetry.fileName, { type: fileToRetry.contentType });
-      
+
       // Reset the file status to pending
-      setUploadedFiles(prev => 
-        prev.map(f => 
-          f.id === fileData.id 
-            ? { ...f, status: 'pending', progress: 0, error: undefined } 
-            : f
+      setUploadedFiles(prev =>
+        prev.map(f =>
+          f.id === fileData.id ? { ...f, status: 'pending', progress: 0, error: undefined } : f
         )
       );
-      
+
       // Start upload with the retry
       await handleUploadWithOptimistic([file], [fileToRetry]);
     } catch (err) {
@@ -372,22 +380,25 @@ const FileUpload: React.FC<FileUploadProps> = ({
   const handleDeleteFile = async (fileId: string) => {
     // If it's a temporary file (not yet uploaded to server)
     const fileToDelete = uploadedFiles.find(file => file.id === fileId);
-    
-    if (fileToDelete?.tempId && (fileToDelete.status === 'pending' || fileToDelete.status === 'error')) {
+
+    if (
+      fileToDelete?.tempId &&
+      (fileToDelete.status === 'pending' || fileToDelete.status === 'error')
+    ) {
       // Just remove it from the UI for optimistic files that failed or are pending
       setUploadedFiles(prev => prev.filter(file => file.id !== fileId));
       return;
     }
-    
+
     try {
       // Optimistically remove the file from UI first
       setUploadedFiles(prev => prev.filter(file => file.id !== fileId));
-      
+
       // Then attempt the server deletion
       await deleteFile(fileId);
     } catch (err: any) {
       setError(err.message || 'Failed to delete file');
-      
+
       // Add the file back if deletion fails
       if (fileToDelete) {
         setUploadedFiles(prev => [...prev, fileToDelete]);
@@ -428,7 +439,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
           onChange={handleFileChange}
           style={{ display: 'none' }}
         />
-        <CloudUploadIcon color="primary" sx={{ fontSize: 48, mb: 1 }} />
+        <UploadIcon color="primary" sx={{ fontSize: 48, mb: 1 }} />
         <Typography variant="body1" gutterBottom>
           {dropzoneText}
         </Typography>
@@ -464,7 +475,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
                   <IconButton
                     edge="end"
                     aria-label="delete"
-                    onClick={(e) => {
+                    onClick={e => {
                       e.stopPropagation();
                       setSelectedFiles(selectedFiles.filter((_, i) => i !== index));
                     }}
@@ -474,13 +485,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
                 }
                 sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, mb: 1 }}
               >
-                <ListItemIcon>
-                  <AttachFileIcon />
-                </ListItemIcon>
-                <ListItemText
-                  primary={file.name}
-                  secondary={formatFileSize(file.size)}
-                />
+                <ListItemText primary={file.name} secondary={formatFileSize(file.size)} />
               </ListItem>
             ))}
           </List>
@@ -506,7 +511,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
             Files ({uploadedFiles.length})
           </Typography>
           <List>
-            {uploadedFiles.map((file) => (
+            {uploadedFiles.map(file => (
               <ListItem
                 key={file.id}
                 secondaryAction={
@@ -515,7 +520,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
                       <IconButton
                         edge="end"
                         aria-label="retry"
-                        onClick={(e) => {
+                        onClick={e => {
                           e.stopPropagation();
                           handleRetryUpload(file);
                         }}
@@ -527,7 +532,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
                     <IconButton
                       edge="end"
                       aria-label="delete"
-                      onClick={(e) => {
+                      onClick={e => {
                         e.stopPropagation();
                         handleDeleteFile(file.id);
                       }}
@@ -536,17 +541,14 @@ const FileUpload: React.FC<FileUploadProps> = ({
                     </IconButton>
                   </Box>
                 }
-                sx={{ 
-                  border: '1px solid', 
-                  borderColor: file.status === 'error' ? 'error.light' : 'divider', 
-                  borderRadius: 1, 
+                sx={{
+                  border: '1px solid',
+                  borderColor: file.status === 'error' ? 'error.light' : 'divider',
+                  borderRadius: 1,
                   mb: 1,
                   backgroundColor: file.status === 'error' ? 'error.lightest' : 'background.paper',
                 }}
               >
-                <ListItemIcon>
-                  {file.status === 'success' ? <CheckCircleIcon color="success" /> : <FileIcon />}
-                </ListItemIcon>
                 <ListItemText
                   primary={
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -554,7 +556,11 @@ const FileUpload: React.FC<FileUploadProps> = ({
                         {file.fileName}
                       </Typography>
                       {file.status === 'uploading' && (
-                        <Typography variant="body2" component="span" sx={{ ml: 1, color: 'text.secondary' }}>
+                        <Typography
+                          variant="body2"
+                          component="span"
+                          sx={{ ml: 1, color: 'text.secondary' }}
+                        >
                           ({file.progress}%)
                         </Typography>
                       )}
@@ -563,10 +569,10 @@ const FileUpload: React.FC<FileUploadProps> = ({
                   secondary={
                     <Box sx={{ width: '100%' }}>
                       {file.status === 'uploading' ? (
-                        <LinearProgress 
-                          variant="determinate" 
-                          value={file.progress} 
-                          sx={{ mt: 1, height: 4, borderRadius: 2 }} 
+                        <LinearProgress
+                          variant="determinate"
+                          value={file.progress}
+                          sx={{ mt: 1, height: 4, borderRadius: 2 }}
                         />
                       ) : (
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
@@ -592,4 +598,4 @@ const FileUpload: React.FC<FileUploadProps> = ({
   );
 };
 
-export default FileUpload; 
+export default FileUpload;

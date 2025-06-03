@@ -91,7 +91,7 @@ const ResponsiveNavigator: React.FC = () => {
   const { isAuthenticated: authState } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  
+
   // During development, override the auth state for UI testing
   // This lets us test the authenticated UI even if auth services aren't available
   const [devModeAuthenticated, setDevModeAuthenticated] = useState(() => {
@@ -111,23 +111,23 @@ const ResponsiveNavigator: React.FC = () => {
         localStorage.setItem('devModeAuthenticated', String(newState));
         console.log(`Development mode auth state: ${newState ? 'Authenticated' : 'Logged out'}`);
       };
-      
+
       // Cleanup
       return () => {
         delete (window as any).toggleAuth;
       };
     }
   }, [isDevelopment, devModeAuthenticated]);
-  
+
   // Use the real auth state in production, dev override in development
   const isAuthenticated = isDevelopment ? devModeAuthenticated : authState;
-  
+
   const [activeItem, setActiveItem] = useState('dashboard');
   const [layoutMode, setLayoutMode] = useState<'mobile' | 'desktop'>('desktop');
-  
+
   // Use useMediaQuery but don't directly use its value for rendering
   const isMobileQuery = useMediaQuery('(max-width:768px)');
-  
+
   // Update layout mode with debounce to prevent rapid changes
   const updateLayoutMode = useCallback(
     debounce((isMobile: boolean) => {
@@ -135,12 +135,12 @@ const ResponsiveNavigator: React.FC = () => {
     }, 250),
     []
   );
-  
+
   // Effect to handle resize only when the query result changes
   useEffect(() => {
     updateLayoutMode(isMobileQuery);
   }, [isMobileQuery, updateLayoutMode]);
-  
+
   // Handle navigation item click
   const handleNavItemClick = (item: string) => {
     setActiveItem(item);
@@ -159,14 +159,14 @@ const ResponsiveNavigator: React.FC = () => {
   // Render the appropriate component based on the current path
   const renderContent = () => {
     const path = location.pathname;
-    
+
     // If not authenticated, only allow login and register routes
     if (!isAuthenticated) {
       if (path === '/login') return <LoginScreen />;
       if (path === '/register') return <RegisterScreen />;
       return <Navigate to="/login" replace />;
     }
-    
+
     // Authenticated routes
     switch (path) {
       case '/':
@@ -202,57 +202,57 @@ const ResponsiveNavigator: React.FC = () => {
         <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
           {/* Top navigation */}
           <TerraAppBar />
-          
+
           {/* Main content area with side or bottom navigation based on screen size */}
-          <div style={{ 
-            display: 'flex', 
-            flexGrow: 1,
-            overflow: 'hidden',
-            position: 'relative'
-          }}>
+          <div
+            style={{
+              display: 'flex',
+              flexGrow: 1,
+              overflow: 'hidden',
+              position: 'relative',
+            }}
+          >
             {/* Side navigation for desktop */}
             {!isMobile && (
               <div style={{ width: '240px', height: '100%' }}>
-                <TerraLeftNavigation 
-                  activeItem={activeItem}
-                  onItemClick={handleNavItemClick}
-                />
+                <TerraLeftNavigation activeItem={activeItem} onItemClick={handleNavItemClick} />
               </div>
             )}
-            
+
             {/* Main content */}
-            <div style={{ 
-              flexGrow: 1, 
-              overflow: 'auto',
-              padding: isMobile ? '16px' : '24px',
-              backgroundColor: terraColors.pearl
-            }}>
+            <div
+              style={{
+                flexGrow: 1,
+                overflow: 'auto',
+                padding: isMobile ? '16px' : '24px',
+                backgroundColor: terraColors.pearl,
+              }}
+            >
               {renderContent()}
             </div>
           </div>
-          
+
           {/* Bottom navigation for mobile */}
           {isMobile && (
-            <TerraBottomNavigation 
-              activeItem={activeItem}
-              onItemClick={handleNavItemClick}
-            />
+            <TerraBottomNavigation activeItem={activeItem} onItemClick={handleNavItemClick} />
           )}
         </div>
       ) : (
         // Unauthenticated layout
         <div style={{ height: '100vh' }}>
           <Header />
-          <div style={{ 
-            padding: '24px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center'
-          }}>
+          <div
+            style={{
+              padding: '24px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+            }}
+          >
             {isDevelopment && (
               <div style={{ marginBottom: '20px', textAlign: 'center' }}>
                 <p>Development Mode: Authentication bypassed</p>
-                <button 
+                <button
                   onClick={() => setDevModeAuthenticated(true)}
                   style={{
                     padding: '8px 16px',
@@ -261,7 +261,7 @@ const ResponsiveNavigator: React.FC = () => {
                     color: 'white',
                     border: 'none',
                     borderRadius: '4px',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
                   }}
                 >
                   Enter Dashboard (Dev Mode)
@@ -276,4 +276,4 @@ const ResponsiveNavigator: React.FC = () => {
   );
 };
 
-export default ResponsiveNavigator; 
+export default ResponsiveNavigator;

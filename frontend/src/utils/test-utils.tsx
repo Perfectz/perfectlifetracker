@@ -14,24 +14,20 @@ const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
   // Create theme using the shared theme creator and apply responsive font sizes
   const muiTheme = createMuiTheme(false); // Use light theme for tests
   const responsiveTheme = responsiveFontSizes(muiTheme);
-  
+
   return (
     <BrowserRouter>
-      <ThemeProvider theme={responsiveTheme}>
-        {children}
-      </ThemeProvider>
+      <ThemeProvider theme={responsiveTheme}>{children}</ThemeProvider>
     </BrowserRouter>
   );
 };
 
 // Custom render method that wraps rendered UI with necessary providers
-const customRender = (
-  ui: ReactElement,
-  options?: Omit<RenderOptions, 'wrapper'>,
-) => render(ui, { wrapper: AllTheProviders, ...options });
+const customRender = (ui: ReactElement, options?: Omit<RenderOptions, 'wrapper'>) =>
+  render(ui, { wrapper: AllTheProviders, ...options });
 
 // Re-export everything from testing-library
 export * from '@testing-library/react';
 
 // Override render method
-export { customRender as render }; 
+export { customRender as render };

@@ -19,7 +19,7 @@ import {
   Tabs,
   Tab,
   Chip,
-  Fab
+  Fab,
 } from '@mui/material';
 import {
   CheckCircleOutline,
@@ -30,7 +30,7 @@ import {
   PriorityHigh as PriorityHighIcon,
   Event as EventIcon,
   Category as CategoryIcon,
-  LocalOffer as TagIcon
+  LocalOffer as TagIcon,
 } from '@mui/icons-material';
 import { terraColors } from '../theme';
 import type { StackScreenProps } from '@react-navigation/stack';
@@ -40,11 +40,57 @@ type TasksScreenProps = StackScreenProps<MainTabParamList, 'Tasks'>;
 
 // Mock data for tasks
 const mockTasks = [
-  { id: '1', title: 'Complete project proposal', description: 'Finalize proposal for Q3 project', status: 'pending', priority: 'high', dueDate: '2024-08-15', category: 'Work', tags: ['Project X', 'Urgent'] },
-  { id: '2', title: 'Schedule team meeting', description: 'Coordinate schedules for weekly sync', status: 'pending', priority: 'medium', dueDate: '2024-08-10', category: 'Work', tags: ['Team'] },
-  { id: '3', title: 'Pay utility bills', description: 'Electricity and internet bills', status: 'pending', priority: 'medium', dueDate: '2024-08-12', category: 'Personal', tags: ['Finance'] },
-  { id: '4', title: 'Buy groceries', description: 'Milk, eggs, bread, vegetables', status: 'completed', priority: 'low', dueDate: '2024-08-09', completedDate: '2024-08-09', category: 'Personal', tags: ['Shopping'] },
-  { id: '5', title: 'Research vacation destinations', description: 'Look into options for winter break', status: 'pending', priority: 'low', dueDate: '2024-09-01', category: 'Personal', tags: ['Travel'] },
+  {
+    id: '1',
+    title: 'Complete project proposal',
+    description: 'Finalize proposal for Q3 project',
+    status: 'pending',
+    priority: 'high',
+    dueDate: '2024-08-15',
+    category: 'Work',
+    tags: ['Project X', 'Urgent'],
+  },
+  {
+    id: '2',
+    title: 'Schedule team meeting',
+    description: 'Coordinate schedules for weekly sync',
+    status: 'pending',
+    priority: 'medium',
+    dueDate: '2024-08-10',
+    category: 'Work',
+    tags: ['Team'],
+  },
+  {
+    id: '3',
+    title: 'Pay utility bills',
+    description: 'Electricity and internet bills',
+    status: 'pending',
+    priority: 'medium',
+    dueDate: '2024-08-12',
+    category: 'Personal',
+    tags: ['Finance'],
+  },
+  {
+    id: '4',
+    title: 'Buy groceries',
+    description: 'Milk, eggs, bread, vegetables',
+    status: 'completed',
+    priority: 'low',
+    dueDate: '2024-08-09',
+    completedDate: '2024-08-09',
+    category: 'Personal',
+    tags: ['Shopping'],
+  },
+  {
+    id: '5',
+    title: 'Research vacation destinations',
+    description: 'Look into options for winter break',
+    status: 'pending',
+    priority: 'low',
+    dueDate: '2024-09-01',
+    category: 'Personal',
+    tags: ['Travel'],
+  },
 ];
 
 const TasksScreen: React.FC<TasksScreenProps> = () => {
@@ -52,15 +98,18 @@ const TasksScreen: React.FC<TasksScreenProps> = () => {
   const [filter, setFilter] = useState('all'); // 'all', 'pending', 'completed', 'high'
 
   const handleToggleTask = (taskId: string) => {
-    setTasks(tasks.map(task => 
-      task.id === taskId 
-        ? { 
-            ...task, 
-            status: task.status === 'pending' ? 'completed' : 'pending', 
-            completedDate: task.status === 'pending' ? new Date().toISOString().split('T')[0] : undefined 
-          } 
-        : task
-    ));
+    setTasks(
+      tasks.map(task =>
+        task.id === taskId
+          ? {
+              ...task,
+              status: task.status === 'pending' ? 'completed' : 'pending',
+              completedDate:
+                task.status === 'pending' ? new Date().toISOString().split('T')[0] : undefined,
+            }
+          : task
+      )
+    );
   };
 
   const filteredTasks = tasks.filter(task => {
@@ -73,23 +122,29 @@ const TasksScreen: React.FC<TasksScreenProps> = () => {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'error';
-      case 'medium': return 'warning';
-      case 'low': return 'info';
-      default: return 'default';
+      case 'high':
+        return 'error';
+      case 'medium':
+        return 'warning';
+      case 'low':
+        return 'info';
+      default:
+        return 'default';
     }
   };
 
   return (
-    <Box sx={{ 
-      flex: 1, 
-      backgroundColor: terraColors.pearl,
-      p: 2,
-      position: 'relative', 
-      height: '100%', 
-      display: 'flex',
-      flexDirection: 'column'
-    }}>
+    <Box
+      sx={{
+        flex: 1,
+        backgroundColor: terraColors.pearl,
+        p: 2,
+        position: 'relative',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <Container maxWidth="lg" sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
         <Typography variant="h5" sx={{ color: terraColors.prussianBlue, mb: 2 }}>
           Tasks
@@ -102,23 +157,39 @@ const TasksScreen: React.FC<TasksScreenProps> = () => {
           </Typography>
           <Box sx={{ display: 'flex', justifyContent: 'space-around' }}>
             <Box sx={{ textAlign: 'center' }}>
-              <Typography variant="h6" sx={{ color: terraColors.maastrichtBlue }}>{tasks.filter(t => t.status === 'pending').length}</Typography>
-              <Typography variant="body2" sx={{ color: terraColors.softTeal }}>Pending</Typography>
+              <Typography variant="h6" sx={{ color: terraColors.maastrichtBlue }}>
+                {tasks.filter(t => t.status === 'pending').length}
+              </Typography>
+              <Typography variant="body2" sx={{ color: terraColors.softTeal }}>
+                Pending
+              </Typography>
             </Box>
             <Box sx={{ textAlign: 'center' }}>
-              <Typography variant="h6" sx={{ color: terraColors.maastrichtBlue }}>{tasks.filter(t => t.status === 'completed').length}</Typography>
-              <Typography variant="body2" sx={{ color: terraColors.softTeal }}>Completed</Typography>
+              <Typography variant="h6" sx={{ color: terraColors.maastrichtBlue }}>
+                {tasks.filter(t => t.status === 'completed').length}
+              </Typography>
+              <Typography variant="body2" sx={{ color: terraColors.softTeal }}>
+                Completed
+              </Typography>
             </Box>
             <Box sx={{ textAlign: 'center' }}>
-              <Typography variant="h6" sx={{ color: terraColors.maastrichtBlue }}>{tasks.filter(t => t.priority === 'high' && t.status === 'pending').length}</Typography>
-              <Typography variant="body2" sx={{ color: 'error.main' }}>High Priority</Typography>
+              <Typography variant="h6" sx={{ color: terraColors.maastrichtBlue }}>
+                {tasks.filter(t => t.priority === 'high' && t.status === 'pending').length}
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'error.main' }}>
+                High Priority
+              </Typography>
             </Box>
           </Box>
         </Paper>
 
         {/* Filter Tabs */}
         <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-          <Tabs value={filter} onChange={(e, newValue) => setFilter(newValue)} aria-label="Task filters">
+          <Tabs
+            value={filter}
+            onChange={(e, newValue) => setFilter(newValue)}
+            aria-label="Task filters"
+          >
             <Tab label="All" value="all" />
             <Tab label="Pending" value="pending" />
             <Tab label="Completed" value="completed" />
@@ -139,25 +210,57 @@ const TasksScreen: React.FC<TasksScreenProps> = () => {
                         onChange={() => handleToggleTask(task.id)}
                         checked={task.status === 'completed'}
                         icon={<RadioButtonUnchecked />}
-                        checkedIcon={<CheckCircleOutline sx={{ color: terraColors.tropicalRain }} />}
+                        checkedIcon={
+                          <CheckCircleOutline sx={{ color: terraColors.tropicalRain }} />
+                        }
                       />
                     }
                   >
                     <ListItemIcon sx={{ minWidth: 'auto', mr: 1 }}>
-                      {
-                        task.priority === 'high' ? <PriorityHighIcon color="error" /> :
-                        task.priority === 'medium' ? <PriorityHighIcon color="warning" /> : null
-                      }
+                      {task.priority === 'high' ? (
+                        <PriorityHighIcon color="error" />
+                      ) : task.priority === 'medium' ? (
+                        <PriorityHighIcon color="warning" />
+                      ) : null}
                     </ListItemIcon>
                     <ListItemText
                       primary={task.title}
                       secondary={
-                        <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
-                          {task.dueDate && <Chip icon={<EventIcon fontSize="small" />} label={task.dueDate} size="small" variant="outlined" />}
-                          {task.category && <Chip icon={<CategoryIcon fontSize="small" />} label={task.category} size="small" variant="outlined" />}
-                          {task.tags && task.tags.map(tag => (
-                            <Chip key={tag} icon={<TagIcon fontSize="small" />} label={tag} size="small" variant="outlined" />
-                          ))}
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            flexWrap: 'wrap',
+                            gap: 0.5,
+                            mt: 0.5,
+                          }}
+                        >
+                          {task.dueDate && (
+                            <Chip
+                              icon={<EventIcon fontSize="small" />}
+                              label={task.dueDate}
+                              size="small"
+                              variant="outlined"
+                            />
+                          )}
+                          {task.category && (
+                            <Chip
+                              icon={<CategoryIcon fontSize="small" />}
+                              label={task.category}
+                              size="small"
+                              variant="outlined"
+                            />
+                          )}
+                          {task.tags &&
+                            task.tags.map(tag => (
+                              <Chip
+                                key={tag}
+                                icon={<TagIcon fontSize="small" />}
+                                label={tag}
+                                size="small"
+                                variant="outlined"
+                              />
+                            ))}
                         </Box>
                       }
                       secondaryTypographyProps={{ component: 'div' }}
@@ -182,21 +285,19 @@ const TasksScreen: React.FC<TasksScreenProps> = () => {
             Smart Suggestions
           </Typography>
           <Typography sx={{ color: terraColors.maastrichtBlue, mb: 1 }}>
-            You have {tasks.filter(t => t.priority === 'high' && t.status === 'pending').length} high-priority tasks due soon. Consider focusing on them first.
+            You have {tasks.filter(t => t.priority === 'high' && t.status === 'pending').length}{' '}
+            high-priority tasks due soon. Consider focusing on them first.
           </Typography>
-          <Button 
-            variant="text" 
-            sx={{ color: terraColors.tropicalRain, alignSelf: 'flex-start' }}
-          >
+          <Button variant="text" sx={{ color: terraColors.tropicalRain, alignSelf: 'flex-start' }}>
             Optimize My Schedule
           </Button>
         </Paper>
       </Container>
 
       {/* Floating Action Button */}
-      <Fab 
-        color="primary" 
-        aria-label="add task" 
+      <Fab
+        color="primary"
+        aria-label="add task"
         sx={{ position: 'absolute', bottom: 16, right: 16, bgcolor: terraColors.tropicalRain }}
       >
         <AddIcon />
@@ -205,4 +306,4 @@ const TasksScreen: React.FC<TasksScreenProps> = () => {
   );
 };
 
-export default TasksScreen; 
+export default TasksScreen;

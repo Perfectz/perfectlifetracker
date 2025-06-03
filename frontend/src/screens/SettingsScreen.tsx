@@ -13,15 +13,13 @@ import {
   Divider,
   SelectChangeEvent,
   Typography,
-  Info
+  Info,
 } from '@mui/material';
-import { 
-  Info as InfoIcon
-} from '@mui/icons-material';
+import { Info as InfoIcon } from '@mui/icons-material';
 
-import { 
-  SettingsSection, 
-  ToggleSetting, 
+import {
+  SettingsSection,
+  ToggleSetting,
   SelectSetting,
   ActionButton,
   settingsStyles,
@@ -29,7 +27,7 @@ import {
   dataSettings,
   regionalSettings,
   securitySettings,
-  aboutSettings
+  aboutSettings,
 } from './settings';
 
 import type { StackScreenProps } from '@react-navigation/stack';
@@ -41,11 +39,11 @@ const SettingsScreen: React.FC<SettingsScreenProps> = () => {
   // Display Settings state
   const [darkMode, setDarkMode] = useState(false);
   const [compactMode, setCompactMode] = useState(false);
-  
+
   // Data Settings state
   const [cloudSync, setCloudSync] = useState(true);
   const [autoBackup, setAutoBackup] = useState(false);
-  
+
   // Regional Settings state
   const [language, setLanguage] = useState('en');
   const [dateFormat, setDateFormat] = useState('MM/DD/YYYY');
@@ -110,10 +108,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = () => {
               icon={setting.getIcon(setting.id === 'darkMode' ? darkMode : compactMode)}
               label={setting.label}
               checked={setting.id === 'darkMode' ? darkMode : compactMode}
-              onChange={() => handleToggleChange(
-                setting.id, 
-                setting.id === 'darkMode' ? darkMode : compactMode
-              )}
+              onChange={() =>
+                handleToggleChange(setting.id, setting.id === 'darkMode' ? darkMode : compactMode)
+              }
             />
           ))}
         </SettingsSection>
@@ -126,10 +123,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = () => {
               icon={setting.getIcon(setting.id === 'cloudSync' ? cloudSync : autoBackup)}
               label={setting.label}
               checked={setting.id === 'cloudSync' ? cloudSync : autoBackup}
-              onChange={() => handleToggleChange(
-                setting.id, 
-                setting.id === 'cloudSync' ? cloudSync : autoBackup
-              )}
+              onChange={() =>
+                handleToggleChange(setting.id, setting.id === 'cloudSync' ? cloudSync : autoBackup)
+              }
             />
           ))}
           <ListItem>
@@ -149,12 +145,16 @@ const SettingsScreen: React.FC<SettingsScreenProps> = () => {
                 label={setting.label}
                 labelId={setting.labelId}
                 value={
-                  setting.id === 'language' ? language :
-                  setting.id === 'dateFormat' ? dateFormat :
-                  setting.id === 'timeFormat' ? timeFormat : weekStartDay
+                  setting.id === 'language'
+                    ? language
+                    : setting.id === 'dateFormat'
+                      ? dateFormat
+                      : setting.id === 'timeFormat'
+                        ? timeFormat
+                        : weekStartDay
                 }
                 options={setting.options}
-                onChange={(e) => handleSelectChange(setting.id, e)}
+                onChange={e => handleSelectChange(setting.id, e)}
               />
             </React.Fragment>
           ))}
@@ -175,7 +175,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = () => {
         {/* About */}
         <SettingsSection title="About" marginBottom={false}>
           <ListItem>
-            <ListItemIcon><InfoIcon /></ListItemIcon>
+            <ListItemIcon>
+              <InfoIcon />
+            </ListItemIcon>
             <ListItemText primary="App Version" secondary="1.0.0" />
           </ListItem>
           {aboutSettings.map(setting => (
@@ -192,4 +194,4 @@ const SettingsScreen: React.FC<SettingsScreenProps> = () => {
   );
 };
 
-export default SettingsScreen; 
+export default SettingsScreen;

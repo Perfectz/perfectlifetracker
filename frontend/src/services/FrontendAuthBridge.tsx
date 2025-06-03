@@ -15,10 +15,10 @@ interface FrontendAuthBridgeProps {
 // This component bridges the shared auth system to the frontend auth context
 export const FrontendAuthBridge: React.FC<FrontendAuthBridgeProps> = ({ children }) => {
   const sharedAuth = useSharedAuth();
-  
+
   // Convert AuthUser to AccountInfo for backwards compatibility
   const [frontendUser, setFrontendUser] = useState<AccountInfo | null>(null);
-  
+
   // Map shared auth state to frontend auth state
   useEffect(() => {
     if (sharedAuth.user) {
@@ -31,26 +31,26 @@ export const FrontendAuthBridge: React.FC<FrontendAuthBridgeProps> = ({ children
         localAccountId: sharedAuth.user.id,
         name: sharedAuth.user.displayName || '',
       };
-      
+
       setFrontendUser(accountInfo);
     } else {
       setFrontendUser(null);
     }
   }, [sharedAuth.user]);
-  
+
   // Map shared auth methods to frontend auth context
   const signIn = async () => {
     await sharedAuth.signInWithMicrosoft();
   };
-  
+
   const signInWithGoogle = async () => {
     await sharedAuth.signInWithGoogle();
   };
-  
+
   const signOut = async () => {
     await sharedAuth.signOut();
   };
-  
+
   // Create a frontendContext value that uses the shared auth but maps to the frontend format
   const frontendAuthValue = {
     isAuthenticated: sharedAuth.isAuthenticated,
@@ -63,13 +63,9 @@ export const FrontendAuthBridge: React.FC<FrontendAuthBridgeProps> = ({ children
     isLoading: sharedAuth.isLoading,
     error: sharedAuth.error,
   };
-  
-  return (
-    <FrontendAuthProvider value={frontendAuthValue}>
-      {children}
-    </FrontendAuthProvider>
-  );
+
+  return <FrontendAuthProvider value={frontendAuthValue}>{children}</FrontendAuthProvider>;
 };
 
 // Export the custom hook for backwards compatibility
-export { useAuth } from './AuthContext'; 
+export { useAuth } from './AuthContext';

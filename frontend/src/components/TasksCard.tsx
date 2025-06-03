@@ -65,31 +65,24 @@ const TasksCard: React.FC<TasksCardProps> = ({
   }, []);
 
   // Memoize the rendered task list
-  const renderedTasks = useMemo(() => (
-    tasks.map(task => (
-      <ListItem
-        key={task.id}
-        disablePadding
-        secondaryAction={null}
-      >
-        <ListItemButton onClick={() => handleToggleTask(task.id)}>
-          <ListItemIcon sx={{ minWidth: 40 }}>
-            <TerraCheckbox
-              edge="start"
-              checked={task.completed}
-              tabIndex={-1}
-              disableRipple
-            />
-          </ListItemIcon>
-          {task.completed ? (
-            <CompletedTaskText primary={task.name} />
-          ) : (
-            <ListItemText primary={task.name} />
-          )}
-        </ListItemButton>
-      </ListItem>
-    ))
-  ), [tasks, handleToggleTask]);
+  const renderedTasks = useMemo(
+    () =>
+      tasks.map(task => (
+        <ListItem key={task.id} disablePadding secondaryAction={null}>
+          <ListItemButton onClick={() => handleToggleTask(task.id)}>
+            <ListItemIcon sx={{ minWidth: 40 }}>
+              <TerraCheckbox edge="start" checked={task.completed} tabIndex={-1} disableRipple />
+            </ListItemIcon>
+            {task.completed ? (
+              <CompletedTaskText primary={task.name} />
+            ) : (
+              <ListItemText primary={task.name} />
+            )}
+          </ListItemButton>
+        </ListItem>
+      )),
+    [tasks, handleToggleTask]
+  );
 
   return (
     <Card>
@@ -98,9 +91,7 @@ const TasksCard: React.FC<TasksCardProps> = ({
           {title}
         </Typography>
 
-        <List sx={{ mt: 1 }}>
-          {renderedTasks}
-        </List>
+        <List sx={{ mt: 1 }}>{renderedTasks}</List>
       </CardContent>
     </Card>
   );

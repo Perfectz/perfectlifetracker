@@ -20,7 +20,7 @@ import {
   DialogActions,
   Paper,
   Alert,
-  Snackbar
+  Snackbar,
 } from '@mui/material';
 import { Edit, Delete, Add } from '@mui/icons-material';
 import {
@@ -28,7 +28,7 @@ import {
   postWeightRecord,
   updateWeightRecord,
   deleteWeightRecord,
-  WeightRecord
+  WeightRecord,
 } from '../services/fitnessService';
 
 interface EditData {
@@ -58,7 +58,9 @@ const WeightTrackerPage: React.FC = () => {
       setLoading(true);
       const data = await fetchWeightRecords();
       // Sort records by date (newest first)
-      const sortedData = data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      const sortedData = data.sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
       setRecords(sortedData);
     } catch (error) {
       console.error('Failed to load weight records', error);
@@ -81,7 +83,7 @@ const WeightTrackerPage: React.FC = () => {
       showMessage('Please enter both date and weight', 'error');
       return;
     }
-    
+
     try {
       setLoading(true);
       await postWeightRecord({ date, weight: Number(weight) });
@@ -102,7 +104,7 @@ const WeightTrackerPage: React.FC = () => {
     setEditData({
       id: record.id,
       date: record.date.split('T')[0], // Extract date part
-      weight: record.value.toString()
+      weight: record.value.toString(),
     });
     setEditDialogOpen(true);
   };
@@ -116,9 +118,9 @@ const WeightTrackerPage: React.FC = () => {
 
     try {
       setLoading(true);
-      await updateWeightRecord(editData.id, { 
-        date: editData.date, 
-        weight: Number(editData.weight) 
+      await updateWeightRecord(editData.id, {
+        date: editData.date,
+        weight: Number(editData.weight),
       });
       setEditDialogOpen(false);
       setEditData(null);
@@ -156,7 +158,7 @@ const WeightTrackerPage: React.FC = () => {
       <Typography variant="h4" gutterBottom color="primary">
         Weight Tracker
       </Typography>
-      
+
       {/* Add New Entry Form */}
       <Paper sx={{ p: 3, mb: 4 }}>
         <Typography variant="h6" gutterBottom>
@@ -185,12 +187,7 @@ const WeightTrackerPage: React.FC = () => {
             required
             sx={{ minWidth: 120 }}
           />
-          <Button 
-            type="submit" 
-            variant="contained" 
-            startIcon={<Add />}
-            disabled={loading}
-          >
+          <Button type="submit" variant="contained" startIcon={<Add />} disabled={loading}>
             Add Entry
           </Button>
         </Box>
@@ -201,7 +198,7 @@ const WeightTrackerPage: React.FC = () => {
         <Typography variant="h6" sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
           Weight History ({records.length} entries)
         </Typography>
-        
+
         {records.length === 0 ? (
           <Box sx={{ p: 4, textAlign: 'center' }}>
             <Typography variant="body1" color="text.secondary">
@@ -212,22 +209,26 @@ const WeightTrackerPage: React.FC = () => {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell><strong>Date</strong></TableCell>
-                <TableCell><strong>Weight</strong></TableCell>
-                <TableCell align="center"><strong>Actions</strong></TableCell>
+                <TableCell>
+                  <strong>Date</strong>
+                </TableCell>
+                <TableCell>
+                  <strong>Weight</strong>
+                </TableCell>
+                <TableCell align="center">
+                  <strong>Actions</strong>
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {records.map((record: WeightRecord) => (
                 <TableRow key={record.id} hover>
-                  <TableCell>
-                    {format(parseISO(record.date), 'MMM d, yyyy')}
-                  </TableCell>
+                  <TableCell>{format(parseISO(record.date), 'MMM d, yyyy')}</TableCell>
                   <TableCell>
                     {record.value} {record.unit}
                   </TableCell>
                   <TableCell align="center">
-                    <IconButton 
+                    <IconButton
                       onClick={() => handleEditClick(record)}
                       color="primary"
                       size="small"
@@ -235,7 +236,7 @@ const WeightTrackerPage: React.FC = () => {
                     >
                       <Edit />
                     </IconButton>
-                    <IconButton 
+                    <IconButton
                       onClick={() => handleDelete(record.id)}
                       color="error"
                       size="small"
@@ -252,7 +253,12 @@ const WeightTrackerPage: React.FC = () => {
       </Paper>
 
       {/* Edit Dialog */}
-      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={editDialogOpen}
+        onClose={() => setEditDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>Edit Weight Entry</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
@@ -260,7 +266,7 @@ const WeightTrackerPage: React.FC = () => {
               label="Date"
               type="date"
               value={editData?.date || ''}
-              onChange={e => setEditData(prev => prev ? { ...prev, date: e.target.value } : null)}
+              onChange={e => setEditData(prev => (prev ? { ...prev, date: e.target.value } : null))}
               InputLabelProps={{ shrink: true }}
               fullWidth
               required
@@ -269,7 +275,9 @@ const WeightTrackerPage: React.FC = () => {
               label="Weight (lbs)"
               type="number"
               value={editData?.weight || ''}
-              onChange={e => setEditData(prev => prev ? { ...prev, weight: e.target.value } : null)}
+              onChange={e =>
+                setEditData(prev => (prev ? { ...prev, weight: e.target.value } : null))
+              }
               inputProps={{ step: 0.1, min: 0 }}
               fullWidth
               required
@@ -291,11 +299,7 @@ const WeightTrackerPage: React.FC = () => {
         onClose={() => setSnackbarOpen(false)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert 
-          onClose={() => setSnackbarOpen(false)} 
-          severity={messageType}
-          sx={{ width: '100%' }}
-        >
+        <Alert onClose={() => setSnackbarOpen(false)} severity={messageType} sx={{ width: '100%' }}>
           {message}
         </Alert>
       </Snackbar>
@@ -303,4 +307,4 @@ const WeightTrackerPage: React.FC = () => {
   );
 };
 
-export default WeightTrackerPage; 
+export default WeightTrackerPage;

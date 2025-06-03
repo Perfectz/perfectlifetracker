@@ -27,4 +27,4 @@ const MobileApp: React.FC = () => {
   );
 };
 
-export default MobileApp; 
+export default MobileApp;

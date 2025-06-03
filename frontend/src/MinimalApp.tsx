@@ -13,4 +13,4 @@ const MinimalApp: React.FC = () => {
   );
 };
 
-export default MinimalApp; 
+export default MinimalApp;

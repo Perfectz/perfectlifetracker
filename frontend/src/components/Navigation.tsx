@@ -34,9 +34,9 @@ import Footer from './Footer';
 const ConditionalHeader = () => {
   const location = useLocation();
   const showHeader = location.pathname === '/' || location.pathname === '/dashboard';
-  
+
   if (!showHeader) return null;
-  
+
   return <Header height={220} marginBottom={3} />;
 };
 
@@ -67,9 +67,7 @@ const Navigation = () => {
   ];
 
   // Filter links based on authentication state
-  const availableLinks = navigationLinks.filter(
-    link => !link.protected || isAuthenticated
-  );
+  const availableLinks = navigationLinks.filter(link => !link.protected || isAuthenticated);
 
   const drawer = (
     <Box
@@ -152,9 +150,7 @@ const Navigation = () => {
             </Box>
           )}
           {/* Auth components */}
-          <Box sx={{ ml: 2 }}>
-            {isAuthenticated ? <UserMenu /> : <LoginButton />}
-          </Box>
+          <Box sx={{ ml: 2 }}>{isAuthenticated ? <UserMenu /> : <LoginButton />}</Box>
         </Toolbar>
       </AppBar>
       <Drawer anchor="left" open={drawerOpen} onClose={toggleDrawer(false)}>
@@ -171,7 +167,7 @@ const Navigation = () => {
       >
         {/* Add the header back, conditionally based on route */}
         <ConditionalHeader />
-        
+
         {/* Outlet renders the current route */}
         <Outlet />
       </Container>
@@ -180,4 +176,4 @@ const Navigation = () => {
   );
 };
 
-export default Navigation; 
+export default Navigation;

@@ -39,13 +39,13 @@ export const AuthModalsProvider: React.FC<AuthModalsProviderProps> = ({ children
   const closeAllModals = () => setActiveModal(ModalType.NONE);
 
   return (
-    <AuthModalsContext.Provider 
+    <AuthModalsContext.Provider
       value={{
         openLoginModal,
         openRegisterModal,
         openResetPasswordModal,
         closeAllModals,
-        activeModal
+        activeModal,
       }}
     >
       {children}
@@ -57,11 +57,11 @@ export const AuthModalsProvider: React.FC<AuthModalsProviderProps> = ({ children
 // Hook that returns functions to control the auth modals
 export const useAuthModals = () => {
   const context = useContext(AuthModalsContext);
-  
+
   if (context === undefined) {
     throw new Error('useAuthModals must be used within an AuthModalsProvider');
   }
-  
+
   return context;
 
   // Original Redux implementation
@@ -74,4 +74,4 @@ export const useAuthModals = () => {
   // };
 };
 
-export default useAuthModals; 
+export default useAuthModals;

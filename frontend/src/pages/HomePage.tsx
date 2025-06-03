@@ -23,12 +23,13 @@ const HomePage = () => {
           Welcome to Perfect LifeTracker Pro
         </Typography>
         <Typography variant="h5" component="h2" gutterBottom sx={{ mb: 4 }}>
-          Your AI-powered personal assistant for tracking fitness goals, personal development, and daily tasks.
+          Your AI-powered personal assistant for tracking fitness goals, personal development, and
+          daily tasks.
         </Typography>
         {!isAuthenticated && (
-          <Button 
-            variant="contained" 
-            color="primary" 
+          <Button
+            variant="contained"
+            color="primary"
             size="large"
             onClick={() => navigate('/login')}
             sx={{ mt: 2, mr: 2 }}
@@ -36,18 +37,18 @@ const HomePage = () => {
             Get Started
           </Button>
         )}
-        <Button 
-          variant="outlined" 
-          color="primary" 
+        <Button
+          variant="outlined"
+          color="primary"
           size="large"
           onClick={() => navigate('/weight')}
           sx={{ mt: 2, mr: 2 }}
         >
           Weight Tracker
         </Button>
-        <Button 
-          variant="outlined" 
-          color="secondary" 
+        <Button
+          variant="outlined"
+          color="secondary"
           size="large"
           onClick={() => navigate('/meals')}
           sx={{ mt: 2 }}
@@ -59,12 +60,7 @@ const HomePage = () => {
       {/* Feature Cards */}
       <Grid container spacing={3} sx={{ mb: 8 }}>
         <Grid item xs={12} md={6}>
-          <FitnessMetricsCard 
-            steps={8423} 
-            goal={10000} 
-            progress={75} 
-            title="Track Your Fitness" 
-          />
+          <FitnessMetricsCard steps={8423} goal={10000} progress={75} title="Track Your Fitness" />
         </Grid>
         <Grid item xs={12} md={6}>
           <DevelopmentCard title="Personal Development" />
@@ -88,7 +84,8 @@ const HomePage = () => {
               AI-Powered Insights
             </Typography>
             <Typography variant="body1">
-              Get personalized recommendations and insights based on your activity patterns and goals.
+              Get personalized recommendations and insights based on your activity patterns and
+              goals.
             </Typography>
           </Grid>
           <Grid item xs={12} md={4}>

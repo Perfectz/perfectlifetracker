@@ -8,4 +8,4 @@ export { default as FormSetting } from './FormSetting';
 export { default as ActionButton } from './ActionButton';
 export { default as SelectSetting } from './SelectSetting';
 export { settingsStyles } from './styles';
-export * from './settingsData.tsx'; 
+export * from './settingsData.tsx';

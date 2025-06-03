@@ -2,7 +2,7 @@
  * frontend/src/services/authConfig.ts
  * Configuration for Microsoft Entra ID authentication
  */
-import { Configuration, LogLevel, PopupRequest } from "@azure/msal-browser";
+import { Configuration, LogLevel, PopupRequest } from '@azure/msal-browser';
 
 // MSAL configuration
 export const msalConfig: Configuration = {
@@ -14,7 +14,7 @@ export const msalConfig: Configuration = {
     navigateToLoginRequestUrl: true,
   },
   cache: {
-    cacheLocation: "sessionStorage",
+    cacheLocation: 'sessionStorage',
     storeAuthStateInCookie: false,
   },
   system: {
@@ -47,47 +47,49 @@ export const msalConfig: Configuration = {
 
 // Base login request configuration
 export const loginRequest: PopupRequest = {
-  scopes: ["User.Read", "openid", "profile", "email"],
-  prompt: "select_account",
+  scopes: ['User.Read', 'openid', 'profile', 'email'],
+  prompt: 'select_account',
 };
 
 // Request for Microsoft login
 export const microsoftLoginRequest: PopupRequest = {
   ...loginRequest,
-  prompt: "select_account",
+  prompt: 'select_account',
   timeout: 60000,
   popupWindowAttributes: {
     popupSize: { width: 800, height: 600 },
     popupPosition: { top: 100, left: 100 },
     asyncPopups: true,
-    popupWindowFeatures: "scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,directories=no,status=no"
-  }
+    popupWindowFeatures:
+      'scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,directories=no,status=no',
+  },
 };
 
 // Request for Google login via Entra ID
 export const googleLoginRequest: PopupRequest = {
   ...loginRequest,
-  prompt: "select_account",
+  prompt: 'select_account',
   extraQueryParameters: {
-    domain_hint: 'google.com'
+    domain_hint: 'google.com',
   },
   timeout: 60000,
   popupWindowAttributes: {
     popupSize: { width: 800, height: 600 },
     popupPosition: { top: 100, left: 100 },
     asyncPopups: true,
-    popupWindowFeatures: "scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,directories=no,status=no"
-  }
+    popupWindowFeatures:
+      'scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,directories=no,status=no',
+  },
 };
 
 // Request for Facebook login via Entra ID
 export const facebookLoginRequest: PopupRequest = {
   ...loginRequest,
-  loginHint: "Facebook", // This doesn't actually trigger Facebook, just used for UX clarity
-  prompt: "select_account",
+  loginHint: 'Facebook', // This doesn't actually trigger Facebook, just used for UX clarity
+  prompt: 'select_account',
   // Add domain hint for Facebook federation if available
   extraQueryParameters: {
-    domain_hint: 'facebook.com' 
+    domain_hint: 'facebook.com',
   },
   // Add a reasonable timeout to avoid issues
   timeout: 60000,
@@ -97,16 +99,17 @@ export const facebookLoginRequest: PopupRequest = {
     popupPosition: { top: 100, left: 100 },
     asyncPopups: true,
     // Add additional window features for cross-browser compatibility
-    popupWindowFeatures: "scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,directories=no,status=no"
-  }
+    popupWindowFeatures:
+      'scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,directories=no,status=no',
+  },
 };
 
 // Graph API request configuration
 export const graphRequest = {
-  scopes: ["User.Read", "User.ReadBasic.All"],
+  scopes: ['User.Read', 'User.ReadBasic.All'],
 };
 
 // Graph API configuration
 export const graphConfig = {
-  graphMeEndpoint: "https://graph.microsoft.com/v1.0/me"
-}; 
+  graphMeEndpoint: 'https://graph.microsoft.com/v1.0/me',
+};

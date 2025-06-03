@@ -62,7 +62,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setError(null);
     try {
       const loginResponse = await msalInstance.loginPopup(microsoftLoginRequest);
-      
+
       if (loginResponse) {
         setUser(loginResponse.account);
         setIsAuthenticated(true);
@@ -71,7 +71,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     } catch (err: any) {
       console.error('Microsoft login error:', err);
-      
+
       if (err instanceof BrowserAuthError) {
         if (err.errorCode === 'user_cancelled') {
           setError('Login was cancelled. Please try again.');
@@ -96,7 +96,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setError(null);
     try {
       const loginResponse = await msalInstance.loginPopup(googleLoginRequest);
-      
+
       if (loginResponse) {
         setUser(loginResponse.account);
         setIsAuthenticated(true);
@@ -105,7 +105,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     } catch (err: any) {
       console.error('Google login error:', err);
-      
+
       if (err instanceof BrowserAuthError) {
         if (err.errorCode === 'user_cancelled') {
           setError('Login was cancelled. Please try again.');
@@ -151,7 +151,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     signInRedirect,
     signOut,
     isLoading,
-    error
+    error,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -163,4 +163,4 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}; 
+};

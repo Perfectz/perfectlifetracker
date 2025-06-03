@@ -22,7 +22,7 @@ async function makeApiRequest<T>(
   data?: any
 ): Promise<T> {
   const url = `${API_URL}/api${endpoint}`;
-  
+
   const options: RequestInit = {
     method,
     headers: {
@@ -37,7 +37,7 @@ async function makeApiRequest<T>(
 
   try {
     const response = await fetch(url, options);
-    
+
     if (!response.ok) {
       let errorMessage = `HTTP ${response.status}`;
       try {
@@ -57,13 +57,13 @@ async function makeApiRequest<T>(
     }
   } catch (error) {
     console.error(`API Error (${method} ${endpoint}):`, error);
-    
+
     // For demo purposes, return mock data if API fails
     if (method === 'GET' && endpoint === '/fitness/weight') {
       console.warn('API not available, returning mock weight data');
       return generateMockWeightData() as T;
     }
-    
+
     throw error;
   }
 }
@@ -79,13 +79,13 @@ function generateMockWeightData(): WeightRecord[] {
   for (let i = 0; i < 10; i++) {
     const date = new Date(startDate);
     date.setDate(date.getDate() + i * 3);
-    
+
     mockData.push({
       id: `mock-${i}`,
       measurementType: 'weight',
       value: 150 + Math.random() * 30, // Random weight between 150-180 lbs
       unit: 'lbs',
-      date: date.toISOString().split('T')[0] + 'T12:00:00.000Z'
+      date: date.toISOString().split('T')[0] + 'T12:00:00.000Z',
     });
   }
 
@@ -102,11 +102,14 @@ export async function fetchWeightRecords(): Promise<WeightRecord[]> {
 /**
  * Logs a new weight measurement or updates an existing record for the given date.
  */
-export async function postWeightRecord(record: { date: string; weight: number; }): Promise<WeightRecord> {
+export async function postWeightRecord(record: {
+  date: string;
+  weight: number;
+}): Promise<WeightRecord> {
   try {
     return await makeApiRequest('/fitness/weight', 'POST', {
       date: record.date,
-      weight: record.weight
+      weight: record.weight,
     });
   } catch (error) {
     // For demo purposes, return a mock response
@@ -116,7 +119,7 @@ export async function postWeightRecord(record: { date: string; weight: number; }
       measurementType: 'weight',
       value: record.weight,
       unit: 'lbs',
-      date: record.date + 'T12:00:00.000Z'
+      date: record.date + 'T12:00:00.000Z',
     };
   }
 }
@@ -124,13 +127,16 @@ export async function postWeightRecord(record: { date: string; weight: number; }
 /**
  * Updates an existing weight record by ID.
  */
-export async function updateWeightRecord(id: string, record: { date: string; weight: number; }): Promise<WeightRecord> {
+export async function updateWeightRecord(
+  id: string,
+  record: { date: string; weight: number }
+): Promise<WeightRecord> {
   try {
     return await makeApiRequest(`/fitness/${id}`, 'PUT', {
       measurementType: 'weight',
       value: record.weight,
       unit: 'lbs',
-      date: record.date
+      date: record.date,
     });
   } catch (error) {
     console.warn('API not available, simulating weight update');
@@ -139,7 +145,7 @@ export async function updateWeightRecord(id: string, record: { date: string; wei
       measurementType: 'weight',
       value: record.weight,
       unit: 'lbs',
-      date: record.date + 'T12:00:00.000Z'
+      date: record.date + 'T12:00:00.000Z',
     };
   }
 }
@@ -154,4 +160,4 @@ export async function deleteWeightRecord(id: string): Promise<void> {
     console.warn('API not available, simulating weight deletion');
     // For demo purposes, just log the deletion
   }
-} 
+}

@@ -14,43 +14,47 @@ export const MaterialCommunityIcons = {
       'weight-lifter': '🏋️',
       'book-open-variant': '📚',
       'format-list-checks': '✓',
-      'account': '👤',
-      'cog': '⚙️',
-      'home': '🏠',
-      'plus': '+',
-      'check': '✓',
-      'close': '×',
-      'eye': '👁️',
+      account: '👤',
+      cog: '⚙️',
+      home: '🏠',
+      plus: '+',
+      check: '✓',
+      close: '×',
+      eye: '👁️',
       'eye-off': '👁️‍🗨️',
       'arrow-left': '←',
       'arrow-right': '→',
-      'calendar': '📅',
-      'bell': '🔔',
-      'star': '⭐',
-      'heart': '❤️',
-      'magnify': '🔍',
+      calendar: '📅',
+      bell: '🔔',
+      star: '⭐',
+      heart: '❤️',
+      magnify: '🔍',
       // Add more mappings as needed
     };
 
     // Return the emoji or a default character if not found
     const iconText = iconMap[iconName] || '•';
-    
-    return React.createElement('span', {
-      style: {
-        fontSize: `${size}px`,
-        color,
-        display: 'inline-block',
-        width: `${size}px`,
-        height: `${size}px`,
-        textAlign: 'center',
-        lineHeight: `${size}px`,
+
+    return React.createElement(
+      'span',
+      {
+        style: {
+          fontSize: `${size}px`,
+          color,
+          display: 'inline-block',
+          width: `${size}px`,
+          height: `${size}px`,
+          textAlign: 'center',
+          lineHeight: `${size}px`,
+        },
       },
-    }, iconText);
-  }
+      iconText
+    );
+  },
 };
 
 // Export other icon sets as needed
 export { MaterialCommunityIcons as Ionicons };
 export { MaterialCommunityIcons as MaterialIcons };
 export { MaterialCommunityIcons as FontAwesome };
-export { MaterialCommunityIcons as Feather }; 
+export { MaterialCommunityIcons as Feather };

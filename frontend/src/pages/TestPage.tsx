@@ -18,10 +18,7 @@ const TestPage: React.FC = () => {
           This is a simple test page to verify rendering is working.
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Button 
-            variant="contained" 
-            onClick={() => setCounter(prev => prev + 1)}
-          >
+          <Button variant="contained" onClick={() => setCounter(prev => prev + 1)}>
             Click me: {counter}
           </Button>
         </Box>
@@ -30,4 +27,4 @@ const TestPage: React.FC = () => {
   );
 };
 
-export default TestPage; 
+export default TestPage;
