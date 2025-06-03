@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 import { expressjwt, Request as JWTRequest } from 'express-jwt';
 import jwksRsa from 'jwks-rsa';
 import { initializeDatabase } from './utils/dbInit';
+import { logger, logApiRequest } from './utils/logger';
 
 // Import routes
 import userRoutes from './routes/userRoutes';
@@ -53,13 +54,19 @@ const checkJwt = expressjwt({
 const conditionalJwt = (req: any, res: any, next: any) => {
   // Only bypass JWT in development with explicit flag
   if (process.env.NODE_ENV === 'development' && process.env.USE_MOCK_AUTH === 'true') {
-    console.warn('⚠️  JWT authentication bypassed for development mode');
+    logger.warn('JWT authentication bypassed for development mode');
     return next();
   }
   
   // Use proper JWT validation in production or when mock auth is disabled
   return checkJwt(req, res, next);
 };
+
+// Request logging middleware
+app.use((req, res, next) => {
+  logApiRequest(req.method, req.path);
+  next();
+});
 
 // Public routes
 app.get('/', (req, res) => {
@@ -96,7 +103,13 @@ app.get('/api/protected', conditionalJwt, (req: JWTRequest, res) => {
 
 // Error handler middleware
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Server error:', err);
+  logger.error('Server error', {
+    error: err.message,
+    stack: err.stack,
+    path: req.path,
+    method: req.method
+  });
+  
   res.status(500).json({
     status: 'error',
     message: 'Internal server error',
@@ -112,11 +125,14 @@ async function startServer() {
     
     // Start Express server
     app.listen(port, '0.0.0.0', () => {
-      console.log(`Server running on port ${port}`);
-      console.log(`Health check available at http://localhost:${port}/api/health`);
+      logger.info('Server started successfully', {
+        port,
+        environment: process.env.NODE_ENV,
+        healthCheck: `http://localhost:${port}/api/health`
+      });
     });
   } catch (error) {
-    console.error('Failed to start server:', error);
+    logger.error('Failed to start server', { error: (error as Error).message });
     process.exit(1);
   }
 }

@@ -5,6 +5,7 @@
 // Replacing axios with a simple fetch-based implementation
 import { getToken } from './auth';
 import { API_BASE_URL, AZURE_UPLOAD_URL } from '../config/api';
+import { logger, logApiError } from '../utils/logger';
 
 // Type definitions for API responses
 interface ApiResponse<T = unknown> {
@@ -66,9 +67,10 @@ function recordFailure(): void {
 
   if (circuitBreaker.failures >= CIRCUIT_THRESHOLD) {
     circuitBreaker.isOpen = true;
-    console.warn(
-      `Circuit breaker opened after ${CIRCUIT_THRESHOLD} failures. Will retry after ${CIRCUIT_RESET_TIMEOUT / 1000}s`
-    );
+    logger.warn('Circuit breaker opened', {
+      failures: CIRCUIT_THRESHOLD,
+      resetTimeout: CIRCUIT_RESET_TIMEOUT / 1000
+    });
   }
 }
 
@@ -170,7 +172,7 @@ async function fetchWithRetry<T = unknown>(
 
       // Calculate backoff delay and wait
       const delay = getBackoffDelay(retries, retryConfig);
-      console.log(`API call failed, retrying in ${delay}ms...`, error);
+      logger.debug('API call retry', { delay, retries, endpoint: url });
       await sleep(delay);
       retries++;
     }
@@ -228,7 +230,11 @@ export async function apiRequest<T = unknown>(
     }
   } catch (error) {
     if (error instanceof Error) {
-      console.error(`API Error (${method} ${endpoint}):`, error.message);
+      logger.error('API request failed', {
+        method,
+        endpoint,
+        error: error.message
+      });
 
       // For development, provide more helpful error messages
       if (process.env.NODE_ENV === 'development') {
@@ -325,7 +331,7 @@ export async function uploadFile(
         }
       }
     } catch (error) {
-      console.warn('Failed to get authentication token:', error);
+      logger.warn('Failed to get authentication token', { error: (error as Error).message });
       // Continue without auth if token retrieval fails
     }
 
@@ -436,7 +442,7 @@ export async function uploadMultipleFiles(
         }
       }
     } catch (error) {
-      console.warn('Failed to get authentication token:', error);
+      logger.warn('Failed to get authentication token', { error: (error as Error).message });
       // Continue without auth if token retrieval fails
     }
 
@@ -479,7 +485,7 @@ export async function getFiles(prefix?: string): Promise<FileResponse[]> {
     const response = await apiRequest<FileResponse[]>(url);
     return response;
   } catch (error: unknown) {
-    console.error('Error getting files:', error);
+    logger.error('Error getting files', { error: (error as Error).message, prefix });
     throw error;
   }
 }
