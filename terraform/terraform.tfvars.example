@@ -1,0 +1,43 @@
+# terraform/terraform.tfvars.example
+# Example Terraform variables file for Perfect LifeTracker Pro
+# Copy this file to terraform.tfvars and update with your values
+
+# Required variables
+subscription_id = "00000000-0000-0000-0000-000000000000"  # Your Azure subscription ID
+tenant_id       = "00000000-0000-0000-0000-000000000000"  # Your Azure tenant ID
+
+# Environment configuration
+environment = "dev"  # dev, staging, or prod
+location    = "East US"
+prefix      = "perfectltp"
+
+# Resource sizing (adjust based on environment)
+app_service_plan_sku = "B1"        # B1 for dev, S1+ for production
+static_web_app_sku   = "Free"      # Free for dev, Standard for production
+cosmos_db_throughput = 400         # 400 for dev, higher for production
+key_vault_sku        = "standard"  # standard or premium
+
+# Feature flags
+enable_monitoring = true   # Enable Application Insights
+enable_backup     = false  # Enable App Service backup (requires higher SKU)
+
+# CORS configuration
+allowed_origins = [
+  "https://localhost:3000",
+  "http://localhost:3000"
+]
+
+# GitHub repository for CI/CD
+github_repo_url = "https://github.com/Perfectz/perfectlifetracker"
+
+# Docker registry (if using containers)
+docker_registry_url = ""
+
+# Resource tags
+tags = {
+  Project     = "PerfectLifeTrackerPro"
+  Environment = "development"
+  Owner       = "YourName"
+  ManagedBy   = "Terraform"
+  CostCenter  = "IT"
+} 

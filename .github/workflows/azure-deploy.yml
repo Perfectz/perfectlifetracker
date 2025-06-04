@@ -1,0 +1,199 @@
+# .github/workflows/azure-deploy.yml
+# GitHub Actions workflow for Perfect LifeTracker Pro Azure deployment
+
+name: Deploy to Azure
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+        - dev
+        - staging
+        - prod
+
+env:
+  NODE_VERSION: '20.x'
+  TERRAFORM_VERSION: '1.5.7'
+
+jobs:
+  # Infrastructure deployment with Terraform
+  infrastructure:
+    name: Deploy Infrastructure
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
+    
+    environment: ${{ github.event.inputs.environment || 'dev' }}
+    
+    outputs:
+      frontend-url: ${{ steps.terraform.outputs.frontend_url }}
+      backend-url: ${{ steps.terraform.outputs.backend_url }}
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ env.TERRAFORM_VERSION }}
+        
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Terraform Init
+      working-directory: ./terraform
+      run: terraform init
+
+    - name: Terraform Plan
+      working-directory: ./terraform
+      run: |
+        terraform plan \
+          -var="subscription_id=${{ secrets.AZURE_SUBSCRIPTION_ID }}" \
+          -var="tenant_id=${{ secrets.AZURE_TENANT_ID }}" \
+          -var="environment=${{ github.event.inputs.environment || 'dev' }}" \
+          -out=tfplan
+
+    - name: Terraform Apply
+      if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/master'
+      working-directory: ./terraform
+      run: terraform apply -auto-approve tfplan
+
+    - name: Get Terraform Outputs
+      id: terraform
+      working-directory: ./terraform
+      run: |
+        echo "frontend_url=$(terraform output -raw frontend_url)" >> $GITHUB_OUTPUT
+        echo "backend_url=$(terraform output -raw backend_url)" >> $GITHUB_OUTPUT
+
+  # Backend deployment
+  backend:
+    name: Deploy Backend
+    runs-on: ubuntu-latest
+    needs: infrastructure
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
+    
+    environment: ${{ github.event.inputs.environment || 'dev' }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+
+    - name: Install backend dependencies
+      working-directory: ./backend
+      run: npm ci
+
+    - name: Build backend
+      working-directory: ./backend
+      run: npm run build
+
+    - name: Run backend tests
+      working-directory: ./backend
+      run: npm test
+      env:
+        NODE_ENV: test
+
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Deploy to Azure App Service
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ format('perfectltp-{0}-backend', github.event.inputs.environment || 'dev') }}
+        package: ./backend
+
+  # Frontend deployment
+  frontend:
+    name: Deploy Frontend
+    runs-on: ubuntu-latest
+    needs: infrastructure
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
+    
+    environment: ${{ github.event.inputs.environment || 'dev' }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Install frontend dependencies
+      working-directory: ./frontend
+      run: npm ci
+
+    - name: Build frontend
+      working-directory: ./frontend
+      run: npm run build
+      env:
+        REACT_APP_API_URL: ${{ needs.infrastructure.outputs.backend-url }}
+        REACT_APP_ENVIRONMENT: ${{ github.event.inputs.environment || 'dev' }}
+
+    - name: Run frontend tests
+      working-directory: ./frontend
+      run: npm test -- --coverage --watchAll=false
+      env:
+        CI: true
+
+    - name: Deploy to Azure Static Web Apps
+      uses: Azure/static-web-apps-deploy@v1
+      with:
+        azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        action: "upload"
+        app_location: "/frontend"
+        api_location: ""
+        output_location: "dist"
+
+  # Health check after deployment
+  health-check:
+    name: Health Check
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
+    
+    steps:
+    - name: Wait for deployment
+      run: sleep 60
+
+    - name: Check backend health
+      run: |
+        curl -f ${{ needs.infrastructure.outputs.backend-url }}/api/health || exit 1
+
+    - name: Check frontend
+      run: |
+        curl -f ${{ needs.infrastructure.outputs.frontend-url }} || exit 1
+
+    - name: Notify deployment success
+      if: success()
+      run: |
+        echo "✅ Deployment successful!"
+        echo "Frontend: ${{ needs.infrastructure.outputs.frontend-url }}"
+        echo "Backend: ${{ needs.infrastructure.outputs.backend-url }}" 
