@@ -2,7 +2,7 @@
  * backend/src/utils/dbInit.ts
  * Database initialization and seeding script
  */
-import { initializeCosmosDB } from './cosmosClient';
+import { initCosmosConfig, initializeContainers } from './cosmosClient';
 import UserModel from '../models/UserModel';
 import FitnessModel from '../models/FitnessModel';
 import { TaskModel } from '../models/TaskModel';
@@ -16,7 +16,8 @@ export async function initializeDatabase() {
   
   // First initialize the database and containers
   try {
-    await initializeCosmosDB();
+    await initCosmosConfig();
+    await initializeContainers();
     console.log('Cosmos DB initialization complete.');
   } catch (error) {
     console.error('Error initializing database:', error);

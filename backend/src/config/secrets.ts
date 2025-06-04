@@ -41,7 +41,7 @@ export class SecretsManager {
           logger.warn(`Secret ${mapping.cacheKey} could not be loaded`);
         }
       } catch (error) {
-        logger.error(`Error loading secret ${mapping.cacheKey}:`, error);
+        logger.error(`Error loading secret ${mapping.cacheKey}:`, { error: error instanceof Error ? error.message : String(error) });
       }
     }
 

@@ -38,7 +38,7 @@ class KeyVaultService {
       this.client = new SecretClient(this.config.vaultUrl, credential);
       logger.info('Key Vault client initialized successfully');
     } catch (error) {
-      logger.error('Failed to initialize Key Vault client:', error);
+      logger.error('Failed to initialize Key Vault client:', { error: error instanceof Error ? error.message : String(error) });
       this.client = null;
     }
   }
@@ -63,7 +63,7 @@ class KeyVaultService {
           return secret.value;
         }
       } catch (error) {
-        logger.warn(`Failed to retrieve secret ${secretName} from Key Vault:`, error);
+        logger.warn(`Failed to retrieve secret ${secretName} from Key Vault:`, { error: error instanceof Error ? error.message : String(error) });
       }
     }
 
@@ -72,6 +72,11 @@ class KeyVaultService {
       const envValue = process.env[fallbackEnvVar];
       if (envValue) {
         logger.info(`Using fallback environment variable for ${secretName}`);
+        // Cache the environment variable value
+        this.secretsCache.set(secretName, {
+          value: envValue,
+          timestamp: Date.now()
+        });
         return envValue;
       }
     }
@@ -98,7 +103,7 @@ class KeyVaultService {
       logger.info(`Secret ${secretName} set successfully`);
       return true;
     } catch (error) {
-      logger.error(`Failed to set secret ${secretName}:`, error);
+      logger.error(`Failed to set secret ${secretName}:`, { error: error instanceof Error ? error.message : String(error) });
       return false;
     }
   }
