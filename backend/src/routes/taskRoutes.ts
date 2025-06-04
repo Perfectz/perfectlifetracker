@@ -149,7 +149,7 @@ router.put('/:id', checkJwt, extractUserId, async (req: JWTRequest, res) => {
       res.status(400).json({ error: 'projectId is required' });
       return;
     }
-    const updates = {
+    const updates: Record<string, any> = {
       title: req.body.title,
       description: req.body.description,
       status: req.body.status,
@@ -158,7 +158,11 @@ router.put('/:id', checkJwt, extractUserId, async (req: JWTRequest, res) => {
       tags: req.body.tags
     };
     // Remove undefined fields
-    Object.keys(updates).forEach(key => updates[key] === undefined && delete updates[key]);
+    Object.keys(updates).forEach(key => {
+      if (updates[key] === undefined) {
+        delete updates[key];
+      }
+    });
     const updatedTask = await taskModel.updateTask(projectId, taskId, updates);
     res.json(updatedTask);
   } catch (error) {
