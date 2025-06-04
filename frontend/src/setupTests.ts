@@ -8,6 +8,13 @@
 // learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom';
 
+// Provide TextEncoder for environments like jsdom
+if (typeof TextEncoder === 'undefined') {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const util = require('util');
+  global.TextEncoder = util.TextEncoder;
+}
+
 // Performance API mock for testing environments
 if (typeof performance === 'undefined') {
   global.performance = {
