@@ -15,7 +15,7 @@ try {
     throw new Error('No bcrypt implementation available');
   }
 }
-import { getContainer } from '../utils/cosmosClient';
+import { initializeContainers } from '../utils/cosmosClient';
 
 // User Interfaces
 export interface User {
@@ -50,21 +50,27 @@ export class UserModel {
 
   constructor() {
     try {
-      this.container = getContainer('users');
+      this.initializeContainer();
     } catch (error) {
-      console.error('Error initializing users container, will initialize later:', error.message);
+      console.error('Error initializing users container, will initialize later:', { error: error instanceof Error ? error.message : String(error) });
       // Will initialize container later when needed
+    }
+  }
+
+  // Initialize container
+  private async initializeContainer() {
+    try {
+      const containers = await initializeContainers();
+      this.container = containers.users;
+    } catch (error) {
+      throw new Error(`Failed to initialize users container: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
   // Initialize container if it wasn't available during construction
   private async ensureContainer() {
     if (!this.container) {
-      try {
-        this.container = getContainer('users');
-      } catch (error) {
-        throw new Error(`Failed to initialize users container: ${error.message}`);
-      }
+      await this.initializeContainer();
     }
     return this.container;
   }
@@ -103,8 +109,8 @@ export class UserModel {
         passwordHash: hashedPassword,
         firstName: userInput.firstName,
         lastName: userInput.lastName,
-        profilePicture: userInput.profilePicture || null,
-        bio: userInput.bio || null,
+        ...(userInput.profilePicture && { profilePicture: userInput.profilePicture }),
+        ...(userInput.bio && { bio: userInput.bio }),
         role: userInput.role || 'user',
         createdAt: now,
         updatedAt: now,
