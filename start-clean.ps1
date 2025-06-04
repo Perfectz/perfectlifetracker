@@ -97,5 +97,22 @@ if ($nodeProcesses) {
     Write-Host "CLEAR: No additional React node processes found running" -ForegroundColor Green
 }
 
+# Check for command line parameters
+param(
+    [switch]$Dev
+)
+
 Write-Host "STARTING: Starting the application..." -ForegroundColor Cyan
-npm start 
+
+if ($Dev) {
+    Write-Host "Starting in development mode..." -ForegroundColor Green
+    npm run dev
+} else {
+    Write-Host "Starting with Docker containers..." -ForegroundColor Green
+    if (Test-Path "docker-start.ps1") {
+        & "./docker-start.ps1"
+    } else {
+        Write-Host "Docker start script not found, falling back to development mode..." -ForegroundColor Yellow
+        npm run dev
+    }
+} 

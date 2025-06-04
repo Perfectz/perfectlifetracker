@@ -47,7 +47,7 @@ async function initializeApp() {
     
     logger.info('Application initialization completed successfully');
   } catch (error) {
-    logger.error('Failed to initialize application:', error);
+    logger.error('Failed to initialize application:', { error: error instanceof Error ? error.message : String(error) });
     process.exit(1);
   }
 }
@@ -154,6 +154,6 @@ async function startServer() {
 }
 
 startServer().catch(error => {
-  logger.error('Failed to start server:', error);
+  logger.error('Failed to start server:', { error: error instanceof Error ? error.message : String(error) });
   process.exit(1);
 }); 
