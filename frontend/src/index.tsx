@@ -11,9 +11,9 @@ import { logger } from './utils/logger';
 const container = document.getElementById('root');
 
 if (!container) {
-  logger.error('Root element not found', { 
+  logger.error('Root element not found', {
     location: 'index.tsx',
-    elementId: 'root' 
+    elementId: 'root',
   });
   throw new Error('Root element not found');
 }

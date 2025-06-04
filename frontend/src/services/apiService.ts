@@ -69,7 +69,7 @@ function recordFailure(): void {
     circuitBreaker.isOpen = true;
     logger.warn('Circuit breaker opened', {
       failures: CIRCUIT_THRESHOLD,
-      resetTimeout: CIRCUIT_RESET_TIMEOUT / 1000
+      resetTimeout: CIRCUIT_RESET_TIMEOUT / 1000,
     });
   }
 }
@@ -233,7 +233,7 @@ export async function apiRequest<T = unknown>(
       logger.error('API request failed', {
         method,
         endpoint,
-        error: error.message
+        error: error.message,
       });
 
       // For development, provide more helpful error messages
@@ -507,4 +507,70 @@ export class ApiError extends Error {
   }
 }
 
-export default apiRequest;
+export const makeApiRequest = async <T = unknown>(
+  endpoint: string,
+  method: string = 'GET',
+  data?: FormData | Record<string, unknown>,
+  isFormData: boolean = false
+): Promise<T> => {
+  const options: RequestInit = {
+    method,
+    headers: {
+      'Content-Type': isFormData ? 'multipart/form-data' : 'application/json',
+    },
+    credentials: 'include', // Include cookies for authentication
+  };
+
+  if (data && method !== 'GET') {
+    options.body = isFormData ? data : JSON.stringify(data);
+  }
+
+  try {
+    const response = await fetch(endpoint, options);
+
+    if (!response.ok) {
+      // Try to get error message from response
+      let errorMessage = `HTTP ${response.status}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorData.error || errorMessage;
+      } catch {
+        // If JSON parsing fails, use status text
+        errorMessage = response.statusText || errorMessage;
+      }
+
+      const error = new Error(errorMessage) as ApiError;
+      error.status = response.status;
+      throw error;
+    }
+
+    // Handle empty responses (like DELETE)
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      return await response.json();
+    } else {
+      return {} as T;
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      logger.error('API request failed', {
+        method,
+        endpoint,
+        error: error.message,
+      });
+
+      // For development, provide more helpful error messages
+      if (process.env.NODE_ENV === 'development') {
+        if (error.message.includes('Failed to fetch')) {
+          throw new Error('Backend server is not running. Please start the backend service.');
+        }
+        if (error.message.includes('authorization token')) {
+          throw new Error('Authentication required. This feature requires login.');
+        }
+      }
+    }
+    throw error;
+  }
+};
+
+export default makeApiRequest;

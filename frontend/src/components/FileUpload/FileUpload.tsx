@@ -9,29 +9,48 @@ import {
   Typography,
   LinearProgress,
   Alert,
+  AlertTitle,
   List,
   ListItem,
   ListItemText,
-  ListItemSecondaryAction,
   IconButton,
   Paper,
-  Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
+  CircularProgress,
 } from '@mui/material';
 import {
   CloudUpload as UploadIcon,
   Delete as DeleteIcon,
-  Download as DownloadIcon,
-  Close as CloseIcon,
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
-import { uploadFile, uploadMultipleFiles, deleteFile, getFiles } from '../../services/apiService';
+import { uploadFile, uploadMultipleFiles, deleteFile } from '../../services/apiService';
+
+// Import FileResponse type from apiService
+interface FileResponse {
+  id: string;
+  filename: string;
+  size: number;
+  mimeType: string;
+  uploadedAt: string;
+  downloadUrl?: string;
+}
 
 // Generate a temporary ID for optimistic updates
 const generateTempId = (): string => {
   return `temp-${Math.random().toString(36).substring(2, 11)}`;
+};
+
+// Convert FileResponse to FileData
+const convertFileResponseToFileData = (fileResponse: FileResponse): FileData => {
+  return {
+    id: fileResponse.id,
+    fileName: fileResponse.filename,
+    url: fileResponse.downloadUrl || '',
+    contentType: fileResponse.mimeType,
+    size: fileResponse.size,
+    blobName: fileResponse.filename,
+    status: 'success',
+    progress: 100,
+  };
 };
 
 export interface FileData {
@@ -284,16 +303,17 @@ const FileUpload: React.FC<FileUploadProps> = ({
         );
 
         const result = await uploadPromise;
-        const newFiles = result.files;
+        const newFiles = result; // uploadMultipleFiles returns FileResponse[] directly
 
         // Update optimistic files with real data
+        const convertedFiles = newFiles.map(convertFileResponseToFileData);
         optimisticFiles.forEach((optimisticFile, index) => {
-          if (index < newFiles.length) {
-            updateFileStatus(optimisticFile.tempId!, 'success', newFiles[index]);
+          if (index < convertedFiles.length) {
+            updateFileStatus(optimisticFile.tempId!, 'success', convertedFiles[index]);
           }
         });
 
-        if (onUploadComplete) onUploadComplete(newFiles);
+        if (onUploadComplete) onUploadComplete(convertedFiles);
       } else {
         const optimisticFile = optimisticFiles[0];
         const file = filesToUpload[0];
@@ -303,12 +323,13 @@ const FileUpload: React.FC<FileUploadProps> = ({
         });
 
         const result = await uploadPromise;
-        const newFile = result.file;
+        const newFile = result; // uploadFile returns FileResponse directly
 
         // Update optimistic file with real data
-        updateFileStatus(optimisticFile.tempId!, 'success', newFile);
+        const convertedFile = convertFileResponseToFileData(newFile);
+        updateFileStatus(optimisticFile.tempId!, 'success', convertedFile);
 
-        if (onUploadComplete) onUploadComplete(newFile);
+        if (onUploadComplete) onUploadComplete(convertedFile);
       }
     } catch (err: any) {
       const errorMessage = err.message || 'An error occurred during upload';

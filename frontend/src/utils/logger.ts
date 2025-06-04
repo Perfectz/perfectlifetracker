@@ -25,7 +25,7 @@ class ProductionClientLogger implements ClientLogger {
 
   private formatMessage(level: string, message: string, metadata?: LogMetadata): string {
     const timestamp = new Date().toISOString();
-    
+
     if (this.isDevelopment) {
       // Human-readable format for development
       return `[${timestamp}] ${level.toUpperCase()}: ${message}${metadata ? ` | ${JSON.stringify(metadata)}` : ''}`;
@@ -37,7 +37,7 @@ class ProductionClientLogger implements ClientLogger {
         message,
         url: window.location.href,
         userAgent: navigator.userAgent,
-        ...(metadata && { metadata })
+        ...(metadata && { metadata }),
       };
       return JSON.stringify(logEntry);
     }
@@ -48,7 +48,7 @@ class ProductionClientLogger implements ClientLogger {
       // In production, only log errors and warnings
       return ['error', 'warn'].includes(level.toLowerCase());
     }
-    
+
     // In development, log everything
     return true;
   }
@@ -58,8 +58,16 @@ class ProductionClientLogger implements ClientLogger {
 
     // Remove sensitive information from client-side logs
     const sanitized = { ...metadata };
-    const sensitiveKeys = ['password', 'token', 'key', 'secret', 'authorization', 'cookie', 'session'];
-    
+    const sensitiveKeys = [
+      'password',
+      'token',
+      'key',
+      'secret',
+      'authorization',
+      'cookie',
+      'session',
+    ];
+
     Object.keys(sanitized).forEach(key => {
       if (sensitiveKeys.some(sensitive => key.toLowerCase().includes(sensitive))) {
         sanitized[key] = '[REDACTED]';
@@ -85,7 +93,7 @@ class ProductionClientLogger implements ClientLogger {
     if (this.shouldLog('error')) {
       const sanitizedMetadata = this.sanitizeMetadata(metadata);
       const formattedMessage = this.formatMessage('error', message, sanitizedMetadata);
-      
+
       console.error(formattedMessage);
       this.sendToMonitoring('error', message, sanitizedMetadata);
     }
@@ -95,7 +103,7 @@ class ProductionClientLogger implements ClientLogger {
     if (this.shouldLog('warn')) {
       const sanitizedMetadata = this.sanitizeMetadata(metadata);
       const formattedMessage = this.formatMessage('warn', message, sanitizedMetadata);
-      
+
       console.warn(formattedMessage);
       this.sendToMonitoring('warn', message, sanitizedMetadata);
     }
@@ -125,7 +133,7 @@ export const logPageView = (pageName: string, userId?: string) => {
     page: pageName,
     userId: userId || 'anonymous',
     timestamp: new Date().toISOString(),
-    url: window.location.href
+    url: window.location.href,
   });
 };
 
@@ -134,7 +142,7 @@ export const logUserAction = (action: string, component: string, metadata?: LogM
     action,
     component,
     ...metadata,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 };
 
@@ -143,7 +151,7 @@ export const logApiError = (endpoint: string, error: Error, statusCode?: number)
     endpoint,
     error: error.message,
     statusCode,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 };
 
@@ -153,19 +161,23 @@ export const logAuthEvent = (event: string, success: boolean, error?: string) =>
     event,
     success,
     error: error || undefined,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 };
 
-export const logComponentError = (component: string, error: Error, props?: Record<string, unknown>) => {
+export const logComponentError = (
+  component: string,
+  error: Error,
+  props?: Record<string, unknown>
+) => {
   logger.error(`Component Error in ${component}`, {
     component,
     error: error.message,
     stack: error.stack,
     props: props ? JSON.stringify(props) : undefined,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 };
 
 // Export default logger
-export default logger; 
+export default logger;
