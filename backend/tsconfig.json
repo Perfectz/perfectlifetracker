@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es2016",
+    "target": "es2020",
     "module": "commonjs",
     "outDir": "./dist",
     "rootDir": "./src",
@@ -8,10 +8,16 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "allowJs": true,
-    "noImplicitAny": false,
+    "allowJs": false,
+    "noImplicitAny": true,
     "noEmitOnError": false,
-    "skipDefaultLibCheck": true
+    "skipDefaultLibCheck": true,
+    "moduleResolution": "node16",
+    "incremental": true,
+    "tsBuildInfoFile": "./.tsbuildinfo",
+    "importHelpers": true,
+    "exactOptionalPropertyTypes": true,
+    "useUnknownInCatchVariables": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "**/*.test.ts"]
