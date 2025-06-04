@@ -8,6 +8,9 @@ import { visualizer } from 'rollup-plugin-visualizer'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  define: {
+    'process.env.NODE_ENV': JSON.stringify(mode),
+  },
   plugins: [
     react(),
     // Bundle analyzer - only in analyze mode
@@ -36,6 +39,8 @@ export default defineConfig(({ mode }) => ({
   build: {
     outDir: 'dist',
     sourcemap: mode === 'development',
+    target: 'es2018',
+    cssCodeSplit: true,
     rollupOptions: {
       input: {
         main: './index.html',
@@ -73,7 +78,7 @@ export default defineConfig(({ mode }) => ({
       }
     },
     // Optimize for production
-    minify: 'terser',
+    minify: mode === 'production' ? 'terser' : 'esbuild',
     terserOptions: {
       compress: {
         drop_console: mode === 'production',
