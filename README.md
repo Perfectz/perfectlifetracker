@@ -245,6 +245,18 @@ npm run dev
 ```
 The backend API will be available at http://localhost:3001
 
+### Running Tests and Lint Checks
+
+Run all frontend and backend tests from the project root:
+```bash
+npm test
+```
+
+Run ESLint for both projects:
+```bash
+npm run lint
+```
+
 ### Current Implementation Status
 
 - ✅ Frontend React application with TypeScript

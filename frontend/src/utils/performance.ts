@@ -39,12 +39,8 @@ export const preloadComponent = (componentImport: () => Promise<any>) => {
 // Bundle analyzer helper
 export const analyzeBundleSize = () => {
   if (process.env.NODE_ENV === 'development') {
-    // Import webpack-bundle-analyzer only in development
-    import('webpack-bundle-analyzer/lib/viewer').then(({ BundleAnalyzerPlugin }) => {
-      console.log('Bundle analysis available at http://localhost:8888');
-    }).catch(() => {
-      console.log('Bundle analyzer not available. Install with: npm install --save-dev webpack-bundle-analyzer');
-    });
+    // Inform developers how to generate a bundle analysis report with Vite
+    console.log('Bundle analysis available using "npm run analyze" after build');
   }
 };
 
