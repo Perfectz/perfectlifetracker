@@ -43,8 +43,12 @@ resource "azurerm_linux_web_app" "backend" {
   app_settings = {
     "WEBSITE_RUN_FROM_PACKAGE"    = "1"
     "WEBSITE_NODE_DEFAULT_VERSION" = "~18"
-    "COSMOS_DB_ENDPOINT"           = azurerm_cosmosdb_account.cosmos.endpoint
-    "COSMOS_DB_KEY"                = azurerm_cosmosdb_account.cosmos.primary_key
+    
+    # Key Vault configuration
+    "AZURE_KEY_VAULT_URL"          = azurerm_key_vault.main.vault_uri
+    "USE_KEY_VAULT"                = "true"
+    
+    # Non-sensitive configuration (still in app settings)
     "COSMOS_DB_DATABASE"           = azurerm_cosmosdb_sql_database.database.name
     "COSMOS_DB_USERS_CONTAINER"    = azurerm_cosmosdb_sql_container.users.name
     "COSMOS_DB_FITNESS_CONTAINER"  = azurerm_cosmosdb_sql_container.fitness.name

@@ -48,4 +48,20 @@ output "frontend_url" {
 output "backend_api_url" {
   description = "The URL of the App Service hosting the backend API"
   value       = "https://${azurerm_linux_web_app.backend.default_hostname}"
+}
+
+# Key Vault outputs
+output "key_vault_uri" {
+  value       = azurerm_key_vault.main.vault_uri
+  description = "The URI of the Key Vault"
+}
+
+output "key_vault_name" {
+  value       = azurerm_key_vault.main.name
+  description = "The name of the Key Vault"
+}
+
+output "backend_identity_principal_id" {
+  value       = azurerm_linux_web_app.backend.identity[0].principal_id
+  description = "The principal ID of the backend App Service managed identity"
 } 
