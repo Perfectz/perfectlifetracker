@@ -1,0 +1,408 @@
+name: Deploy to Production - Azure Kubernetes Service
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'k8s/**'
+      - '.github/workflows/deploy-production.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+      skip_tests:
+        description: 'Skip test execution'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  AZURE_RESOURCE_GROUP: perfectltp-prod-rg
+  AZURE_CLUSTER_NAME: perfectltp-aks
+  AZURE_CONTAINER_REGISTRY: perfectltpacr
+  BACKEND_IMAGE: perfectltp/backend
+  FRONTEND_IMAGE: perfectltp/frontend
+  KUBERNETES_NAMESPACE: perfectltp
+
+jobs:
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  test-backend:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    if: ${{ !inputs.skip_tests }}
+    defaults:
+      run:
+        working-directory: ./backend
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Run type checking
+        run: npm run type-check
+
+      - name: Run unit tests
+        run: npm run test:unit
+        env:
+          NODE_ENV: test
+
+      - name: Run integration tests
+        run: npm run test:integration
+        env:
+          NODE_ENV: test
+
+      - name: Upload test coverage
+        uses: codecov/codecov-action@v3
+        with:
+          directory: ./backend/coverage
+          flags: backend
+
+  test-frontend:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    if: ${{ !inputs.skip_tests }}
+    defaults:
+      run:
+        working-directory: ./frontend
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Run type checking
+        run: npm run type-check
+
+      - name: Run tests
+        run: npm run test
+        env:
+          CI: true
+
+      - name: Build application
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Upload test coverage
+        uses: codecov/codecov-action@v3
+        with:
+          directory: ./frontend/coverage
+          flags: frontend
+
+  build-and-push:
+    name: Build and Push Docker Images
+    runs-on: ubuntu-latest
+    needs: [security-scan, test-backend, test-frontend]
+    if: always() && (needs.security-scan.result == 'success' && (needs.test-backend.result == 'success' || inputs.skip_tests) && (needs.test-frontend.result == 'success' || inputs.skip_tests))
+    outputs:
+      backend-image-tag: ${{ steps.backend-meta.outputs.tags }}
+      frontend-image-tag: ${{ steps.frontend-meta.outputs.tags }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Azure Container Registry Login
+        run: |
+          az acr login --name ${{ env.AZURE_CONTAINER_REGISTRY }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract backend metadata
+        id: backend-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.BACKEND_IMAGE }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile.production
+          push: true
+          tags: ${{ steps.backend-meta.outputs.tags }}
+          labels: ${{ steps.backend-meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+      - name: Extract frontend metadata
+        id: frontend-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.FRONTEND_IMAGE }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile.production
+          push: true
+          tags: ${{ steps.frontend-meta.outputs.tags }}
+          labels: ${{ steps.frontend-meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+      - name: Image vulnerability scan
+        run: |
+          # Scan backend image
+          az acr task run \
+            --registry ${{ env.AZURE_CONTAINER_REGISTRY }} \
+            --cmd "trivy image ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.BACKEND_IMAGE }}:latest" \
+            --platform linux/amd64
+          
+          # Scan frontend image
+          az acr task run \
+            --registry ${{ env.AZURE_CONTAINER_REGISTRY }} \
+            --cmd "trivy image ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.FRONTEND_IMAGE }}:latest" \
+            --platform linux/amd64
+
+  deploy-to-aks:
+    name: Deploy to Azure Kubernetes Service
+    runs-on: ubuntu-latest
+    needs: [build-and-push]
+    environment: 
+      name: ${{ inputs.environment || 'production' }}
+      url: https://perfectltp.azurewebsites.net
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Get AKS credentials
+        run: |
+          az aks get-credentials \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --name ${{ env.AZURE_CLUSTER_NAME }} \
+            --overwrite-existing
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Create namespace if not exists
+        run: |
+          kubectl create namespace ${{ env.KUBERNETES_NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Create secrets
+        run: |
+          kubectl create secret generic perfectltp-secrets \
+            --namespace=${{ env.KUBERNETES_NAMESPACE }} \
+            --from-literal=azure-client-id=${{ secrets.AZURE_CLIENT_ID }} \
+            --from-literal=azure-tenant-id=${{ secrets.AZURE_TENANT_ID }} \
+            --from-literal=azure-client-secret=${{ secrets.AZURE_CLIENT_SECRET }} \
+            --from-literal=cosmos-db-endpoint=${{ secrets.COSMOS_DB_ENDPOINT }} \
+            --from-literal=cosmos-db-key=${{ secrets.COSMOS_DB_KEY }} \
+            --from-literal=azure-openai-endpoint=${{ secrets.AZURE_OPENAI_ENDPOINT }} \
+            --from-literal=azure-openai-api-key=${{ secrets.AZURE_OPENAI_API_KEY }} \
+            --from-literal=azure-storage-connection=${{ secrets.AZURE_STORAGE_CONNECTION_STRING }} \
+            --from-literal=jwt-secret=${{ secrets.JWT_SECRET }} \
+            --from-literal=session-secret=${{ secrets.SESSION_SECRET }} \
+            --from-literal=encryption-key=${{ secrets.ENCRYPTION_KEY }} \
+            --from-literal=redis-connection-string=${{ secrets.REDIS_CONNECTION_STRING }} \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Update image tags in manifests
+        run: |
+          # Update backend image tag
+          sed -i 's|perfectltp/backend:latest|${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.BACKEND_IMAGE }}:${{ github.sha }}|g' k8s/backend-deployment.yaml
+          
+          # Update frontend image tag
+          sed -i 's|perfectltp/frontend:latest|${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}|g' k8s/frontend-deployment.yaml
+
+      - name: Deploy to AKS
+        run: |
+          kubectl apply -f k8s/ --namespace=${{ env.KUBERNETES_NAMESPACE }}
+
+      - name: Wait for deployment rollout
+        run: |
+          kubectl rollout status deployment/perfectltp-backend --namespace=${{ env.KUBERNETES_NAMESPACE }} --timeout=600s
+          kubectl rollout status deployment/perfectltp-frontend --namespace=${{ env.KUBERNETES_NAMESPACE }} --timeout=600s
+
+      - name: Verify deployment
+        run: |
+          kubectl get pods --namespace=${{ env.KUBERNETES_NAMESPACE }}
+          kubectl get services --namespace=${{ env.KUBERNETES_NAMESPACE }}
+          
+          # Wait for backend to be ready
+          kubectl wait --for=condition=ready pod -l app=perfectltp-backend --namespace=${{ env.KUBERNETES_NAMESPACE }} --timeout=300s
+          
+          # Test backend health endpoint
+          kubectl port-forward service/perfectltp-backend-service 8080:80 --namespace=${{ env.KUBERNETES_NAMESPACE }} &
+          PORT_FORWARD_PID=$!
+          sleep 10
+          
+          if curl -f http://localhost:8080/api/health; then
+            echo "Backend health check passed"
+          else
+            echo "Backend health check failed"
+            exit 1
+          fi
+          
+          kill $PORT_FORWARD_PID
+
+  monitor-deployment:
+    name: Monitor Deployment
+    runs-on: ubuntu-latest
+    needs: [deploy-to-aks]
+    if: always() && needs.deploy-to-aks.result == 'success'
+    steps:
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Get AKS credentials
+        run: |
+          az aks get-credentials \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --name ${{ env.AZURE_CLUSTER_NAME }} \
+            --overwrite-existing
+
+      - name: Monitor application health
+        run: |
+          echo "Monitoring application health for 5 minutes..."
+          
+          for i in {1..10}; do
+            echo "Health check attempt $i/10"
+            
+            # Check pod status
+            kubectl get pods --namespace=${{ env.KUBERNETES_NAMESPACE }} -l app=perfectltp-backend
+            kubectl get pods --namespace=${{ env.KUBERNETES_NAMESPACE }} -l app=perfectltp-frontend
+            
+            # Check if all pods are ready
+            if kubectl wait --for=condition=ready pod -l app=perfectltp-backend --namespace=${{ env.KUBERNETES_NAMESPACE }} --timeout=30s && \
+               kubectl wait --for=condition=ready pod -l app=perfectltp-frontend --namespace=${{ env.KUBERNETES_NAMESPACE }} --timeout=30s; then
+              echo "All pods are healthy"
+              break
+            else
+              echo "Some pods are not ready, waiting..."
+              if [ $i -eq 10 ]; then
+                echo "Deployment health check failed"
+                exit 1
+              fi
+              sleep 30
+            fi
+          done
+
+      - name: Send deployment notification
+        if: always()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          channel: '#deployments'
+          text: |
+            Perfect LifeTracker Pro Production Deployment
+            Environment: ${{ inputs.environment || 'production' }}
+            Status: ${{ job.status }}
+            Commit: ${{ github.sha }}
+            Actor: ${{ github.actor }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  rollback:
+    name: Rollback on Failure
+    runs-on: ubuntu-latest
+    needs: [deploy-to-aks, monitor-deployment]
+    if: failure()
+    steps:
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Get AKS credentials
+        run: |
+          az aks get-credentials \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --name ${{ env.AZURE_CLUSTER_NAME }} \
+            --overwrite-existing
+
+      - name: Rollback deployment
+        run: |
+          echo "Rolling back backend deployment..."
+          kubectl rollout undo deployment/perfectltp-backend --namespace=${{ env.KUBERNETES_NAMESPACE }}
+          
+          echo "Rolling back frontend deployment..."
+          kubectl rollout undo deployment/perfectltp-frontend --namespace=${{ env.KUBERNETES_NAMESPACE }}
+          
+          echo "Waiting for rollback to complete..."
+          kubectl rollout status deployment/perfectltp-backend --namespace=${{ env.KUBERNETES_NAMESPACE }} --timeout=600s
+          kubectl rollout status deployment/perfectltp-frontend --namespace=${{ env.KUBERNETES_NAMESPACE }} --timeout=600s
+
+      - name: Verify rollback
+        run: |
+          kubectl get pods --namespace=${{ env.KUBERNETES_NAMESPACE }}
+          echo "Rollback completed successfully" 

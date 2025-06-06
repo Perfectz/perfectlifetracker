@@ -19,6 +19,12 @@ USE_MOCK_DATABASE=true
 # Set to true ONLY in development to bypass JWT authentication
 USE_MOCK_AUTH=true
 
+# Azure Key Vault Configuration
+AZURE_KEY_VAULT_ENABLED=true
+AZURE_KEY_VAULT_NAME=perfectltpkv202506061150
+AZURE_TENANT_ID=78e9993f-a208-4c38-9d9d-6b15f0d2407d
+AZURE_CLIENT_ID=d9764c39-1eb9-4963-83a0-e8ba859c8965
+
 # Cosmos DB Configuration
 COSMOS_DB_ENDPOINT=https://localhost:8081
 COSMOS_DB_KEY=dummy-key-for-development
@@ -28,7 +34,6 @@ COSMOS_DB_DATABASE=lifetracker
 MONGODB_URI=mongodb://localhost:27017/perfectltp
 
 # Azure Authentication
-AZURE_CLIENT_ID=d9764c39-1eb9-4963-83a0-e8ba859c8965
 AZURE_AUTHORITY=https://login.microsoftonline.com/78e9993f-a208-4c38-9d9d-6b15f0d2407d
 FRONTEND_URL=http://localhost:3000
 

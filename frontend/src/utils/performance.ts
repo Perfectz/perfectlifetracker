@@ -51,7 +51,7 @@ export const measurePerformance = (name: string, fn: () => void) => {
     fn();
     performance.mark(`${name}-end`);
     performance.measure(name, `${name}-start`, `${name}-end`);
-    
+
     const measure = performance.getEntriesByName(name)[0];
     console.log(`${name}: ${measure.duration}ms`);
   } else {
@@ -62,21 +62,23 @@ export const measurePerformance = (name: string, fn: () => void) => {
 // Web Vitals tracking
 export const trackWebVitals = () => {
   if (typeof window !== 'undefined') {
-    import('web-vitals').then(({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {
-      getCLS(console.log);
-      getFID(console.log);
-      getFCP(console.log);
-      getLCP(console.log);
-      getTTFB(console.log);
-    }).catch(() => {
-      console.log('Web Vitals not available');
-    });
+    import('web-vitals')
+      .then(({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {
+        getCLS(console.log);
+        getFID(console.log);
+        getFCP(console.log);
+        getLCP(console.log);
+        getTTFB(console.log);
+      })
+      .catch(() => {
+        console.log('Web Vitals not available');
+      });
   }
 };
 
 // Image lazy loading with Intersection Observer
 export const createImageLazyLoader = () => {
-  const imageObserver = new IntersectionObserver((entries) => {
+  const imageObserver = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
         const img = entry.target as HTMLImageElement;
@@ -92,7 +94,7 @@ export const createImageLazyLoader = () => {
 
   return {
     observe: (img: HTMLImageElement) => imageObserver.observe(img),
-    disconnect: () => imageObserver.disconnect()
+    disconnect: () => imageObserver.disconnect(),
   };
 };
 
@@ -104,7 +106,7 @@ export const withPerformanceMonitoring = <P extends object>(
   return React.memo((props: P) => {
     React.useEffect(() => {
       const startTime = performance.now();
-      
+
       return () => {
         const endTime = performance.now();
         console.log(`${componentName} render time: ${endTime - startTime}ms`);
@@ -113,4 +115,4 @@ export const withPerformanceMonitoring = <P extends object>(
 
     return React.createElement(WrappedComponent, props);
   });
-}; 
+};

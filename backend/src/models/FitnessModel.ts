@@ -11,10 +11,9 @@ export class FitnessModel {
 
   constructor() {
     try {
-      this.container = getContainer('fitness');
+      this.container = null; // Will be initialized lazily
     } catch (error) {
-      console.error('Error initializing fitness container, will initialize later:', error.message);
-      // Will initialize container later when needed
+      console.error('Error initializing fitness container, will initialize later:', error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -22,9 +21,9 @@ export class FitnessModel {
   private async ensureContainer() {
     if (!this.container) {
       try {
-        this.container = getContainer('fitness');
+        this.container = await getContainer('fitness');
       } catch (error) {
-        throw new Error(`Failed to initialize fitness container: ${error.message}`);
+        throw new Error(`Failed to initialize fitness container: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
     return this.container;
@@ -35,15 +34,16 @@ export class FitnessModel {
    */
   async createFitnessRecord(
     userId: string, 
-    data: { date?: string | Date | null } & Omit<FitnessDocument, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
+    data: Omit<FitnessDocument, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'date'> & { date?: string | Date | null }
   ): Promise<FitnessDocument> {
+    const { date: inputDate, ...restData } = data;
     const newRecord: FitnessDocument = {
       id: uuidv4(),
       userId,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      date: this.formatDate(data.date),
-      ...data
+      date: this.formatDate(inputDate),
+      ...restData
     };
     
     if (typeof (this.container as any).items === 'function') {
@@ -292,7 +292,7 @@ export class FitnessModel {
       return resource;
     } else {
       // MockContainer fallback: remove old and add updated
-      let allRecords = await this.getUserFitnessRecords(userId);
+      const allRecords = await this.getUserFitnessRecords(userId);
       const idx = allRecords.findIndex(r => r.id === recordId);
       if (idx !== -1) {
         allRecords[idx] = updatedRecord;

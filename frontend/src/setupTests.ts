@@ -36,7 +36,7 @@ global.IntersectionObserver = class IntersectionObserver {
   root: Element | null = null;
   rootMargin: string = '';
   thresholds: ReadonlyArray<number> = [];
-  
+
   constructor() {}
   observe() {}
   unobserve() {}
@@ -90,10 +90,10 @@ jest.setTimeout(30000);
 afterEach(() => {
   // Clear all mocks
   jest.clearAllMocks();
-  
+
   // Clean up DOM
   document.body.innerHTML = '';
-  
+
   // Clear localStorage
   localStorage.clear();
   sessionStorage.clear();

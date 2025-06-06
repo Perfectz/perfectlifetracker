@@ -19,14 +19,12 @@ export const defaultDeadCodeConfig: DeadCodeAnalysisConfig = {
     'build/**',
     '**/*.test.{ts,tsx,js,jsx}',
     '**/*.spec.{ts,tsx,js,jsx}',
-    '**/*.d.ts'
+    '**/*.d.ts',
   ],
-  includePatterns: [
-    'src/**/*.{ts,tsx,js,jsx}'
-  ],
+  includePatterns: ['src/**/*.{ts,tsx,js,jsx}'],
   checkUnusedExports: true,
   checkUnusedImports: true,
-  checkUnreachableCode: true
+  checkUnreachableCode: true,
 };
 
 // Dead code analysis results
@@ -111,23 +109,19 @@ npm run build && npm run analyze
 // Bundle size analyzer
 export const analyzeCurrentBundle = () => {
   console.log('📊 Bundle Analysis Starting...');
-  
+
   // This would integrate with webpack-bundle-analyzer
   const mockAnalysis = {
     totalSize: '2.4MB',
     gzippedSize: '645KB',
-    largestChunks: [
-      'vendor.js (1.8MB)',
-      'main.js (400KB)', 
-      'mui.js (200KB)'
-    ],
+    largestChunks: ['vendor.js (1.8MB)', 'main.js (400KB)', 'mui.js (200KB)'],
     recommendations: [
       'Split Material-UI into separate chunk',
       'Lazy load chart.js components',
-      'Remove unused React Native dependencies'
-    ]
+      'Remove unused React Native dependencies',
+    ],
   };
-  
+
   console.log('Bundle Analysis Results:', mockAnalysis);
   return mockAnalysis;
 };
@@ -136,23 +130,20 @@ export const analyzeCurrentBundle = () => {
 export const optimizeImports = (sourceCode: string): string => {
   // Simple regex-based import optimization
   // In production, use proper AST parsing
-  
+
   let optimized = sourceCode;
-  
+
   // Convert default imports to named imports where possible
   optimized = optimized.replace(
     /import\s+(\w+)\s+from\s+['"]@mui\/material['"]/g,
     "import { $1 } from '@mui/material'"
   );
-  
+
   // Remove unused React imports in modern React
   if (!optimized.includes('React.')) {
-    optimized = optimized.replace(
-      /import React,?\s*{([^}]*)}/,
-      'import {$1}'
-    );
+    optimized = optimized.replace(/import React,?\s*{([^}]*)}/, 'import {$1}');
   }
-  
+
   return optimized;
 };
 
@@ -160,7 +151,7 @@ export const optimizeImports = (sourceCode: string): string => {
 export const findUnusedComponents = (projectPath: string): string[] => {
   // This would use AST analysis to find unused components
   // For now, return a mock list based on our analysis
-  
+
   return [
     'frontend/src/components/Grid.tsx', // Custom grid wrapper
     'frontend/src/components/AuthModals.tsx', // If using different auth
@@ -170,7 +161,9 @@ export const findUnusedComponents = (projectPath: string): string[] => {
 };
 
 // Performance impact calculator
-export const calculatePerformanceImpact = (removedFiles: string[]): {
+export const calculatePerformanceImpact = (
+  removedFiles: string[]
+): {
   bundleSizeReduction: number;
   loadTimeImprovement: number;
   mainThreadWorkReduction: number;
@@ -178,10 +171,10 @@ export const calculatePerformanceImpact = (removedFiles: string[]): {
   // Estimate based on file sizes and complexity
   const avgFileSize = 15000; // bytes
   const bundleSizeReduction = removedFiles.length * avgFileSize;
-  
+
   return {
     bundleSizeReduction,
     loadTimeImprovement: bundleSizeReduction / 1000, // rough ms estimate
-    mainThreadWorkReduction: removedFiles.length * 10 // ms saved in parsing
+    mainThreadWorkReduction: removedFiles.length * 10, // ms saved in parsing
   };
-}; 
+};

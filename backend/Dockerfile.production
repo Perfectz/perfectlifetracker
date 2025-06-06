@@ -1,0 +1,77 @@
+# Multi-stage production Dockerfile for Perfect LifeTracker Pro Backend
+# Optimized for Azure Kubernetes Service deployment
+
+# Stage 1: Build stage
+FROM node:18-alpine AS builder
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY tsconfig.json ./
+
+# Install dependencies (including dev dependencies for build)
+RUN npm ci --only=production=false
+
+# Copy source code
+COPY src/ ./src/
+
+# Build TypeScript to JavaScript
+RUN npm run build
+
+# Remove dev dependencies
+RUN npm ci --only=production && npm cache clean --force
+
+# Stage 2: Production stage
+FROM node:18-alpine AS production
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S appuser -u 1001
+
+# Set working directory
+WORKDIR /app
+
+# Copy built application from builder stage
+COPY --from=builder --chown=appuser:nodejs /app/dist ./dist
+COPY --from=builder --chown=appuser:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=appuser:nodejs /app/package*.json ./
+
+# Copy production scripts and configs
+COPY --chown=appuser:nodejs scripts/ ./scripts/
+COPY --chown=appuser:nodejs start.sh ./
+
+# Set environment variables
+ENV NODE_ENV=production
+ENV PORT=3001
+ENV AZURE_CLIENT_ID=""
+ENV AZURE_TENANT_ID=""
+ENV AZURE_CLIENT_SECRET=""
+ENV COSMOS_DB_ENDPOINT=""
+ENV COSMOS_DB_KEY=""
+ENV AZURE_OPENAI_ENDPOINT=""
+ENV AZURE_OPENAI_API_KEY=""
+ENV AZURE_STORAGE_CONNECTION_STRING=""
+ENV JWT_SECRET=""
+ENV SESSION_SECRET=""
+ENV ENCRYPTION_KEY=""
+
+# Create necessary directories
+RUN mkdir -p /app/logs /app/uploads && \
+    chown -R appuser:nodejs /app/logs /app/uploads
+
+# Switch to non-root user
+USER appuser
+
+# Expose port
+EXPOSE 3001
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3001/api/health', (res) => { \
+    if (res.statusCode === 200) process.exit(0); else process.exit(1); \
+  }).on('error', () => process.exit(1));"
+
+# Start application
+CMD ["node", "dist/index.js"] 

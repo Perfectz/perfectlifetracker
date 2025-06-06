@@ -3,7 +3,6 @@
  * Middleware for handling file uploads
  */
 import multer from 'multer';
-import path from 'path';
 import { Request as ExpressRequest } from 'express';
 
 // Configure multer memory storage
@@ -21,7 +20,7 @@ const ALLOWED_FILE_TYPES = {
 };
 
 // File filter for validation
-const fileFilter = (req: ExpressRequest, file: Express.Multer.File, callback: (error: Error | null, acceptFile: boolean) => void) => {
+const fileFilter = (req: ExpressRequest, file: Express.Multer.File, callback: multer.FileFilterCallback) => {
   // Allow all types if no type specified
   if (!req.query.fileType) {
     return callback(null, true);
@@ -31,13 +30,13 @@ const fileFilter = (req: ExpressRequest, file: Express.Multer.File, callback: (e
   const allowedTypes = ALLOWED_FILE_TYPES[fileType as keyof typeof ALLOWED_FILE_TYPES];
 
   if (!allowedTypes) {
-    return callback(new Error(`Invalid file type category: ${fileType}`), false);
+    return callback(null, false);
   }
 
   if (allowedTypes.includes(file.mimetype)) {
     callback(null, true);
   } else {
-    callback(new Error(`File type not allowed. Accepted types: ${allowedTypes.join(', ')}`), false);
+    callback(null, false);
   }
 };
 

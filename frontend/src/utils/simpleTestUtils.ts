@@ -88,12 +88,12 @@ export class CacheTester {
   static getCacheItem(key: string): any | null {
     const item = this.mockCache.get(key);
     if (!item) return null;
-    
+
     if (Date.now() > item.expiry) {
       this.mockCache.delete(key);
       return null;
     }
-    
+
     return item.value;
   }
 
@@ -118,11 +118,14 @@ export class BundleAnalyzer {
     };
   }
 
-  static assertBundleBudget(analysis: { [key: string]: number }, budget: { [key: string]: number }): void {
+  static assertBundleBudget(
+    analysis: { [key: string]: number },
+    budget: { [key: string]: number }
+  ): void {
     Object.keys(budget).forEach(bundle => {
       const actualSize = analysis[bundle];
       const budgetSize = budget[bundle];
-      
+
       if (actualSize && actualSize > budgetSize) {
         throw new Error(`Bundle ${bundle} size ${actualSize}B exceeds budget ${budgetSize}B`);
       }
@@ -132,13 +135,15 @@ export class BundleAnalyzer {
 
 // Lazy loading testing utilities
 export class LazyLoadingTester {
-  static async testLazyComponentLoad(importFunction: () => Promise<any>): Promise<PerformanceMetrics> {
+  static async testLazyComponentLoad(
+    importFunction: () => Promise<any>
+  ): Promise<PerformanceMetrics> {
     const startTime = performance.now();
-    
+
     try {
       await importFunction();
       const endTime = performance.now();
-      
+
       return {
         renderTime: endTime - startTime,
         memoryUsage: 0, // Would measure actual memory in real scenario
@@ -148,9 +153,12 @@ export class LazyLoadingTester {
     }
   }
 
-  static async testRetryMechanism(importFunction: () => Promise<any>, maxRetries: number = 3): Promise<boolean> {
+  static async testRetryMechanism(
+    importFunction: () => Promise<any>,
+    maxRetries: number = 3
+  ): Promise<boolean> {
     let retries = 0;
-    
+
     while (retries < maxRetries) {
       try {
         await importFunction();
@@ -164,7 +172,7 @@ export class LazyLoadingTester {
         await new Promise(resolve => setTimeout(resolve, 1000 * retries));
       }
     }
-    
+
     return false;
   }
 }
@@ -173,7 +181,7 @@ export class LazyLoadingTester {
 export const detectMemoryLeaks = (): boolean => {
   const memoryInfo = (performance as any).memory;
   if (!memoryInfo) return false;
-  
+
   const threshold = 50 * 1024 * 1024; // 50MB
   return memoryInfo.usedJSHeapSize > threshold;
-}; 
+};

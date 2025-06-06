@@ -33,10 +33,10 @@ const preloadFitness = preloadComponent(() => import('./screens/FitnessScreen'))
 
 // Enhanced loading component with Terra styling
 const LoadingFallback = () => (
-  <Box 
-    display="flex" 
-    justifyContent="center" 
-    alignItems="center" 
+  <Box
+    display="flex"
+    justifyContent="center"
+    alignItems="center"
     minHeight="400px"
     flexDirection="column"
     gap={2}
@@ -67,21 +67,21 @@ function App() {
               <Route element={<Layout useStandardHeader={true} />}>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/login" element={<LoginPage />} />
-                <Route 
-                  path="/weight" 
+                <Route
+                  path="/weight"
                   element={
                     <Suspense fallback={<LoadingFallback />}>
                       <WeightTrackerPage />
                     </Suspense>
-                  } 
+                  }
                 />
-                <Route 
-                  path="/meals" 
+                <Route
+                  path="/meals"
                   element={
                     <Suspense fallback={<LoadingFallback />}>
                       <MealTrackerPage />
                     </Suspense>
-                  } 
+                  }
                 />
               </Route>
 
@@ -108,13 +108,13 @@ function App() {
               </Route>
 
               {/* Design Demo Route */}
-              <Route 
-                path="/terra-design" 
+              <Route
+                path="/terra-design"
                 element={
                   <Suspense fallback={<LoadingFallback />}>
                     <TerraDesignDemo />
                   </Suspense>
-                } 
+                }
               />
 
               {/* Catch-all redirect to Home */}

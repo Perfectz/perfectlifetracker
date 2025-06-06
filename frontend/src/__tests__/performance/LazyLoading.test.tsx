@@ -48,7 +48,7 @@ describe('Lazy Loading Performance Tests', () => {
   describe('Retry Mechanism', () => {
     test('Retry mechanism works for failed imports', async () => {
       let attemptCount = 0;
-      
+
       const mockImport = () => {
         attemptCount++;
         if (attemptCount < 2) {
@@ -58,7 +58,7 @@ describe('Lazy Loading Performance Tests', () => {
       };
 
       const success = await LazyLoadingTester.testRetryMechanism(mockImport, 3);
-      
+
       expect(success).toBe(true);
       expect(attemptCount).toBe(2); // Should succeed on second attempt
     });
@@ -66,9 +66,9 @@ describe('Lazy Loading Performance Tests', () => {
     test('Retry mechanism respects max retry limit', async () => {
       const mockImport = () => Promise.reject(new Error('Persistent failure'));
 
-      await expect(
-        LazyLoadingTester.testRetryMechanism(mockImport, 2)
-      ).rejects.toThrow('Retry mechanism failed after 2 attempts');
+      await expect(LazyLoadingTester.testRetryMechanism(mockImport, 2)).rejects.toThrow(
+        'Retry mechanism failed after 2 attempts'
+      );
     });
   });
 
@@ -79,13 +79,10 @@ describe('Lazy Loading Performance Tests', () => {
       const preloadFitness = () => import('../../screens/FitnessScreen');
 
       const startTime = performance.now();
-      
+
       // Preload both components
-      await Promise.all([
-        preloadDashboard(),
-        preloadFitness()
-      ]);
-      
+      await Promise.all([preloadDashboard(), preloadFitness()]);
+
       const endTime = performance.now();
       const preloadTime = endTime - startTime;
 
@@ -99,16 +96,18 @@ describe('Lazy Loading Performance Tests', () => {
     test('Lazy chunks meet size budget', async () => {
       // Mock bundle analysis for lazy chunks
       const lazyChunks = {
-        'DashboardPage': 15000,  // ~15KB
-        'TasksScreen': 5000,     // ~5KB  
-        'FitnessScreen': 8000,   // ~8KB
-        'SettingsScreen': 5000,  // ~5KB
+        DashboardPage: 15000, // ~15KB
+        TasksScreen: 5000, // ~5KB
+        FitnessScreen: 8000, // ~8KB
+        SettingsScreen: 5000, // ~5KB
       };
 
       Object.entries(lazyChunks).forEach(([chunk, size]) => {
         expect(size).toBeLessThan(PERFORMANCE_BUDGETS.BUNDLE_SIZE.LAZY_COMPONENT);
-        console.log(`${chunk}: ${size}B (Budget: ${PERFORMANCE_BUDGETS.BUNDLE_SIZE.LAZY_COMPONENT}B)`);
+        console.log(
+          `${chunk}: ${size}B (Budget: ${PERFORMANCE_BUDGETS.BUNDLE_SIZE.LAZY_COMPONENT}B)`
+        );
       });
     });
   });
-}); 
+});

@@ -4,57 +4,59 @@
  */
 import { v4 as uuidv4 } from 'uuid';
 import dotenv from 'dotenv';
-import { getContainer } from '../utils/cosmosClient';
+import { initializeContainers } from '../utils/cosmosClient';
 
 dotenv.config();
 
+// Task Status type
+export type TaskStatus = 'todo' | 'in-progress' | 'completed' | 'blocked';
+
+// Task Priority type
+export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
+
+// Task interface
 export interface Task {
   id: string;
   projectId: string;
   userId: string;
   title: string;
-  description?: string;
-  status: 'todo' | 'in-progress' | 'completed' | 'blocked';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  dueDate?: string;
-  tags?: string[];
-  attachments?: {
+  description?: string | undefined;
+  status: TaskStatus;
+  priority: TaskPriority;
+  dueDate?: string | null | undefined;
+  tags?: string[] | undefined;
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string | null | undefined;
+  attachments?: Array<{
     id: string;
     name: string;
     url: string;
     size: number;
     type: string;
     uploadedAt: string;
-  }[];
-  createdAt: string;
-  updatedAt: string;
-  completedAt?: string;
-  assignedTo?: string[];
-  checklist?: string[];
+  }> | undefined;
 }
 
-export interface CreateTaskInput {
+// Task input interface for creation
+export interface TaskInput {
   projectId: string;
   userId: string;
   title: string;
   description?: string;
-  priority?: Task['priority'];
+  priority?: TaskPriority;
   dueDate?: string;
   tags?: string[];
-  status?: Task['status'];
-  assignedTo?: string[];
-  checklist?: string[];
 }
 
-export interface UpdateTaskInput {
+// Task update interface
+export interface TaskUpdate {
   title?: string;
   description?: string;
-  status?: Task['status'];
-  priority?: Task['priority'];
-  dueDate?: string;
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  dueDate?: string | null;
   tags?: string[];
-  assignedTo?: string[];
-  checklist?: string[];
 }
 
 export class TaskModel {
@@ -62,10 +64,9 @@ export class TaskModel {
 
   constructor() {
     try {
-      this.container = getContainer('tasks');
+      this.container = null; // Will be initialized lazily
     } catch (error) {
-      console.error('Error initializing tasks container, will initialize later:', error.message);
-      // Will initialize container later when needed
+      console.error('Error initializing tasks container, will initialize later:', error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -73,53 +74,67 @@ export class TaskModel {
   private async ensureContainer() {
     if (!this.container) {
       try {
-        this.container = getContainer('tasks');
+        const containers = await initializeContainers();
+        this.container = containers.tasks;
       } catch (error) {
-        throw new Error(`Failed to initialize tasks container: ${error.message}`);
+        throw new Error(`Failed to initialize tasks container: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
     return this.container;
   }
 
-  async createTask(taskInput: CreateTaskInput): Promise<Task> {
+  /**
+   * Create a new task
+   */
+  async createTask(
+    userId: string,
+    projectId: string,
+    taskInput: {
+      title: string;
+      description?: string;
+      status?: TaskStatus;
+      priority?: TaskPriority;
+      dueDate?: string | null;
+      tags?: string[];
+    }
+  ): Promise<Task> {
     await this.ensureContainer();
     try {
-      const newTask: Task = {
-        id: `task_${uuidv4()}`,
-        userId: taskInput.userId,
-        projectId: taskInput.projectId,
+      const task: Task = {
+        id: uuidv4(),
+        userId,
+        projectId,
         title: taskInput.title,
-        description: taskInput.description || '',
+        description: taskInput.description,
         status: taskInput.status || 'todo',
         priority: taskInput.priority || 'medium',
-        dueDate: taskInput.dueDate || null,
+        dueDate: taskInput.dueDate || undefined,
+        tags: taskInput.tags || [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        completedAt: null,
-        assignedTo: taskInput.assignedTo || [],
-        tags: taskInput.tags || [],
-        checklist: taskInput.checklist || [],
+        completedAt: undefined,
         attachments: []
       };
       
-      const { resource: createdTask } = await this.container.items.create(newTask);
-      return createdTask;
+      const result = await this.container.items.create(task);
+      return result.resource;
     } catch (error) {
-      console.error('Error creating task:', error);
-      throw error;
+      if ((error as any).code === 404) {
+        throw new Error('Container not found');
+      }
+      throw new Error(`Error creating task: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
-  async getTaskById(projectId: string, taskId: string): Promise<Task | undefined> {
+  async getTaskById(projectId: string, taskId: string): Promise<Task | null> {
     await this.ensureContainer();
     try {
       const { resource: task } = await this.container.item(taskId, projectId).read();
       return task;
     } catch (error) {
-      if (error.code === 404) {
-        return undefined;
+      if ((error as any).code === 404) {
+        return null;
       }
-      console.error(`Error getting task ${taskId}:`, error);
       throw error;
     }
   }
@@ -228,7 +243,7 @@ export class TaskModel {
     }
   }
 
-  async updateTask(projectId: string, taskId: string, updates: UpdateTaskInput): Promise<Task> {
+  async updateTask(projectId: string, taskId: string, updates: TaskUpdate): Promise<Task> {
     await this.ensureContainer();
     try {
       const { resource: existingTask } = await this.container.item(taskId, projectId).read();
@@ -266,7 +281,12 @@ export class TaskModel {
   async addAttachment(
     projectId: string, 
     taskId: string, 
-    attachment: Omit<Task['attachments'][0], 'id' | 'uploadedAt'>
+    attachment: {
+      name: string;
+      url: string;
+      size: number;
+      type: string;
+    }
   ): Promise<Task> {
     await this.ensureContainer();
     try {
@@ -276,8 +296,11 @@ export class TaskModel {
       }
       
       const attachmentWithId = {
-        ...attachment,
         id: uuidv4(),
+        name: attachment.name,
+        url: attachment.url,
+        size: attachment.size,
+        type: attachment.type,
         uploadedAt: new Date().toISOString()
       };
       
@@ -287,11 +310,10 @@ export class TaskModel {
         updatedAt: new Date().toISOString()
       };
       
-      const { resource } = await this.container.item(taskId, projectId).replace(updatedTask);
-      return resource;
+      const result = await this.container.items.upsert(updatedTask);
+      return result.resource;
     } catch (error) {
-      console.error('Error adding attachment:', error);
-      throw error;
+      throw new Error(`Error adding attachment: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 

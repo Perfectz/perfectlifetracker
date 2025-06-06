@@ -1,6 +1,11 @@
 # start-clean.ps1
 # Script to kill any running React development servers and start a fresh instance
 
+# Check for command line parameters
+param(
+    [switch]$Dev
+)
+
 Write-Host "CLEANING UP: Cleaning up processes before starting the application..." -ForegroundColor Cyan
 
 # 1. Find and kill processes using port 3000 (default React port)
@@ -96,11 +101,6 @@ if ($nodeProcesses) {
 } else {
     Write-Host "CLEAR: No additional React node processes found running" -ForegroundColor Green
 }
-
-# Check for command line parameters
-param(
-    [switch]$Dev
-)
 
 Write-Host "STARTING: Starting the application..." -ForegroundColor Cyan
 

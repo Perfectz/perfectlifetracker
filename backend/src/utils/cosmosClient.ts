@@ -55,7 +55,7 @@ const containersConfig = {
 // Cosmos Client (lazy initialization)
 let cosmosClient: CosmosClient | null = null;
 let database: Database | null = null;
-let containers: { [key: string]: Container } = {};
+const containers: { [key: string]: Container } = {};
 
 // Mock data stores for development
 const mockDataStore = {
@@ -68,32 +68,56 @@ const mockDataStore = {
 };
 
 // Mock database implementation
-const mockContainerImplementation = {
-  items: {
-    create: async (item: any) => {
-      const id = item.id || Date.now().toString();
-      item.id = id;
-      const containerName = 'mock'; // This would be determined by context
-      mockDataStore[containerName as keyof typeof mockDataStore].set(id, item);
-      return { resource: item };
-    },
-    query: (query: any) => ({
-      fetchAll: async () => ({ resources: Array.from(mockDataStore.users.values()) })
-    }),
-    read: async (id: string) => {
-      const item = mockDataStore.users.get(id);
-      return item ? { resource: item } : null;
-    },
-    replace: async (item: any) => {
-      mockDataStore.users.set(item.id, item);
-      return { resource: item };
-    },
-    delete: async (id: string) => {
-      const deleted = mockDataStore.users.delete(id);
-      return { resource: deleted ? { id } : null };
+function createMockContainer(containerName: string) {
+  return {
+    id: containerName,
+    items: {
+      create: async (item: any) => {
+        const id = item.id || Date.now().toString();
+        item.id = id;
+        const store = mockDataStore[containerName as keyof typeof mockDataStore];
+        if (!store) {
+          throw new Error(`Mock container '${containerName}' not found`);
+        }
+        store.set(id, item);
+        return { resource: item };
+      },
+      query: (query: any) => ({
+        fetchAll: async () => {
+          const store = mockDataStore[containerName as keyof typeof mockDataStore];
+          if (!store) {
+            throw new Error(`Mock container '${containerName}' not found`);
+          }
+          return { resources: Array.from(store.values()) };
+        }
+      }),
+      read: async (id: string) => {
+        const store = mockDataStore[containerName as keyof typeof mockDataStore];
+        if (!store) {
+          throw new Error(`Mock container '${containerName}' not found`);
+        }
+        const item = store.get(id);
+        return item ? { resource: item } : null;
+      },
+      replace: async (item: any) => {
+        const store = mockDataStore[containerName as keyof typeof mockDataStore];
+        if (!store) {
+          throw new Error(`Mock container '${containerName}' not found`);
+        }
+        store.set(item.id, item);
+        return { resource: item };
+      },
+      delete: async (id: string) => {
+        const store = mockDataStore[containerName as keyof typeof mockDataStore];
+        if (!store) {
+          throw new Error(`Mock container '${containerName}' not found`);
+        }
+        const deleted = store.delete(id);
+        return { resource: deleted ? { id } : null };
+      }
     }
-  }
-};
+  };
+}
 
 // Initialize containers
 async function initializeContainers() {
@@ -103,10 +127,7 @@ async function initializeContainers() {
     // Return mock containers
     const mockContainers: { [key: string]: any } = {};
     Object.keys(containersConfig).forEach(containerName => {
-      mockContainers[containerName] = {
-        ...mockContainerImplementation,
-        id: containerName
-      };
+      mockContainers[containerName] = createMockContainer(containerName);
     });
     return mockContainers;
   }
@@ -147,4 +168,22 @@ async function initializeContainers() {
 }
 
 // Export the initialization function and configuration
-export { initCosmosConfig, initializeContainers, useMockDatabase, containersConfig }; 
+export { initCosmosConfig, initializeContainers, useMockDatabase, containersConfig };
+
+// Container management
+let initializedContainers: { [key: string]: any } = {};
+
+// Get a container by name (lazy initialization)
+export async function getContainer(containerName: string): Promise<any> {
+  // If containers haven't been initialized yet, initialize them
+  if (Object.keys(initializedContainers).length === 0) {
+    initializedContainers = await initializeContainers();
+  }
+
+  const container = initializedContainers[containerName];
+  if (!container) {
+    throw new Error(`Container '${containerName}' not found or not configured`);
+  }
+
+  return container;
+} 

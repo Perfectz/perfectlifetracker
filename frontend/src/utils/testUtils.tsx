@@ -89,11 +89,14 @@ export class BundleAnalyzer {
     };
   }
 
-  static assertBundleBudget(analysis: { [key: string]: number }, budget: { [key: string]: number }): void {
+  static assertBundleBudget(
+    analysis: { [key: string]: number },
+    budget: { [key: string]: number }
+  ): void {
     Object.keys(budget).forEach(bundle => {
       const actualSize = analysis[bundle];
       const budgetSize = budget[bundle];
-      
+
       if (actualSize && actualSize > budgetSize) {
         throw new Error(`Bundle ${bundle} size ${actualSize}B exceeds budget ${budgetSize}B`);
       }
@@ -103,13 +106,15 @@ export class BundleAnalyzer {
 
 // Lazy loading testing utilities
 export class LazyLoadingTester {
-  static async testLazyComponentLoad(importFunction: () => Promise<any>): Promise<PerformanceMetrics> {
+  static async testLazyComponentLoad(
+    importFunction: () => Promise<any>
+  ): Promise<PerformanceMetrics> {
     const startTime = performance.now();
-    
+
     try {
       await importFunction();
       const endTime = performance.now();
-      
+
       return {
         renderTime: endTime - startTime,
         memoryUsage: 0, // Would measure actual memory in real scenario
@@ -119,9 +124,12 @@ export class LazyLoadingTester {
     }
   }
 
-  static async testRetryMechanism(importFunction: () => Promise<any>, maxRetries: number = 3): Promise<boolean> {
+  static async testRetryMechanism(
+    importFunction: () => Promise<any>,
+    maxRetries: number = 3
+  ): Promise<boolean> {
     let retries = 0;
-    
+
     while (retries < maxRetries) {
       try {
         await importFunction();
@@ -135,7 +143,7 @@ export class LazyLoadingTester {
         await new Promise(resolve => setTimeout(resolve, 1000 * retries));
       }
     }
-    
+
     return false;
   }
 }
@@ -154,12 +162,12 @@ export class CacheTester {
   static getCacheItem(key: string): any | null {
     const item = this.mockCache.get(key);
     if (!item) return null;
-    
+
     if (Date.now() > item.expiry) {
       this.mockCache.delete(key);
       return null;
     }
-    
+
     return item.value;
   }
 
@@ -175,17 +183,11 @@ export class CacheTester {
 
 // Custom render function with minimal providers
 const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <BrowserRouter>
-      {children}
-    </BrowserRouter>
-  );
+  return <BrowserRouter>{children}</BrowserRouter>;
 };
 
-const customRender = (
-  ui: ReactElement,
-  options?: Omit<RenderOptions, 'wrapper'>
-) => render(ui, { wrapper: AllTheProviders, ...options });
+const customRender = (ui: ReactElement, options?: Omit<RenderOptions, 'wrapper'>) =>
+  render(ui, { wrapper: AllTheProviders, ...options });
 
 // Performance-aware render function
 export const renderWithPerformance = (
@@ -205,7 +207,7 @@ export { customRender as render };
 
 // API testing utilities
 export const mockApiResponse = (data: any, delay: number = 0): Promise<any> => {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     setTimeout(() => resolve(data), delay);
   });
 };
@@ -226,7 +228,7 @@ export const axeCheck = async (container: HTMLElement): Promise<void> => {
 export const detectMemoryLeaks = (): boolean => {
   const memoryInfo = (performance as any).memory;
   if (!memoryInfo) return false;
-  
+
   const threshold = 50 * 1024 * 1024; // 50MB
   return memoryInfo.usedJSHeapSize > threshold;
 };

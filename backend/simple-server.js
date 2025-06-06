@@ -1,0 +1,1 @@
+const express = require('express'); const app = express(); app.get('/api/health', (req, res) => res.json({status: 'healthy', keyVault: process.env.USE_KEY_VAULT})); app.listen(3001, () => console.log('Server running on 3001'));

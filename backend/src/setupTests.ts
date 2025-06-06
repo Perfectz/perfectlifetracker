@@ -5,16 +5,26 @@
 
 // Global test variables
 declare global {
-  var __MONGO_URI__: string;
-  var __MONGO_DB_NAME__: string;
-  var performanceTestUtils: any;
+  namespace NodeJS {
+    interface Global {
+      __MONGO_URI__: string;
+      __MONGO_DB_NAME__: string;
+      performanceTestUtils: {
+        measurements: Map<string, Array<{ duration: number; memory: number }>>;
+        startMeasurement(testName: string): number;
+        endMeasurement(testName: string, startTime: number): { duration: number; memory: number };
+        getAverageMetrics(testName: string): { duration: number; memory: number } | null;
+        clearMeasurements(): void;
+      };
+    }
+  }
 }
 
 // Performance measurement utilities
-global.performanceTestUtils = {
+(global as unknown as NodeJS.Global).performanceTestUtils = {
   measurements: new Map(),
   
-  startMeasurement(testName: string): number {
+  startMeasurement(_testName: string): number {
     const startTime = process.hrtime.bigint();
     return Number(startTime);
   },
@@ -32,17 +42,17 @@ global.performanceTestUtils = {
     if (!this.measurements.has(testName)) {
       this.measurements.set(testName, []);
     }
-    this.measurements.get(testName).push(result);
+    this.measurements.get(testName)?.push(result);
     
     return result;
   },
   
-  getAverageMetrics(testName: string) {
+  getAverageMetrics(testName: string): { duration: number; memory: number } | null {
     const measurements = this.measurements.get(testName);
     if (!measurements || measurements.length === 0) return null;
     
     const total = measurements.reduce(
-      (acc: any, metric: any) => ({
+      (acc: { duration: number; memory: number }, metric: { duration: number; memory: number }) => ({
         duration: acc.duration + metric.duration,
         memory: acc.memory + metric.memory,
       }),
@@ -63,19 +73,19 @@ global.performanceTestUtils = {
 // Setup test environment
 beforeAll(() => {
   // Mock database setup
-  global.__MONGO_URI__ = 'mongodb://localhost:27017/test-db';
-  global.__MONGO_DB_NAME__ = 'test-db';
+  (global as unknown as NodeJS.Global).__MONGO_URI__ = 'mongodb://localhost:27017/test-db';
+  (global as unknown as NodeJS.Global).__MONGO_DB_NAME__ = 'test-db';
   
   // Set test environment variables
   process.env.NODE_ENV = 'test';
   process.env.USE_MOCK_AUTH = 'true';
-  process.env.MONGO_URI = global.__MONGO_URI__;
+  process.env.MONGO_URI = (global as unknown as NodeJS.Global).__MONGO_URI__;
 });
 
 // Clean up after each test
 afterEach(() => {
   // Clear performance measurements
-  global.performanceTestUtils.clearMeasurements();
+  (global as unknown as NodeJS.Global).performanceTestUtils.clearMeasurements();
 });
 
 // Performance budgets for backend testing

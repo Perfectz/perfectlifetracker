@@ -3,6 +3,8 @@
  * Handles user-related database operations
  */
 import { v4 as uuidv4 } from 'uuid';
+import { initializeContainers } from '../utils/cosmosClient';
+
 // Support both possible bcrypt implementations
 let bcrypt: any;
 try {
@@ -15,7 +17,6 @@ try {
     throw new Error('No bcrypt implementation available');
   }
 }
-import { initializeContainers } from '../utils/cosmosClient';
 
 // User Interfaces
 export interface User {
@@ -25,13 +26,15 @@ export interface User {
   passwordHash: string; // Renamed from password to be more explicit
   firstName: string;
   lastName: string;
-  profilePicture?: string;
-  bio?: string;
+  profilePicture?: string | undefined;
+  bio?: string | undefined;
   role: 'admin' | 'user';
   createdAt: string; // Store as ISO string
   updatedAt: string; // Store as ISO string
-  lastLogin?: string; // Store as ISO string
+  lastLogin?: string | undefined; // Store as ISO string
   isActive: boolean;
+  preferences: Record<string, any>;
+  isEmailVerified: boolean;
 }
 
 export interface UserInput {
@@ -49,12 +52,7 @@ export class UserModel {
   private container: any;
 
   constructor() {
-    try {
-      this.initializeContainer();
-    } catch (error) {
-      console.error('Error initializing users container, will initialize later:', { error: error instanceof Error ? error.message : String(error) });
-      // Will initialize container later when needed
-    }
+    // Container will be initialized lazily when needed
   }
 
   // Initialize container
@@ -67,7 +65,7 @@ export class UserModel {
     }
   }
 
-  // Initialize container if it wasn't available during construction
+  // Ensure container is available
   private async ensureContainer() {
     if (!this.container) {
       await this.initializeContainer();
@@ -103,18 +101,21 @@ export class UserModel {
       // Create user object
       const now = new Date().toISOString();
       const user: User = {
-        id: `user_${uuidv4()}`,
+        id: uuidv4(),
         username: userInput.username,
         email: userInput.email,
         passwordHash: hashedPassword,
         firstName: userInput.firstName,
         lastName: userInput.lastName,
-        ...(userInput.profilePicture && { profilePicture: userInput.profilePicture }),
-        ...(userInput.bio && { bio: userInput.bio }),
+        profilePicture: userInput.profilePicture || undefined,
+        bio: userInput.bio || undefined,
         role: userInput.role || 'user',
         createdAt: now,
         updatedAt: now,
-        isActive: true
+        lastLogin: undefined,
+        preferences: {},
+        isActive: true,
+        isEmailVerified: false
       };
       
       // Save user to database

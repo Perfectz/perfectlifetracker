@@ -124,15 +124,13 @@ router.post('/', checkJwt, extractUserId, async (req: JWTRequest, res) => {
       return;
     }
     const taskInput = {
-      projectId,
-      userId,
       title,
       description,
       priority,
       dueDate,
       tags
     };
-    const newTask = await taskModel.createTask(taskInput);
+    const newTask = await taskModel.createTask(userId, projectId, taskInput);
     res.status(201).json(newTask);
   } catch (error) {
     console.error('Error creating task:', error);
@@ -158,12 +156,13 @@ router.put('/:id', checkJwt, extractUserId, async (req: JWTRequest, res) => {
       tags: req.body.tags
     };
     // Remove undefined fields
+    const filteredUpdates: Record<string, any> = {};
     Object.keys(updates).forEach(key => {
-      if (updates[key] === undefined) {
-        delete updates[key];
+      if (updates[key as keyof typeof updates] !== undefined) {
+        filteredUpdates[key] = updates[key as keyof typeof updates];
       }
     });
-    const updatedTask = await taskModel.updateTask(projectId, taskId, updates);
+    const updatedTask = await taskModel.updateTask(projectId, taskId, filteredUpdates);
     res.json(updatedTask);
   } catch (error) {
     console.error('Error updating task:', error);

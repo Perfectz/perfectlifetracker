@@ -29,7 +29,7 @@ describe('Component Performance Tests', () => {
 
       const metrics = PerformanceTester.getAverageMetrics('HomePage');
       console.log('HomePage Performance:', metrics);
-      
+
       expect(metrics).toBeDefined();
       expect(metrics!.renderTime).toBeLessThan(PERFORMANCE_BUDGETS.RENDER_TIME.LARGE_COMPONENT);
     });
@@ -53,7 +53,7 @@ describe('Component Performance Tests', () => {
         renderWithPerformance(
           <Layout title="Test Layout">
             <div>Test Content</div>
-          </Layout>, 
+          </Layout>,
           'Layout'
         );
       }
@@ -71,14 +71,14 @@ describe('Component Performance Tests', () => {
   describe('Bundle Size Validation', () => {
     test('Bundle sizes meet performance budget', async () => {
       const analysis = await BundleAnalyzer.analyzeBundleSize();
-      
+
       const budget = {
         'vendor.js': PERFORMANCE_BUDGETS.BUNDLE_SIZE.VENDOR_JS,
         'main.js': PERFORMANCE_BUDGETS.BUNDLE_SIZE.MAIN_JS,
       };
 
       BundleAnalyzer.assertBundleBudget(analysis, budget);
-      
+
       // Log actual vs budget for monitoring
       Object.keys(budget).forEach(bundle => {
         const actual = analysis[bundle];
@@ -92,7 +92,7 @@ describe('Component Performance Tests', () => {
   describe('Memory Leak Detection', () => {
     test('Components do not cause memory leaks', async () => {
       const initialMemory = (performance as any).memory?.usedJSHeapSize || 0;
-      
+
       // Render and unmount components multiple times
       for (let i = 0; i < 10; i++) {
         const { unmount } = renderWithPerformance(<HomePage />, `HomePage-${i}`);
@@ -106,7 +106,7 @@ describe('Component Performance Tests', () => {
 
       const finalMemory = (performance as any).memory?.usedJSHeapSize || 0;
       const memoryIncrease = finalMemory - initialMemory;
-      
+
       // Memory increase should be minimal (less than 5MB)
       expect(memoryIncrease).toBeLessThan(5 * 1024 * 1024);
       console.log(`Memory increase after 10 renders: ${memoryIncrease}B`);
@@ -116,14 +116,17 @@ describe('Component Performance Tests', () => {
   describe('Re-render Performance', () => {
     test('Components handle prop changes efficiently', async () => {
       let renderCount = 0;
-      
+
       const TestComponent = ({ value }: { value: number }) => {
         renderCount++;
         return <div>Value: {value}</div>;
       };
 
-      const { rerender } = renderWithPerformance(<TestComponent value={1} />, 'TestComponent-Initial');
-      
+      const { rerender } = renderWithPerformance(
+        <TestComponent value={1} />,
+        'TestComponent-Initial'
+      );
+
       // Measure re-render performance
       const startTime = PerformanceTester.startMeasurement('TestComponent-Rerender');
       rerender(<TestComponent value={2} />);
@@ -134,4 +137,4 @@ describe('Component Performance Tests', () => {
       expect(renderCount).toBe(2); // Should only render twice
     });
   });
-}); 
+});

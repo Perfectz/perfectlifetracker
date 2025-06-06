@@ -132,7 +132,7 @@ export async function analyzeFoodImage(imageBase64: string): Promise<FoodAnalysi
     // Validate and sanitize the result
     return {
       foodName: analysisResult.foodName || 'Unknown Food',
-      brand: analysisResult.brand || undefined,
+      ...(analysisResult.brand && { brand: analysisResult.brand }),
       estimatedCalories: Math.max(0, analysisResult.estimatedCalories || 0),
       servingSize: Math.max(0, analysisResult.servingSize || 1),
       servingUnit: analysisResult.servingUnit || 'serving',
@@ -140,8 +140,8 @@ export async function analyzeFoodImage(imageBase64: string): Promise<FoodAnalysi
         protein: Math.max(0, analysisResult.macros?.protein || 0),
         carbs: Math.max(0, analysisResult.macros?.carbs || 0),
         fat: Math.max(0, analysisResult.macros?.fat || 0),
-        fiber: analysisResult.macros?.fiber ? Math.max(0, analysisResult.macros.fiber) : undefined,
-        sugar: analysisResult.macros?.sugar ? Math.max(0, analysisResult.macros.sugar) : undefined,
+        ...(analysisResult.macros?.fiber !== undefined && { fiber: Math.max(0, analysisResult.macros.fiber) }),
+        ...(analysisResult.macros?.sugar !== undefined && { sugar: Math.max(0, analysisResult.macros.sugar) }),
       },
       confidence: Math.min(1, Math.max(0, analysisResult.confidence || 0.5)),
       description: analysisResult.description || 'Food analysis completed'
