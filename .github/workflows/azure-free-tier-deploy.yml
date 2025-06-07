@@ -89,12 +89,53 @@ jobs:
           cp simple-server.js simple-deploy/
           cp package*.json simple-deploy/
           
-          # Install production dependencies in deploy directory
+          # Create web.config for Windows App Service
+          cat > simple-deploy/web.config << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <system.webServer>
+              <handlers>
+                <add name="iisnode" path="simple-server.js" verb="*" modules="iisnode"/>
+              </handlers>
+              <rewrite>
+                <rules>
+                  <rule name="NodeInspector" patternSyntax="ECMAScript" stopProcessing="true">
+                    <match url="^simple-server.js\/debug[\/]?" />
+                  </rule>
+                  <rule name="StaticContent">
+                    <action type="Rewrite" url="public{REQUEST_URI}"/>
+                  </rule>
+                  <rule name="DynamicContent">
+                    <conditions>
+                      <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="True"/>
+                    </conditions>
+                    <action type="Rewrite" url="simple-server.js"/>
+                  </rule>
+                </rules>
+              </rewrite>
+              <security>
+                <requestFiltering>
+                  <hiddenSegments>
+                    <remove segment="bin"/>
+                  </hiddenSegments>
+                </requestFiltering>
+              </security>
+              <iisnode watchedFiles="web.config;*.js"/>
+            </system.webServer>
+          </configuration>
+          EOF
+          
+          # Update package.json with correct start script
           cd simple-deploy
+          npm pkg set scripts.start="node simple-server.js"
+          npm pkg set main="simple-server.js"
+          
+          # Install production dependencies
           npm install --production
           
-          # Set startup command for Azure App Service
-          echo "node simple-server.js" > ../startup.txt
+          # Create .deployment file for App Service (optional fallback)
+          echo "[config]" > .deployment
+          echo "command = npm install --production && npm start" >> .deployment
 
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
@@ -102,7 +143,6 @@ jobs:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: ./backend/simple-deploy
-          startup-command: "node simple-server.js"
 
   test-frontend:
     name: Test Frontend
