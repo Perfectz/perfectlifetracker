@@ -147,4 +147,11 @@ dist
 .yarn/unplugged
 .yarn/build-state.yml
 .yarn/install-state.gz
-.pnp.* 
+.pnp.*
+
+# Azure deployment logs and artifacts
+backend/app-logs/
+backend/*-deploy.zip
+backend/simple-deploy/
+backend/deploy/
+*.log 
