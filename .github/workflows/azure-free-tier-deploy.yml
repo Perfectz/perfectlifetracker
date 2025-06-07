@@ -48,13 +48,29 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Verify simple server exists
+      - name: Verify simple server exists and test
         run: |
+          echo "Current directory: $(pwd)"
+          echo "Files in directory:"
+          ls -la
+          
           if [ -f "simple-server.js" ]; then
             echo "✅ simple-server.js found"
-            node -c simple-server.js || echo "Syntax check passed"
+            echo "File size: $(wc -c < simple-server.js) bytes"
+            
+            # Check syntax
+            node -c simple-server.js
+            echo "✅ Syntax check passed"
+            
+            # Check if required dependencies are available
+            echo "Checking dependencies..."
+            node -e "console.log('Express:', require('express').version || 'available')" || echo "Express not available"
+            node -e "console.log('CORS:', typeof require('cors'))" || echo "CORS not available"
+            
           else
             echo "❌ simple-server.js not found"
+            echo "Available files:"
+            find . -name "*.js" -type f
             exit 1
           fi
 
@@ -82,14 +98,34 @@ jobs:
 
       - name: Create deployment package
         run: |
-          # Create deployment directory
+          # Remove existing deployment directory
+          rm -rf simple-deploy
           mkdir -p simple-deploy
           
-          # Copy the working simple server
+          # Copy necessary files
           cp simple-server.js simple-deploy/
-          cp package*.json simple-deploy/
+          cp package.json simple-deploy/
+          cp package-lock.json simple-deploy/
           
-          # Create web.config for Windows App Service
+          # Create custom package.json for deployment
+          cat > simple-deploy/package.json << 'EOF'
+          {
+            "name": "perfectltp-backend",
+            "version": "1.0.0",
+            "description": "Perfect LifeTracker Pro Backend API",
+            "main": "simple-server.js",
+            "scripts": {
+              "start": "node simple-server.js"
+            },
+            "dependencies": {
+              "express": "^4.21.2",
+              "cors": "^2.8.5",
+              "@azure/cosmos": "^4.4.1"
+            }
+          }
+          EOF
+          
+          # Create web.config for Windows IIS/iisnode
           cat > simple-deploy/web.config << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <configuration>
@@ -99,12 +135,6 @@ jobs:
               </handlers>
               <rewrite>
                 <rules>
-                  <rule name="NodeInspector" patternSyntax="ECMAScript" stopProcessing="true">
-                    <match url="^simple-server.js\/debug[\/]?" />
-                  </rule>
-                  <rule name="StaticContent">
-                    <action type="Rewrite" url="public{REQUEST_URI}"/>
-                  </rule>
                   <rule name="DynamicContent">
                     <conditions>
                       <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="True"/>
@@ -113,29 +143,38 @@ jobs:
                   </rule>
                 </rules>
               </rewrite>
-              <security>
-                <requestFiltering>
-                  <hiddenSegments>
-                    <remove segment="bin"/>
-                  </hiddenSegments>
-                </requestFiltering>
-              </security>
-              <iisnode watchedFiles="web.config;*.js"/>
+              <iisnode 
+                node_env="%node_env%"
+                nodeProcessCountPerApplication="1"
+                maxConcurrentRequestsPerProcess="1024"
+                maxNamedPipeConnectionRetry="3"
+                namedPipeConnectionRetryDelay="2000"
+                maxNamedPipeConnectionPoolSize="512"
+                maxNamedPipePooledConnectionAge="30000"
+                asyncCompletionThreadCount="0"
+                initialRequestBufferSize="4096"
+                maxRequestBufferSize="65536"
+                watchedFiles="*.js"
+                uncFileChangesPollingInterval="5000"
+                gracefulShutdownTimeout="60000"
+                loggingEnabled="true"
+                logDirectoryNameSuffix="logs"
+                debuggingEnabled="false"
+                devErrorsEnabled="false"/>
             </system.webServer>
           </configuration>
           EOF
           
-          # Update package.json with correct start script
-          cd simple-deploy
-          npm pkg set scripts.start="node simple-server.js"
-          npm pkg set main="simple-server.js"
-          
           # Install production dependencies
-          npm install --production
+          cd simple-deploy
+          npm install --production --no-optional
           
-          # Create .deployment file for App Service (optional fallback)
-          echo "[config]" > .deployment
-          echo "command = npm install --production && npm start" >> .deployment
+          # Verify deployment package
+          echo "Files in deployment package:"
+          ls -la
+          echo "simple-server.js exists:" && test -f simple-server.js && echo "YES" || echo "NO"
+          echo "package.json exists:" && test -f package.json && echo "YES" || echo "NO"
+          echo "node_modules exists:" && test -d node_modules && echo "YES" || echo "NO"
 
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
