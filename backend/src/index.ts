@@ -37,17 +37,8 @@ async function initializeApp() {
     logger.info('✓ Secrets initialization completed');
     
     // Initialize database service with configuration
-    await databaseService.initialize({
-      endpoint: process.env.COSMOS_DB_ENDPOINT || '',
-      key: process.env.COSMOS_DB_KEY || '',
-      databaseId: process.env.COSMOS_DB_DATABASE_NAME || 'LifeTrackerDB',
-      connectionPolicy: {
-        requestTimeout: 10000,
-        connectionMode: 'Gateway',
-        maxRetryAttemptCount: 3,
-        maxRetryWaitTimeInSeconds: 30
-      }
-    });
+    const dbConfig = await import('./config/database');
+    await databaseService.initialize(dbConfig.getDatabaseConfig());
     logger.info('✓ Database service initialization completed');
     
     // Initialize WebSocket service

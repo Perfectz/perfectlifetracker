@@ -1,10 +1,10 @@
 /**
  * backend/src/models/FileModel.ts
- * Model for file metadata operations
+ * Model for file metadata operations using Cosmos DB
  */
 import { v4 as uuidv4 } from 'uuid';
 import { FileDocument } from './types';
-import db from '../config/database';
+import databaseService from '../services/DatabaseService';
 
 export class FileModel {
   /**
@@ -21,7 +21,12 @@ export class FileModel {
         updatedAt: now
       };
       
-      await db.files.insertOne(newFile);
+      const container = databaseService.getContainer('files');
+      if (!container) {
+        throw new Error('Files container not available');
+      }
+      
+      await container.items.create(newFile);
       return newFile;
     } catch (error) {
       console.error('Error creating file record:', error);
@@ -34,10 +39,16 @@ export class FileModel {
    */
   async getFileById(fileId: string): Promise<FileDocument | null> {
     try {
-      return await db.files.findOne({ id: fileId });
+      const container = databaseService.getContainer('files');
+      if (!container) {
+        throw new Error('Files container not available');
+      }
+      
+      const { resource } = await container.item(fileId, fileId).read();
+      return resource || null;
     } catch (error) {
       console.error('Error getting file by ID:', error);
-      throw error;
+      return null;
     }
   }
   
@@ -46,7 +57,18 @@ export class FileModel {
    */
   async getFilesByUserId(userId: string): Promise<FileDocument[]> {
     try {
-      return await db.files.find({ userId }).toArray();
+      const container = databaseService.getContainer('files');
+      if (!container) {
+        throw new Error('Files container not available');
+      }
+      
+      const querySpec = {
+        query: 'SELECT * FROM c WHERE c.userId = @userId',
+        parameters: [{ name: '@userId', value: userId }]
+      };
+      
+      const { resources } = await container.items.query(querySpec).fetchAll();
+      return resources;
     } catch (error) {
       console.error('Error getting files by user ID:', error);
       throw error;
@@ -58,7 +80,18 @@ export class FileModel {
    */
   async getFilesByRelatedEntity(relatedEntityId: string): Promise<FileDocument[]> {
     try {
-      return await db.files.find({ relatedEntityId }).toArray();
+      const container = databaseService.getContainer('files');
+      if (!container) {
+        throw new Error('Files container not available');
+      }
+      
+      const querySpec = {
+        query: 'SELECT * FROM c WHERE c.relatedEntityId = @relatedEntityId',
+        parameters: [{ name: '@relatedEntityId', value: relatedEntityId }]
+      };
+      
+      const { resources } = await container.items.query(querySpec).fetchAll();
+      return resources;
     } catch (error) {
       console.error('Error getting files by related entity:', error);
       throw error;
@@ -70,18 +103,25 @@ export class FileModel {
    */
   async updateFile(fileId: string, updates: Partial<FileDocument>): Promise<FileDocument | null> {
     try {
+      const container = databaseService.getContainer('files');
+      if (!container) {
+        throw new Error('Files container not available');
+      }
+      
+      // First get the existing file
+      const { resource: existingFile } = await container.item(fileId, fileId).read();
+      if (!existingFile) {
+        return null;
+      }
+      
       const updateData = {
+        ...existingFile,
         ...updates,
         updatedAt: new Date().toISOString()
       };
       
-      const result = await db.files.findOneAndUpdate(
-        { id: fileId },
-        { $set: updateData },
-        { returnDocument: 'after' }
-      );
-      
-      return result.value;
+      const { resource } = await container.item(fileId, fileId).replace(updateData);
+      return resource;
     } catch (error) {
       console.error('Error updating file metadata:', error);
       throw error;
@@ -93,11 +133,16 @@ export class FileModel {
    */
   async deleteFile(fileId: string): Promise<boolean> {
     try {
-      const result = await db.files.deleteOne({ id: fileId });
-      return result.deletedCount > 0;
+      const container = databaseService.getContainer('files');
+      if (!container) {
+        throw new Error('Files container not available');
+      }
+      
+      await container.item(fileId, fileId).delete();
+      return true;
     } catch (error) {
       console.error('Error deleting file metadata:', error);
-      throw error;
+      return false;
     }
   }
   
@@ -106,7 +151,21 @@ export class FileModel {
    */
   async getFilesByCategory(userId: string, category: string): Promise<FileDocument[]> {
     try {
-      return await db.files.find({ userId, category }).toArray();
+      const container = databaseService.getContainer('files');
+      if (!container) {
+        throw new Error('Files container not available');
+      }
+      
+      const querySpec = {
+        query: 'SELECT * FROM c WHERE c.userId = @userId AND c.category = @category',
+        parameters: [
+          { name: '@userId', value: userId },
+          { name: '@category', value: category }
+        ]
+      };
+      
+      const { resources } = await container.items.query(querySpec).fetchAll();
+      return resources;
     } catch (error) {
       console.error('Error getting files by category:', error);
       throw error;

@@ -9,8 +9,10 @@ import TaskController from '../controllers/TaskController';
 import ValidationMiddleware from '../middleware/validation';
 import AuthMiddleware from '../middleware/auth';
 import { cacheService } from '../services/CacheService';
-import { databaseService } from '../services/DatabaseService';
+import databaseService from '../services/DatabaseService';
 import { logger } from '../utils/logger';
+import fitnessRoutes from './fitnessRoutes';
+import authRoutes from './authRoutes';
 
 const router = Router();
 
@@ -265,6 +267,16 @@ router.post('/tasks/:id/attachments',
   }),
   TaskController.addAttachment
 );
+
+// ===================
+// FITNESS ROUTES
+// ===================
+
+// Mount authentication routes  
+router.use('/auth', authRoutes);
+
+// Mount fitness routes
+router.use('/fitness', fitnessRoutes);
 
 // ===================
 // AI INTEGRATION ROUTES (Phase 4)

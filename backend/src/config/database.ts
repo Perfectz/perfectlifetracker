@@ -1,90 +1,64 @@
 /**
  * backend/src/config/database.ts
- * Database configuration and connection
+ * Cosmos DB configuration and connection
  */
-import { MongoClient } from 'mongodb';
 import dotenv from 'dotenv';
+import { logger } from '../utils/logger';
 
 dotenv.config();
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/perfectltp';
-const client = new MongoClient(MONGODB_URI);
+export interface DatabaseConfig {
+  endpoint: string;
+  key: string;
+  databaseId: string;
+  useMockDatabase: boolean;
+  connectionPolicy: {
+    requestTimeout: number;
+    connectionMode: string;
+    maxRetryAttemptCount: number;
+    maxRetryWaitTimeInSeconds: number;
+  };
+}
 
-// Database connection
-let db: any;
-
-async function connectToDatabase() {
-  try {
-    await client.connect();
-    console.log('Connected to MongoDB');
-    
-    const database = client.db();
-    
-    // Define database collections
-    db = {
-      users: database.collection('users'),
-      projects: database.collection('projects'),
-      tasks: database.collection('tasks'),
-      comments: database.collection('comments'),
-      notifications: database.collection('notifications'),
-      files: database.collection('files')
+export const getDatabaseConfig = (): DatabaseConfig => {
+  const useMockDatabase = process.env.USE_MOCK_DATABASE === 'true' || process.env.NODE_ENV === 'test';
+  
+  if (useMockDatabase) {
+    logger.info('Using mock database configuration');
+    return {
+      endpoint: '',
+      key: '',
+      databaseId: 'mock-database',
+      useMockDatabase: true,
+      connectionPolicy: {
+        requestTimeout: 10000,
+        connectionMode: 'Gateway',
+        maxRetryAttemptCount: 3,
+        maxRetryWaitTimeInSeconds: 30
+      }
     };
-    
-    // Create indexes
-    await createIndexes();
-    
-    return db;
-  } catch (error) {
-    console.error('Failed to connect to MongoDB:', error);
-    process.exit(1);
   }
-}
 
-async function createIndexes() {
-  try {
-    // Users collection indexes
-    await db.users.createIndex({ email: 1 }, { unique: true });
-    await db.users.createIndex({ username: 1 }, { unique: true });
-    
-    // Projects collection indexes
-    await db.projects.createIndex({ id: 1 }, { unique: true });
-    await db.projects.createIndex({ ownerId: 1 });
-    await db.projects.createIndex({ 'members.userId': 1 });
-    await db.projects.createIndex({ status: 1 });
-    
-    // Tasks collection indexes
-    await db.tasks.createIndex({ id: 1 }, { unique: true });
-    await db.tasks.createIndex({ projectId: 1 });
-    await db.tasks.createIndex({ assigneeId: 1 });
-    await db.tasks.createIndex({ status: 1 });
-    await db.tasks.createIndex({ dueDate: 1 });
-    
-    // Files collection indexes
-    await db.files.createIndex({ id: 1 }, { unique: true });
-    await db.files.createIndex({ userId: 1 });
-    await db.files.createIndex({ relatedEntityId: 1 });
-    await db.files.createIndex({ category: 1 });
-    await db.files.createIndex({ blobName: 1 });
-    
-    console.log('Database indexes created successfully');
-  } catch (error) {
-    console.error('Error creating database indexes:', error);
+  const config: DatabaseConfig = {
+    endpoint: process.env.COSMOS_DB_ENDPOINT || '',
+    key: process.env.COSMOS_DB_KEY || '',
+    databaseId: process.env.COSMOS_DB_DATABASE || 'lifetrackpro-db',
+    useMockDatabase: false,
+    connectionPolicy: {
+      requestTimeout: 10000,
+      connectionMode: 'Gateway',
+      maxRetryAttemptCount: 3,
+      maxRetryWaitTimeInSeconds: 30
+    }
+  };
+
+  // Validate required configuration
+  if (!config.endpoint || !config.key) {
+    logger.warn('Missing Cosmos DB configuration, falling back to mock database');
+    config.useMockDatabase = true;
   }
-}
 
-// Initialize connection
-connectToDatabase();
+  return config;
+};
 
-// Handle graceful shutdown
-process.on('SIGINT', async () => {
-  try {
-    await client.close();
-    console.log('MongoDB connection closed');
-    process.exit(0);
-  } catch (error) {
-    console.error('Error closing MongoDB connection:', error);
-    process.exit(1);
-  }
-});
-
-export default db; 
+export default getDatabaseConfig();

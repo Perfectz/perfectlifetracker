@@ -30,14 +30,23 @@ async function initCosmosConfig() {
     cosmosKey = process.env.COSMOS_DB_KEY || '';
   }
 
+  console.log('Cosmos DB Configuration Check:');
+  console.log(`  USE_MOCK_DATABASE: ${process.env.USE_MOCK_DATABASE}`);
+  console.log(`  Endpoint available: ${!!cosmosEndpoint}`);
+  console.log(`  Key available: ${!!cosmosKey}`);
+
   // Check if we have credentials
   const hasCosmosCredentials = !!(cosmosEndpoint && cosmosKey);
   
-  // Update mock database decision
-  useMockDatabase = 
-    process.env.USE_MOCK_DATABASE === 'true' || 
-    (isDevelopment && !hasCosmosCredentials) ||
-    !hasCosmosCredentials;
+  // Update mock database decision - respect explicit USE_MOCK_DATABASE setting
+  if (process.env.USE_MOCK_DATABASE === 'false' && hasCosmosCredentials) {
+    useMockDatabase = false;
+    console.log('✅ Using REAL Cosmos DB (USE_MOCK_DATABASE=false and credentials available)');
+  } else {
+    useMockDatabase = true;
+    const reason = process.env.USE_MOCK_DATABASE === 'true' ? 'USE_MOCK_DATABASE=true' : 'missing credentials';
+    console.log(`ℹ️  Using mock database (${reason})`);
+  }
 }
 
 const databaseId = process.env.COSMOS_DB_DATABASE || 'lifetrackpro-db';

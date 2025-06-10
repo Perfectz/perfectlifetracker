@@ -58,7 +58,7 @@
     "test:lighthouse": "node scripts/lighthouse-test.js",
     "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e",
     "test:performance:all": "npm run test:performance && npm run test:e2e:performance && npm run test:lighthouse",
-    "lint": "eslint . --ext .ts,.tsx",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "format": "prettier --write 'src/**/*.{ts,tsx,css,scss}'",
     "format:check": "prettier --check 'src/**/*.{ts,tsx,css,scss}'",
@@ -68,7 +68,10 @@
     "deadcode": "npx ts-prune",
     "performance": "npm run build && npm run analyze && npm run deadcode",
     "clean:deps": "npx depcheck",
-    "bundle:report": "npm run build -- --mode=analyze"
+    "bundle:report": "npm run build -- --mode=analyze",
+    "deploy:vercel": "npm run build && vercel --prod",
+    "deploy:netlify": "npm run build && netlify deploy --prod --dir=dist",
+    "deploy:preview": "npm run build && vite preview --host"
   },
   "eslintConfig": {
     "extends": [

@@ -4,7 +4,7 @@
  */
 import React, { useState } from 'react';
 import { Button, Menu, MenuItem, Avatar, Typography } from '@mui/material';
-import { useAuth } from '../services/MockAuthContext';
+import { useAuth } from '../services/AuthContext';
 
 const UserMenu = () => {
   const { user, signOut } = useAuth();
@@ -37,12 +37,12 @@ const UserMenu = () => {
         }}
       >
         <Avatar
-          alt={user?.name || 'User'}
+          alt={user?.name || user?.username || 'User'}
           src="/avatar-placeholder.png"
           sx={{ width: 32, height: 32 }}
         />
         <Typography variant="body1" sx={{ display: { xs: 'none', sm: 'block' } }}>
-          {user?.name || 'User'}
+          {user?.name || user?.username || 'User'}
         </Typography>
       </Button>
       <Menu

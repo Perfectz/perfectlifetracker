@@ -26,13 +26,14 @@ export const MockAuthProvider = ({ children }: MockAuthProviderProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<MockUser | null>(null);
   const [userProfile, setUserProfile] = useState<MockUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Check for existing authentication on mount
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        setIsLoading(true);
         const currentUser = mockAuthService.getCurrentUser();
         if (currentUser) {
           setUser(currentUser);
@@ -59,6 +60,7 @@ export const MockAuthProvider = ({ children }: MockAuthProviderProps) => {
       setUser(user);
       setUserProfile(user);
       setIsAuthenticated(true);
+      setError(null);
     } catch (err: any) {
       console.error('Sign in error:', err);
       setError(err.message || 'Failed to sign in');
@@ -69,14 +71,19 @@ export const MockAuthProvider = ({ children }: MockAuthProviderProps) => {
 
   // Sign out function
   const signOut = async () => {
+    setIsLoading(true);
+    setError(null);
     try {
       await mockAuthService.signOut();
       setUser(null);
       setUserProfile(null);
       setIsAuthenticated(false);
+      setError(null);
     } catch (err: any) {
       console.error('Sign out error:', err);
       setError(err.message || 'Failed to sign out');
+    } finally {
+      setIsLoading(false);
     }
   };
 

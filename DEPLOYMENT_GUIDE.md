@@ -1,258 +1,248 @@
-# Perfect LifeTracker Pro - Production Deployment Guide
+# 🚀 Perfect LifeTracker Pro - Deployment Guide
 
-This guide covers the complete process for deploying Perfect LifeTracker Pro to production with proper security and configuration.
+## Overview
+This guide will walk you through deploying your Perfect LifeTracker Pro application to production. The app will be accessible on mobile devices with real authentication and database persistence.
 
-## 📋 Prerequisites
+---
 
-### Azure Resources Required
-- [ ] Azure Cosmos DB account (SQL API)
-- [ ] Azure Storage Account (for file uploads)
-- [ ] Azure Active Directory B2C tenant
-- [ ] Azure App Service or Azure Kubernetes Service
-- [ ] Azure Application Insights (optional, for monitoring)
-- [ ] Azure OpenAI Service (optional, for AI features)
+## ⚡ **Quick Deploy Options**
 
-### Local Development Tools
-- [ ] Node.js 18.x or higher
-- [ ] npm 9.x or higher
-- [ ] Azure CLI 2.x
-- [ ] Docker (for containerized deployment)
-
-## 🔧 Environment Configuration
-
-### 1. Backend Environment Setup
-
-Copy the production environment template:
+### Option A: Deploy to Vercel (Recommended)
 ```bash
-cp backend/env-templates/production.env.template backend/.env
-```
+# 1. Install Vercel CLI
+npm install -g vercel
 
-**Required Environment Variables to Replace:**
+# 2. Login to Vercel
+vercel login
 
-#### Database Configuration
-```bash
-# Replace with your Cosmos DB details
-COSMOS_DB_ENDPOINT=https://YOUR_COSMOS_ACCOUNT.documents.azure.com:443/
-COSMOS_DB_KEY=YOUR_COSMOS_PRIMARY_KEY
-```
-
-#### Authentication Configuration
-```bash
-# Replace with your Azure AD B2C details
-AZURE_CLIENT_ID=YOUR_AZURE_CLIENT_ID
-AZURE_AUTHORITY=https://login.microsoftonline.com/YOUR_TENANT_ID
-```
-
-#### Storage Configuration
-```bash
-# Replace with your Azure Storage details
-AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=https;AccountName=YOUR_STORAGE_ACCOUNT;AccountKey=YOUR_STORAGE_KEY;EndpointSuffix=core.windows.net
-```
-
-#### Security Secrets (Generate Secure Random Values)
-```bash
-# Generate secure 256-bit secrets
-JWT_SECRET=$(openssl rand -hex 32)
-SESSION_SECRET=$(openssl rand -hex 32)
-ENCRYPTION_KEY=$(openssl rand -hex 32)
-```
-
-### 2. Frontend Environment Setup
-
-Copy the production environment template:
-```bash
-cp frontend/env-templates/production.env.template frontend/.env.production
-```
-
-**Required Environment Variables to Replace:**
-```bash
-# Replace with your Azure AD B2C details
-VITE_AZURE_CLIENT_ID=YOUR_AZURE_CLIENT_ID
-VITE_AZURE_AUTHORITY=https://login.microsoftonline.com/YOUR_TENANT_ID
-
-# Replace with your production API URL
-VITE_API_BASE_URL=https://api.yourdomain.com
-```
-
-## 🚀 Deployment Options
-
-### Option 1: Azure App Service (Recommended for Small-Medium Scale)
-
-#### Backend Deployment
-```bash
-# Build the backend
-cd backend
-npm run build
-
-# Deploy to Azure App Service
-az webapp up --name perfectltp-api --resource-group perfectltp-rg
-```
-
-#### Frontend Deployment
-```bash
-# Build the frontend
+# 3. Deploy frontend
 cd frontend
-npm run build
-
-# Deploy to Azure Static Web Apps or App Service
-az staticwebapp create --name perfectltp-frontend --source .
+npm run deploy:vercel
 ```
 
-### Option 2: Azure Kubernetes Service (Recommended for Enterprise Scale)
-
-#### 1. Build Docker Images
+### Option B: Deploy to Netlify
 ```bash
-# Backend
-docker build -t perfectltp/backend:latest -f backend/Dockerfile .
+# 1. Install Netlify CLI
+npm install -g netlify-cli
 
-# Frontend
-docker build -t perfectltp/frontend:latest -f frontend/Dockerfile .
-```
+# 2. Login to Netlify
+netlify login
 
-#### 2. Push to Azure Container Registry
-```bash
-az acr login --name yourregistryname
-docker tag perfectltp/backend:latest yourregistryname.azurecr.io/perfectltp/backend:latest
-docker push yourregistryname.azurecr.io/perfectltp/backend:latest
-```
-
-#### 3. Deploy to AKS
-```bash
-kubectl apply -f kubernetes/production/
-```
-
-## 🔒 Security Checklist
-
-### Pre-Deployment Security
-- [ ] All placeholder values replaced in environment files
-- [ ] JWT secrets generated with 256-bit entropy
-- [ ] CORS origins restricted to production domains only
-- [ ] `USE_MOCK_AUTH=false` in production
-- [ ] `USE_MOCK_DATABASE=false` in production
-- [ ] HTTPS enforced for all endpoints
-- [ ] Rate limiting enabled and configured
-
-### Post-Deployment Security
-- [ ] SSL certificates configured and valid
-- [ ] Security headers enabled (Helmet.js)
-- [ ] Database access restricted to application IPs only
-- [ ] Storage account access keys rotated
-- [ ] Application Insights monitoring enabled
-- [ ] Backup and disaster recovery configured
-
-## 📊 Monitoring and Maintenance
-
-### Application Insights Setup
-1. Create Application Insights resource in Azure
-2. Add instrumentation key to backend environment:
-   ```bash
-   APPINSIGHTS_INSTRUMENTATIONKEY=your_instrumentation_key
-   ```
-
-### Health Checks
-- Backend health: `https://api.yourdomain.com/api/health`
-- Frontend health: Check main application loads properly
-
-### Log Monitoring
-- Application logs available in Azure App Service logs
-- Custom metrics in Application Insights
-- Error tracking and alerting configured
-
-## 🔄 CI/CD Pipeline
-
-### GitHub Actions Configuration
-Create `.github/workflows/production.yml`:
-
-```yaml
-name: Production Deployment
-on:
-  push:
-    branches: [main]
-    
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-      - name: Install dependencies
-        run: |
-          cd backend && npm ci
-          cd ../frontend && npm ci
-      - name: Run tests
-        run: |
-          cd backend && npm test
-          cd ../frontend && npm test
-      - name: Build applications
-        run: |
-          cd backend && npm run build
-          cd ../frontend && npm run build
-      - name: Deploy to Azure
-        # Add your deployment steps here
-```
-
-## 🆘 Troubleshooting
-
-### Common Issues
-
-#### 1. Database Connection Failed
-- Verify Cosmos DB endpoint and key
-- Check network security groups allow connections
-- Ensure database and containers exist
-
-#### 2. Authentication Errors
-- Verify Azure AD B2C configuration
-- Check client ID and tenant ID are correct
-- Ensure redirect URLs are configured
-
-#### 3. File Upload Issues
-- Verify Azure Storage connection string
-- Check container exists and permissions
-- Verify CORS settings on storage account
-
-#### 4. CORS Errors
-- Ensure frontend URL is in `ALLOWED_ORIGINS`
-- Check Azure AD B2C redirect URIs
-- Verify API gateway CORS configuration
-
-### Debugging Commands
-```bash
-# Check backend logs
-az webapp log tail --name perfectltp-api --resource-group perfectltp-rg
-
-# Check frontend deployment
-az staticwebapp show --name perfectltp-frontend
-
-# Test API connectivity
-curl -X GET https://api.yourdomain.com/api/health
-```
-
-## 📞 Support
-
-For deployment support and issues:
-1. Check the troubleshooting section above
-2. Review Azure service health status
-3. Check application logs in Azure portal
-4. Contact the development team with specific error messages
-
-## 🔄 Rolling Back
-
-### Quick Rollback Commands
-```bash
-# Rollback backend
-az webapp deployment slot swap --name perfectltp-api --resource-group perfectltp-rg --slot staging --target-slot production
-
-# Rollback frontend
-az staticwebapp environment set --name perfectltp-frontend --environment-name production --source previous-deployment
+# 3. Deploy frontend
+cd frontend
+npm run deploy:netlify
 ```
 
 ---
 
-**⚠️ Important Security Notes:**
-- Never commit `.env` files to version control
-- Rotate secrets regularly (every 90 days minimum)
-- Monitor access logs for suspicious activity
-- Keep all Azure services updated with latest patches 
+## 📋 **Step-by-Step Deployment**
+
+### **Step 1: Deploy Backend to Azure**
+
+#### 1.1 Prepare Azure Resources
+```bash
+# Your backend is already configured for Azure!
+# The following are already set up:
+# - Azure Cosmos DB connection
+# - Environment variables
+# - Docker configuration
+```
+
+#### 1.2 Deploy to Azure Container Apps (Recommended)
+```bash
+# From the backend directory
+cd backend
+
+# Build Docker image
+docker build -t perfect-lifetracker-backend .
+
+# Tag for Azure Container Registry
+docker tag perfect-lifetracker-backend your-registry.azurecr.io/lifetracker-backend:latest
+
+# Push to Azure Container Registry
+docker push your-registry.azurecr.io/lifetracker-backend:latest
+```
+
+#### 1.3 Alternative: Deploy to Azure Web Apps
+Your backend is already configured for this. Just:
+1. Go to Azure Portal
+2. Create new Web App
+3. Deploy from your GitHub repository
+4. Set environment variables in Azure
+
+### **Step 2: Configure Azure AD Authentication**
+
+#### 2.1 Register App in Azure AD
+1. Go to **Azure Portal** → **Entra ID** → **App registrations**
+2. Click **"New registration"**
+3. Fill in:
+   - **Name**: Perfect LifeTracker Pro
+   - **Supported account types**: Accounts in any organizational directory and personal Microsoft accounts
+   - **Redirect URI**: 
+     - Type: SPA (Single Page Application)
+     - URI: `https://your-frontend-domain.com`
+
+#### 2.2 Configure Authentication
+1. In your app registration, go to **Authentication**
+2. Add redirect URIs:
+   - `https://your-frontend-domain.com`
+   - `http://localhost:3000` (for development)
+3. Enable **ID tokens** and **Access tokens**
+4. Save the configuration
+
+#### 2.3 Get Credentials
+Copy these values for later:
+- **Application (client) ID**
+- **Directory (tenant) ID**
+
+### **Step 3: Deploy Frontend**
+
+#### 3.1 Update Environment Variables
+Create a `.env.production` file in the frontend directory:
+```bash
+VITE_API_URL=https://your-backend-domain.azurewebsites.net
+VITE_AZURE_CLIENT_ID=your-client-id-from-step-2
+VITE_AZURE_AUTHORITY=https://login.microsoftonline.com/your-tenant-id
+```
+
+#### 3.2 Deploy to Vercel
+```bash
+# Install Vercel CLI if not already installed
+npm install -g vercel
+
+# Login to Vercel
+vercel login
+
+# Deploy
+cd frontend
+vercel --prod
+
+# Set environment variables in Vercel dashboard:
+# VITE_API_URL=https://your-backend-domain.azurewebsites.net
+# VITE_AZURE_CLIENT_ID=your-client-id
+# VITE_AZURE_AUTHORITY=https://login.microsoftonline.com/your-tenant-id
+```
+
+#### 3.3 Alternative: Deploy to Netlify
+```bash
+# Install Netlify CLI
+npm install -g netlify-cli
+
+# Login to Netlify
+netlify login
+
+# Deploy
+cd frontend
+netlify deploy --prod --dir=dist
+
+# Set environment variables in Netlify dashboard
+```
+
+### **Step 4: Update Azure AD with Production URLs**
+
+1. Go back to your Azure AD app registration
+2. Update **Redirect URIs** with your production domain:
+   - `https://your-vercel-app.vercel.app`
+   - `https://your-netlify-app.netlify.app`
+3. Update **Logout URLs** if needed
+
+### **Step 5: Test the Deployment**
+
+#### 5.1 Test Authentication
+1. Open your deployed app
+2. Click "Login"
+3. Sign in with your Microsoft account
+4. Verify you're redirected back to the app
+
+#### 5.2 Test Features
+1. **Weight Tracker**: Add a weight entry
+2. **Task Manager**: Create and complete tasks
+3. **Mobile**: Test on your phone's browser
+
+---
+
+## 📱 **Mobile Access Setup**
+
+### For iOS Safari:
+1. Open your deployed app in Safari
+2. Tap the **Share** button
+3. Select **"Add to Home Screen"**
+4. Your app will appear like a native app!
+
+### For Android Chrome:
+1. Open your deployed app in Chrome
+2. Tap the **Menu** (three dots)
+3. Select **"Add to Home Screen"**
+4. Install the web app
+
+---
+
+## 🔧 **Quick Deployment Commands**
+
+I've already prepared everything for you. Just run these commands:
+
+### Deploy Frontend to Vercel:
+```bash
+cd frontend
+npm run deploy:vercel
+```
+
+### Deploy Frontend to Netlify:
+```bash
+cd frontend
+npm run deploy:netlify
+```
+
+### Build and Preview Locally:
+```bash
+cd frontend
+npm run deploy:preview
+```
+
+---
+
+## 🎯 **Environment Variables Checklist**
+
+### Frontend (.env.production):
+- [ ] `VITE_API_URL` - Your backend URL
+- [ ] `VITE_AZURE_CLIENT_ID` - From Azure AD app registration
+- [ ] `VITE_AZURE_AUTHORITY` - Azure tenant URL
+
+### Backend (already configured):
+- [x] `COSMOS_DB_ENDPOINT` - Already set
+- [x] `COSMOS_DB_KEY` - Already set
+- [x] `JWT_SECRET` - Already set
+- [x] `AZURE_CLIENT_ID` - Already set
+
+---
+
+## 🚨 **Important Notes**
+
+1. **Domain Updates**: Update all placeholder URLs with your actual domains
+2. **CORS Configuration**: Ensure your backend allows requests from your frontend domain
+3. **HTTPS Required**: Azure AD requires HTTPS for production
+4. **Mobile Testing**: Test thoroughly on actual mobile devices
+
+---
+
+## 🎉 **You're Ready!**
+
+Once deployed, your Perfect LifeTracker Pro will:
+- ✅ Work on any mobile device
+- ✅ Sync data across devices
+- ✅ Use real Microsoft authentication
+- ✅ Store data in Azure Cosmos DB
+- ✅ Provide a professional user experience
+
+**Your app will be available at:**
+- Vercel: `https://your-app.vercel.app`
+- Netlify: `https://your-app.netlify.app`
+
+## 📞 **Need Help?**
+
+The configuration files are already created:
+- `vercel.json` - Vercel configuration
+- `netlify.toml` - Netlify configuration
+- Package.json scripts updated with deploy commands
+
+Just update the placeholder URLs with your actual domains and deploy! 

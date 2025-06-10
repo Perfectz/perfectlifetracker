@@ -1,9 +1,9 @@
 /**
  * backend/src/models/ProjectModel.ts
- * Handles project-related database operations
+ * Handles project-related database operations using Cosmos DB
  */
 import { v4 as uuidv4 } from 'uuid';
-import db from '../config/database';
+import databaseService from '../services/DatabaseService';
 
 // Project Interfaces
 export interface Project {
@@ -61,7 +61,12 @@ class ProjectModel {
         tags: projectData.tags || []
       };
 
-      await db.projects.insertOne(newProject);
+      const container = databaseService.getContainer('tasks'); // Using tasks container for projects
+      if (!container) {
+        throw new Error('Tasks container not available');
+      }
+
+      await container.items.create(newProject);
       
       return newProject;
     } catch (error) {
@@ -75,10 +80,16 @@ class ProjectModel {
    */
   async getProjectById(projectId: string): Promise<Project | null> {
     try {
-      return await db.projects.findOne({ id: projectId });
+      const container = databaseService.getContainer('tasks');
+      if (!container) {
+        throw new Error('Tasks container not available');
+      }
+      
+      const { resource } = await container.item(projectId, projectId).read();
+      return resource || null;
     } catch (error) {
       console.error('Error getting project by ID:', error);
-      throw error;
+      return null;
     }
   }
 
@@ -87,7 +98,18 @@ class ProjectModel {
    */
   async getProjectsByOwnerId(ownerId: string): Promise<Project[]> {
     try {
-      return await db.projects.find({ ownerId }).toArray();
+      const container = databaseService.getContainer('tasks');
+      if (!container) {
+        throw new Error('Tasks container not available');
+      }
+      
+      const querySpec = {
+        query: 'SELECT * FROM c WHERE c.ownerId = @ownerId',
+        parameters: [{ name: '@ownerId', value: ownerId }]
+      };
+      
+      const { resources } = await container.items.query(querySpec).fetchAll();
+      return resources;
     } catch (error) {
       console.error('Error getting projects by owner ID:', error);
       throw error;
@@ -99,9 +121,18 @@ class ProjectModel {
    */
   async getProjectsByMemberId(userId: string): Promise<Project[]> {
     try {
-      return await db.projects.find({
-        "members.userId": userId
-      }).toArray();
+      const container = databaseService.getContainer('tasks');
+      if (!container) {
+        throw new Error('Tasks container not available');
+      }
+      
+      const querySpec = {
+        query: 'SELECT * FROM c JOIN m IN c.members WHERE m.userId = @userId',
+        parameters: [{ name: '@userId', value: userId }]
+      };
+      
+      const { resources } = await container.items.query(querySpec).fetchAll();
+      return resources;
     } catch (error) {
       console.error('Error getting projects by member ID:', error);
       throw error;
@@ -113,25 +144,26 @@ class ProjectModel {
    */
   async updateProject(projectId: string, updateData: Partial<ProjectInput>): Promise<Project | null> {
     try {
-      // Check if project exists
-      const project = await db.projects.findOne({ id: projectId });
-      if (!project) {
+      const container = databaseService.getContainer('tasks');
+      if (!container) {
+        throw new Error('Tasks container not available');
+      }
+      
+      // First get the existing project
+      const { resource: existingProject } = await container.item(projectId, projectId).read();
+      if (!existingProject) {
         throw new Error('Project not found');
       }
 
       // Update project
       const updates = {
+        ...existingProject,
         ...updateData,
         updatedAt: new Date()
       };
 
-      await db.projects.updateOne(
-        { id: projectId },
-        { $set: updates }
-      );
-
-      // Return updated project
-      return await this.getProjectById(projectId);
+      const { resource } = await container.item(projectId, projectId).replace(updates);
+      return resource;
     } catch (error) {
       console.error('Error updating project:', error);
       throw error;
@@ -143,11 +175,16 @@ class ProjectModel {
    */
   async deleteProject(projectId: string): Promise<boolean> {
     try {
-      const result = await db.projects.deleteOne({ id: projectId });
-      return result.deletedCount === 1;
+      const container = databaseService.getContainer('tasks');
+      if (!container) {
+        throw new Error('Tasks container not available');
+      }
+      
+      await container.item(projectId, projectId).delete();
+      return true;
     } catch (error) {
       console.error('Error deleting project:', error);
-      throw error;
+      return false;
     }
   }
 
@@ -156,14 +193,19 @@ class ProjectModel {
    */
   async addProjectMember(projectId: string, userId: string, role: ProjectMember['role'] = 'member'): Promise<boolean> {
     try {
-      // Check if project exists
-      const project = await db.projects.findOne({ id: projectId });
+      const container = databaseService.getContainer('tasks');
+      if (!container) {
+        throw new Error('Tasks container not available');
+      }
+      
+      // Get existing project
+      const { resource: project } = await container.item(projectId, projectId).read();
       if (!project) {
         throw new Error('Project not found');
       }
 
       // Check if user is already a member
-      const memberExists = project.members.some(member => member.userId === userId);
+      const memberExists = project.members.some((member: ProjectMember) => member.userId === userId);
       if (memberExists) {
         throw new Error('User is already a member of this project');
       }
@@ -175,15 +217,11 @@ class ProjectModel {
         joinedAt: new Date()
       };
 
-      const result = await db.projects.updateOne(
-        { id: projectId },
-        { 
-          $push: { members: newMember },
-          $set: { updatedAt: new Date() }
-        }
-      );
+      project.members.push(newMember);
+      project.updatedAt = new Date();
 
-      return result.modifiedCount === 1;
+      await container.item(projectId, projectId).replace(project);
+      return true;
     } catch (error) {
       console.error('Error adding project member:', error);
       throw error;
@@ -195,32 +233,26 @@ class ProjectModel {
    */
   async removeProjectMember(projectId: string, userId: string): Promise<boolean> {
     try {
-      // Check if project exists
-      const project = await db.projects.findOne({ id: projectId });
+      const container = databaseService.getContainer('tasks');
+      if (!container) {
+        throw new Error('Tasks container not available');
+      }
+      
+      // Get existing project
+      const { resource: project } = await container.item(projectId, projectId).read();
       if (!project) {
         throw new Error('Project not found');
       }
 
-      // Can't remove the owner
-      const isOwner = project.members.some(member => 
-        member.userId === userId && member.role === 'owner');
-      
-      if (isOwner) {
-        throw new Error('Cannot remove the project owner');
-      }
+      // Remove member
+      project.members = project.members.filter((member: ProjectMember) => member.userId !== userId);
+      project.updatedAt = new Date();
 
-      const result = await db.projects.updateOne(
-        { id: projectId },
-        { 
-          $pull: { members: { userId } },
-          $set: { updatedAt: new Date() }
-        }
-      );
-
-      return result.modifiedCount === 1;
+      await container.item(projectId, projectId).replace(project);
+      return true;
     } catch (error) {
       console.error('Error removing project member:', error);
-      throw error;
+      return false;
     }
   }
 
@@ -229,38 +261,31 @@ class ProjectModel {
    */
   async updateMemberRole(projectId: string, userId: string, newRole: ProjectMember['role']): Promise<boolean> {
     try {
-      // Check if project exists
-      const project = await db.projects.findOne({ id: projectId });
+      const container = databaseService.getContainer('tasks');
+      if (!container) {
+        throw new Error('Tasks container not available');
+      }
+      
+      // Get existing project
+      const { resource: project } = await container.item(projectId, projectId).read();
       if (!project) {
         throw new Error('Project not found');
       }
 
-      // Check if user is a member
-      const memberIndex = project.members.findIndex(member => member.userId === userId);
+      // Update member role
+      const memberIndex = project.members.findIndex((member: ProjectMember) => member.userId === userId);
       if (memberIndex === -1) {
-        throw new Error('User is not a member of this project');
+        throw new Error('Member not found in project');
       }
 
-      // Can't change owner's role
-      if (project.members[memberIndex].role === 'owner' && newRole !== 'owner') {
-        throw new Error('Cannot change the role of the project owner');
-      }
+      project.members[memberIndex].role = newRole;
+      project.updatedAt = new Date();
 
-      // Update role
-      const result = await db.projects.updateOne(
-        { id: projectId, "members.userId": userId },
-        { 
-          $set: { 
-            "members.$.role": newRole,
-            updatedAt: new Date() 
-          }
-        }
-      );
-
-      return result.modifiedCount === 1;
+      await container.item(projectId, projectId).replace(project);
+      return true;
     } catch (error) {
       console.error('Error updating member role:', error);
-      throw error;
+      return false;
     }
   }
 
@@ -269,42 +294,22 @@ class ProjectModel {
    */
   async archiveProject(projectId: string): Promise<boolean> {
     try {
-      const result = await db.projects.updateOne(
-        { id: projectId },
-        { 
-          $set: { 
-            status: 'archived',
-            updatedAt: new Date() 
-          }
-        }
-      );
-
-      return result.modifiedCount === 1;
+      return await this.updateProjectStatus(projectId, 'archived');
     } catch (error) {
       console.error('Error archiving project:', error);
-      throw error;
+      return false;
     }
   }
 
   /**
-   * Restore archived project
+   * Restore project
    */
   async restoreProject(projectId: string): Promise<boolean> {
     try {
-      const result = await db.projects.updateOne(
-        { id: projectId, status: 'archived' },
-        { 
-          $set: { 
-            status: 'active',
-            updatedAt: new Date() 
-          }
-        }
-      );
-
-      return result.modifiedCount === 1;
+      return await this.updateProjectStatus(projectId, 'active');
     } catch (error) {
       console.error('Error restoring project:', error);
-      throw error;
+      return false;
     }
   }
 
@@ -313,21 +318,37 @@ class ProjectModel {
    */
   async completeProject(projectId: string): Promise<boolean> {
     try {
-      const result = await db.projects.updateOne(
-        { id: projectId },
-        { 
-          $set: { 
-            status: 'completed',
-            updatedAt: new Date(),
-            endDate: new Date()
-          }
-        }
-      );
-
-      return result.modifiedCount === 1;
+      return await this.updateProjectStatus(projectId, 'completed');
     } catch (error) {
       console.error('Error completing project:', error);
-      throw error;
+      return false;
+    }
+  }
+
+  /**
+   * Update project status
+   */
+  private async updateProjectStatus(projectId: string, status: Project['status']): Promise<boolean> {
+    try {
+      const container = databaseService.getContainer('tasks');
+      if (!container) {
+        throw new Error('Tasks container not available');
+      }
+      
+      // Get existing project
+      const { resource: project } = await container.item(projectId, projectId).read();
+      if (!project) {
+        throw new Error('Project not found');
+      }
+
+      project.status = status;
+      project.updatedAt = new Date();
+
+      await container.item(projectId, projectId).replace(project);
+      return true;
+    } catch (error) {
+      console.error('Error updating project status:', error);
+      return false;
     }
   }
 
@@ -336,13 +357,21 @@ class ProjectModel {
    */
   async searchProjects(query: string, limit: number = 10): Promise<Project[]> {
     try {
-      return await db.projects.find({
-        $or: [
-          { name: { $regex: query, $options: 'i' } },
-          { description: { $regex: query, $options: 'i' } },
-          { tags: { $in: [new RegExp(query, 'i')] } }
+      const container = databaseService.getContainer('tasks');
+      if (!container) {
+        throw new Error('Tasks container not available');
+      }
+      
+      const querySpec = {
+        query: 'SELECT TOP @limit * FROM c WHERE CONTAINS(c.name, @query) OR CONTAINS(c.description, @query)',
+        parameters: [
+          { name: '@query', value: query },
+          { name: '@limit', value: limit }
         ]
-      }).limit(limit).toArray();
+      };
+      
+      const { resources } = await container.items.query(querySpec).fetchAll();
+      return resources;
     } catch (error) {
       console.error('Error searching projects:', error);
       throw error;

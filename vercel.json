@@ -1,0 +1,44 @@
+{
+  "version": 2,
+  "name": "perfect-lifetracker-pro",
+  "builds": [
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "frontend/dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "https://your-backend-domain.com/api/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/frontend/dist/$1"
+    }
+  ],
+  "env": {
+    "VITE_API_URL": "https://your-backend-domain.com",
+    "VITE_AZURE_CLIENT_ID": "@azure-client-id",
+    "VITE_AZURE_AUTHORITY": "@azure-authority"
+  },
+  "build": {
+    "env": {
+      "VITE_API_URL": "https://your-backend-domain.com"
+    }
+  },
+  "functions": {
+    "frontend/dist/index.html": {
+      "maxDuration": 10
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/((?!api/.*).*)",
+      "destination": "/index.html"
+    }
+  ]
+} 

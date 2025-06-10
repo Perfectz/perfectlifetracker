@@ -1,0 +1,27 @@
+[build]
+  base = "frontend"
+  publish = "frontend/dist"
+  command = "npm run build"
+
+[build.environment]
+  VITE_API_URL = "https://your-backend-domain.com"
+  VITE_AZURE_CLIENT_ID = "your-azure-client-id"
+  VITE_AZURE_AUTHORITY = "https://login.microsoftonline.com/your-tenant-id"
+
+[[redirects]]
+  from = "/api/*"
+  to = "https://your-backend-domain.com/api/:splat"
+  status = 200
+  force = true
+  headers = {X-From = "Netlify"}
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[context.production.environment]
+  VITE_API_URL = "https://your-backend-domain.com"
+
+[context.deploy-preview.environment]
+  VITE_API_URL = "https://your-backend-staging.com" 

@@ -1,15 +1,15 @@
 /**
  * frontend/src/services/authConfig.ts
- * Configuration for Microsoft Entra ID authentication
+ * Authentication configuration for Microsoft Entra ID
  */
-import { Configuration, LogLevel, PopupRequest } from '@azure/msal-browser';
+import { Configuration, PopupRequest } from '@azure/msal-browser';
 
-// MSAL configuration
+// MSAL configuration for browser
 export const msalConfig: Configuration = {
   auth: {
-    clientId: import.meta.env.VITE_REACT_APP_AZURE_CLIENT_ID,
-    authority: import.meta.env.VITE_REACT_APP_AZURE_AUTHORITY,
-    redirectUri: import.meta.env.VITE_REACT_APP_AZURE_REDIRECT_URI,
+    clientId: process.env.REACT_APP_AZURE_CLIENT_ID || 'your-client-id',
+    authority: process.env.REACT_APP_AZURE_AUTHORITY || 'https://login.microsoftonline.com/common',
+    redirectUri: process.env.REACT_APP_REDIRECT_URI || window.location.origin,
     postLogoutRedirectUri: window.location.origin,
     navigateToLoginRequestUrl: true,
   },
@@ -24,92 +24,54 @@ export const msalConfig: Configuration = {
           return;
         }
         switch (level) {
-          case LogLevel.Error:
+          case 0: // Error
             console.error(message);
             return;
-          case LogLevel.Info:
+          case 1: // Warning
+            console.warn(message);
+            return;
+          case 2: // Info
             console.info(message);
             return;
-          case LogLevel.Verbose:
+          case 3: // Verbose
             console.debug(message);
-            return;
-          case LogLevel.Warning:
-            console.warn(message);
             return;
           default:
             return;
         }
       },
-      logLevel: LogLevel.Info,
+      logLevel: 2, // Info level
     },
   },
 };
 
-// Base login request configuration
+// Login request configuration
 export const loginRequest: PopupRequest = {
   scopes: ['User.Read', 'openid', 'profile', 'email'],
   prompt: 'select_account',
 };
 
-// Request for Microsoft login
+// Microsoft-specific login request
 export const microsoftLoginRequest: PopupRequest = {
-  ...loginRequest,
+  scopes: ['User.Read', 'openid', 'profile', 'email'],
   prompt: 'select_account',
-  timeout: 60000,
-  popupWindowAttributes: {
-    popupSize: { width: 800, height: 600 },
-    popupPosition: { top: 100, left: 100 },
-    asyncPopups: true,
-    popupWindowFeatures:
-      'scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,directories=no,status=no',
-  },
 };
 
-// Request for Google login via Entra ID
+// Google login request (via Entra ID federation)
 export const googleLoginRequest: PopupRequest = {
-  ...loginRequest,
+  scopes: ['User.Read', 'openid', 'profile', 'email'],
   prompt: 'select_account',
   extraQueryParameters: {
-    domain_hint: 'google.com',
-  },
-  timeout: 60000,
-  popupWindowAttributes: {
-    popupSize: { width: 800, height: 600 },
-    popupPosition: { top: 100, left: 100 },
-    asyncPopups: true,
-    popupWindowFeatures:
-      'scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,directories=no,status=no',
-  },
-};
-
-// Request for Facebook login via Entra ID
-export const facebookLoginRequest: PopupRequest = {
-  ...loginRequest,
-  loginHint: 'Facebook', // This doesn't actually trigger Facebook, just used for UX clarity
-  prompt: 'select_account',
-  // Add domain hint for Facebook federation if available
-  extraQueryParameters: {
-    domain_hint: 'facebook.com',
-  },
-  // Add a reasonable timeout to avoid issues
-  timeout: 60000,
-  // Browser-compatible popup features
-  popupWindowAttributes: {
-    popupSize: { width: 800, height: 600 },
-    popupPosition: { top: 100, left: 100 },
-    asyncPopups: true,
-    // Add additional window features for cross-browser compatibility
-    popupWindowFeatures:
-      'scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,directories=no,status=no',
-  },
+    domain_hint: 'google.com'
+  }
 };
 
 // Graph API request configuration
 export const graphRequest = {
-  scopes: ['User.Read', 'User.ReadBasic.All'],
+  scopes: ['User.Read'],
 };
 
-// Graph API configuration
+// Graph API endpoints
 export const graphConfig = {
   graphMeEndpoint: 'https://graph.microsoft.com/v1.0/me',
 };

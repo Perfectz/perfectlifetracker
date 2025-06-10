@@ -6,7 +6,7 @@ import React, { Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { Box, CircularProgress } from '@mui/material';
 import { ThemeModeProvider } from './theme';
-import { MockAuthProvider } from './services/MockAuthContext';
+import { AuthProvider } from './services/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import { lazyWithRetry, preloadComponent } from './utils/performance';
 
@@ -31,18 +31,20 @@ const TerraDesignDemo = lazyWithRetry(() => import('./pages/TerraDesignDemo'));
 const preloadDashboard = preloadComponent(() => import('./pages/DashboardPage'));
 const preloadFitness = preloadComponent(() => import('./screens/FitnessScreen'));
 
-// Enhanced loading component with Terra styling
+// Loading fallback component
 const LoadingFallback = () => (
   <Box
-    display="flex"
-    justifyContent="center"
-    alignItems="center"
-    minHeight="400px"
-    flexDirection="column"
-    gap={2}
+    sx={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      height: '100vh',
+      flexDirection: 'column',
+      gap: 2,
+    }}
   >
-    <CircularProgress size={40} />
-    <Box sx={{ color: 'text.secondary', fontSize: 14 }}>Loading...</Box>
+    <CircularProgress size={60} />
+    <Box sx={{ color: 'text.secondary' }}>Loading...</Box>
   </Box>
 );
 
@@ -59,7 +61,7 @@ function App() {
 
   return (
     <ThemeModeProvider>
-      <MockAuthProvider>
+      <AuthProvider>
         <ErrorBoundary>
           <BrowserRouter>
             <Routes>
@@ -122,7 +124,7 @@ function App() {
             </Routes>
           </BrowserRouter>
         </ErrorBoundary>
-      </MockAuthProvider>
+      </AuthProvider>
     </ThemeModeProvider>
   );
 }

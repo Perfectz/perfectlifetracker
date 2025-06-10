@@ -4,7 +4,7 @@
  */
 import { Container } from '@azure/cosmos';
 import { logger } from '../utils/logger';
-import { databaseService } from './DatabaseService';
+import databaseService from './DatabaseService';
 import { DatabaseError, NotFoundError, ValidationError, createDatabaseError } from '../middleware/errorHandler';
 
 // Generic pagination interface
@@ -57,7 +57,7 @@ export abstract class BaseService<T extends BaseEntity> {
    * Initialize container connection
    */
   private initializeContainer(): void {
-    this.container = (databaseService as any).getContainer(this.containerName);
+    this.container = databaseService.getContainer(this.containerName);
     if (!this.container) {
       logger.error(`Failed to initialize container: ${this.containerName}`);
       throw createDatabaseError(`Container ${this.containerName} not available`);
